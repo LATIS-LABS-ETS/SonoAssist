@@ -1,3 +1,9 @@
+# ignoring folders
+
+# ignoring log files
+*.log
+*.tlog
+
 # Prerequisites
 *.d
 
