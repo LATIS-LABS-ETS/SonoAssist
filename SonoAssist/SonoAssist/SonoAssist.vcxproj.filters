@@ -31,9 +31,6 @@
     <ClCompile Include="SonoAssist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="background_thread_sample_windows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">

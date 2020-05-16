@@ -39,8 +39,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
+    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
@@ -68,7 +73,8 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>tobii_stream_engine.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tobii_stream_engine.lib;opencv_calib3d3410d.lib;opencv_core3410d.lib;opencv_dnn3410d.lib;opencv_features2d3410d.lib;opencv_flann3410d.lib;opencv_highgui3410d.lib;opencv_imgcodecs3410d.lib;opencv_imgproc3410d.lib;opencv_ml3410d.lib;opencv_objdetect3410d.lib;opencv_photo3410d.lib;opencv_shape3410d.lib;opencv_stitching3410d.lib;opencv_superres3410d.lib;opencv_video3410d.lib;opencv_videoio3410d.lib;opencv_videostab3410d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -82,10 +88,10 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>tobii_stream_engine.lib;opencv_calib3d3410.lib;opencv_core3410.lib;opencv_dnn3410.lib;opencv_features2d3410.lib;opencv_flann3410.lib;opencv_highgui3410.lib;opencv_imgcodecs3410.lib;opencv_imgproc3410.lib;opencv_ml3410.lib;opencv_objdetect3410.lib;opencv_photo3410.lib;opencv_shape3410.lib;opencv_stitching3410.lib;opencv_superres3410.lib;opencv_video3410.lib;opencv_videoio3410.lib;opencv_videostab3410.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="background_thread_sample_windows.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
   </ItemGroup>
