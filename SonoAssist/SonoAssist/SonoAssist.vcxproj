@@ -39,8 +39,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\src;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\dist\Release\lib\x64;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
@@ -53,6 +53,7 @@
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <QtInstall>msvc2017_64</QtInstall>
     <QtModules>core;gui;widgets</QtModules>
+    <QMakeCodeLines>QT += bluetooth;QT += xml;$(QMakeCodeLines)</QMakeCodeLines>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtInstall>msvc2017_64</QtInstall>
@@ -73,7 +74,7 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>tobii_stream_engine.lib;opencv_calib3d3410d.lib;opencv_core3410d.lib;opencv_dnn3410d.lib;opencv_features2d3410d.lib;opencv_flann3410d.lib;opencv_highgui3410d.lib;opencv_imgcodecs3410d.lib;opencv_imgproc3410d.lib;opencv_ml3410d.lib;opencv_objdetect3410d.lib;opencv_photo3410d.lib;opencv_shape3410d.lib;opencv_stitching3410d.lib;opencv_superres3410d.lib;opencv_video3410d.lib;opencv_videoio3410d.lib;opencv_videostab3410d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MetaWear.Win32.lib;tobii_stream_engine.lib;opencv_calib3d3410d.lib;opencv_core3410d.lib;opencv_dnn3410d.lib;opencv_features2d3410d.lib;opencv_flann3410d.lib;opencv_highgui3410d.lib;opencv_imgcodecs3410d.lib;opencv_imgproc3410d.lib;opencv_ml3410d.lib;opencv_objdetect3410d.lib;opencv_photo3410d.lib;opencv_shape3410d.lib;opencv_stitching3410d.lib;opencv_superres3410d.lib;opencv_video3410d.lib;opencv_videoio3410d.lib;opencv_videostab3410d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -93,6 +94,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MetaWearBluetoothClient.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -103,6 +105,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="SonoAssist.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="MetaWearBluetoothClient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

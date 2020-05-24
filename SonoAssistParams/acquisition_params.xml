@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<params>
+	<gyroscope_ble_address>F3:AC:8B:CE:E1:10</gyroscope_ble_address>
+	<gyroscope_output_file>F3:AC:8B:CE:E1:10</gyroscope_output_file>
+	<gyroscope_to_redis>F3:AC:8B:CE:E1:10</gyroscope_to_redis>
+</params>

@@ -31,9 +31,15 @@
     <ClCompile Include="SonoAssist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MetaWearBluetoothClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="MetaWearBluetoothClient.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
