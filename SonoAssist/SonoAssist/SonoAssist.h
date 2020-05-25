@@ -40,7 +40,7 @@ class SonoAssist : public QMainWindow{
 
 	private:
 
-		Ui::SonoAssist ui;
+		Ui::MainWindow ui;
 
 		// requirements check vars
 		bool m_stream_is_active = false;
@@ -52,6 +52,7 @@ class SonoAssist : public QMainWindow{
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 
 		bool load_config_file(QString param_file_path);
+		void set_acquisition_label(bool active);
 		void display_warning_message(QString title, QString message);
 
 };

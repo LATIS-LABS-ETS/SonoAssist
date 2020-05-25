@@ -140,6 +140,8 @@ void MetaWearBluetoothClient::start_data_stream() {
 	// making sure device is ready to stream
 	if (m_device_connected && !m_device_streaming) {
 
+		m_output_file.open(m_output_file_str, std::fstream::app);
+
 		// defining the quaternion data and the associated callback
 		auto quaternion = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
 		mbl_mw_datasignal_subscribe(quaternion, this, 
@@ -220,7 +222,7 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 void MetaWearBluetoothClient::device_disconnected(){
 
 	// calling the registered call back for the MblMwBtleConnection structure
-	if(m_disconnect_handler != nullptr){
+	if(m_disconnect_handler != nullptr) {
 		m_disconnect_handler(m_disconnect_event_caller, 0);
 	}
 
@@ -299,7 +301,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 void MetaWearBluetoothClient::service_characteristic_read(const QLowEnergyCharacteristic& descriptor, const QByteArray& value) {
 	
 	// making sure request information is available
-	if(!m_char_read_callback_queue.empty()){
+	if(!m_char_read_callback_queue.empty()) {
 	
 		// getting the callback and context for the corresponding (oldest) read request
 		std::tuple<const void*, MblMwFnIntVoidPtrArray> info_tuple = m_char_read_callback_queue.front();
@@ -344,18 +346,16 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std::string extension){
 	
 	try {
-		// creating an output file stream
+
+		// defining the output file path
 		auto extension_pos = output_file_path.find(extension);
 		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), ".csv");
-		m_output_file.open(m_output_file_str);
+		if (m_output_file.is_open()) m_output_file.close();
 
 		// writing the output file header
+		m_output_file.open(m_output_file_str);
 		m_output_file << "Time" << "," << "W" << "," << "X" << "," << "Y" << "," << "Z" << std::endl;
-
-		// closing and reopening in append mode
 		m_output_file.close();
-		m_output_file.open(m_output_file_str, std::fstream::app);
-	
 		m_output_file_loaded = true;
 
 	} catch(...) {
