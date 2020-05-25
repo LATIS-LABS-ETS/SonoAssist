@@ -118,6 +118,7 @@ MetaWearBluetoothClient::MetaWearBluetoothClient(){
 		[this](QBluetoothDeviceDiscoveryAgent::Error error) {
 			qDebug() << "\nMetaWearBluetoothClient - ble device discovery level error occured, code : " << error;
 		});
+
 }
 
 MetaWearBluetoothClient::~MetaWearBluetoothClient() {
@@ -146,9 +147,13 @@ void MetaWearBluetoothClient::start_data_stream() {
 		// connecting to redis and defining call back (redis enabled)
 		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 			
+			// connecting to redis and initializing the data list
 			m_redis_client.connect();
 			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
-			
+			m_redis_client.del(std::vector<std::string>({m_redis_entry}));
+			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({""}));
+			m_redis_client.sync_commit();
+
 			stream_callback = [](void* context, const MblMwData* data) {
 
 				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
@@ -166,6 +171,7 @@ void MetaWearBluetoothClient::start_data_stream() {
 				// writing to the output file and redis
 				context_p->m_output_file << output_str;
 				context_p->m_redis_client.rpushx(context_p->m_redis_entry, output_str);
+				context_p->m_redis_client.sync_commit();
 				
 			};
 		
