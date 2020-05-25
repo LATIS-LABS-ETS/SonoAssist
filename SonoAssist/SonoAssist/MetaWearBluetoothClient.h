@@ -4,7 +4,9 @@
 #include <tuple>
 #include <memory>
 #include <string>
+#include <chrono>
 #include <exception>
+#include <fstream>
 
 #include <QThread>
 #include <QtGlobal>
@@ -41,11 +43,15 @@ class MetaWearBluetoothClient : public QObject {
 	public:
 	
 		MetaWearBluetoothClient();
+		~MetaWearBluetoothClient();
 
 		// setters and getters
 		bool get_device_status();
 		void set_device_status(bool state);
+		void set_output_file(std::string output_file_path, std::string extension);
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
+
+		void clear_communication(void);
 
 		// ui interface functions
 		void stop_data_stream(void);
@@ -60,6 +66,9 @@ class MetaWearBluetoothClient : public QObject {
 		void enable_notifications(const void* caller, const MblMwGattChar* characteristic,
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
+
+		// output file vars
+		std::ofstream m_output_file;
 
 		// metawear communication attributes
 		MblMwBtleConnection m_metawear_ble_interface = { 0 };
@@ -86,7 +95,14 @@ class MetaWearBluetoothClient : public QObject {
 
 		bool m_device_connected = false;
 		bool m_device_streaming = false;
+		
+		// config vars 
+		bool m_config_loaded = false;
 		std::shared_ptr<config_map> m_config_ptr;
+
+		// output file vars
+		bool m_output_file_loaded = false;
+		std::string m_output_file_str = "";
 
 		// device disconnect handling vars
 		const void* m_disconnect_event_caller = nullptr;
@@ -102,7 +118,6 @@ class MetaWearBluetoothClient : public QObject {
 		bytes_callback_queue m_char_read_callback_queue;
 
 		// convenience functions
-		void clear_communication(void);
 		QBluetoothUuid metawear_uuid_to_qt_uuid(const uint64_t uuid_low, const uint64_t uuid_high) const;
 		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str="") const;
 

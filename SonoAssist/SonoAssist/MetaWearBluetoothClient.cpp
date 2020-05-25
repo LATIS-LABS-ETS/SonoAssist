@@ -116,28 +116,44 @@ MetaWearBluetoothClient::MetaWearBluetoothClient(){
 	QObject::connect(&m_discovery_agent,
 		static_cast<void (QBluetoothDeviceDiscoveryAgent::*)(QBluetoothDeviceDiscoveryAgent::Error)>(&QBluetoothDeviceDiscoveryAgent::error),
 		[this](QBluetoothDeviceDiscoveryAgent::Error error) {
-			qDebug() << "\nBLE device discovery level error occured, code : " << error;
+			qDebug() << "\nMetaWearBluetoothClient - ble device discovery level error occured, code : " << error;
 		});
 }
 
+MetaWearBluetoothClient::~MetaWearBluetoothClient() {
+	clear_communication();
+}
+
 void MetaWearBluetoothClient::connect_to_metawear_board() {
-	if (m_device_connected) clear_communication();
-	m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
-	qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
+
+	// making sure that requirements have been loaded
+	if (m_config_loaded && m_output_file_loaded) {
+		if (m_device_connected) clear_communication();
+		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
+		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
+	}
+
 }
 
 void MetaWearBluetoothClient::start_data_stream() {
 
 	// making sure device is ready to stream
-	if(m_device_connected && !m_device_streaming){
-	
+	if (m_device_connected && !m_device_streaming) {
+
 		// defining the quaternion data and the associated callback
 		auto quaternion = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
-		mbl_mw_datasignal_subscribe(quaternion, nullptr, [](void* context, const MblMwData* data) {
-			MblMwQuaternion* quaternion = (MblMwQuaternion*)data->value;
-			qDebug() << "w : " << quaternion->w  << " x : " << quaternion->x << " y : " << quaternion->y << " z : " << quaternion->z;
-		});
-		
+		mbl_mw_datasignal_subscribe(quaternion, this, 
+			[](void* context, const MblMwData* data) {					
+				
+				// pulling orientation and time data
+				MblMwQuaternion* quaternion = (MblMwQuaternion*)data->value;
+				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+					std::chrono::system_clock::now().time_since_epoch()).count();
+
+				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << quaternion->w 
+					<< "," << quaternion->x << "," << quaternion->y << "," << quaternion->z << std::endl;
+			});
+
 		// hooking the callback to the data signal
 		mbl_mw_sensor_fusion_enable_data(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
 		mbl_mw_sensor_fusion_start(m_metawear_board_p);
@@ -151,7 +167,7 @@ void MetaWearBluetoothClient::stop_data_stream(void){
 
 	// making sure device is streaming
 	if (m_device_connected && m_device_streaming) {
-		mbl_mw_sensor_fusion_stop(m_metawear_board_p);
+		mbl_mw_sensor_fusion_stop(m_metawear_board_p);		
 		m_device_streaming = false;
 	}
 
@@ -166,7 +182,7 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 	QString target_device_adress((*m_config_ptr)["gyroscope_ble_address"].c_str());
 	if((incoming_adress_str == target_device_adress) && !m_metawear_device_controller_p) {
 		
-		qDebug() << "\ndevice with address : " << incoming_adress_str << "discovered\n";
+		qDebug() << "\nMetaWearBluetoothClient - device with address : " << incoming_adress_str << "discovered\n";
 
 		// creating a controller to interface with the device
 		m_metawear_device_controller_p = std::shared_ptr<QLowEnergyController>(QLowEnergyController::createCentral(device));
@@ -190,7 +206,8 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 		connect(m_metawear_device_controller_p.get(), 
 			static_cast<void (QLowEnergyController::*)(QLowEnergyController::Error)>(&QLowEnergyController::error),
 			[this](QLowEnergyController::Error error) {
-				qDebug() << "\nBLE device communication level error occured, code : " << error;
+				this->clear_communication();
+				qDebug() << "\nMetaWearBluetoothClient - ble device communication level error occured, code : " << error;
 			});
 	
 		// connecting to the target device
@@ -324,12 +341,36 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
-bool MetaWearBluetoothClient::get_device_status(){
-	return m_device_connected;
+void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std::string extension){
+	
+	try {
+		// creating an output file stream
+		auto extension_pos = output_file_path.find(extension);
+		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), ".csv");
+		m_output_file.open(m_output_file_str);
+
+		// writing the output file header
+		m_output_file << "Time" << "," << "W" << "," << "X" << "," << "Y" << "," << "Z" << std::endl;
+
+		// closing and reopening in append mode
+		m_output_file.close();
+		m_output_file.open(m_output_file_str, std::fstream::app);
+	
+		m_output_file_loaded = true;
+
+	} catch(...) {
+		qDebug() << "\nMetaWearBluetoothClient - error occured while setting the output file";
+	}
+
 }
 
 void MetaWearBluetoothClient::set_configuration(std::shared_ptr<config_map> config_ptr){
 	m_config_ptr = config_ptr;
+	m_config_loaded = true;
+}
+
+bool MetaWearBluetoothClient::get_device_status() {
+	return m_device_connected;
 }
 
 void MetaWearBluetoothClient::set_device_status(bool state) {
@@ -343,6 +384,7 @@ void MetaWearBluetoothClient::clear_communication() {
 	// stopping the data stream
 	stop_data_stream();
 	m_device_connected = false;
+	if (m_output_file.is_open()) m_output_file.close();
 
 	// clearing the metawear related vars
 	mbl_mw_metawearboard_free(m_metawear_board_p);
