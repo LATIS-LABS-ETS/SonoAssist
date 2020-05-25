@@ -140,22 +140,56 @@ void MetaWearBluetoothClient::start_data_stream() {
 	// making sure device is ready to stream
 	if (m_device_connected && !m_device_streaming) {
 
+		MblMwFnData stream_callback;
 		m_output_file.open(m_output_file_str, std::fstream::app);
 
-		// defining the quaternion data and the associated callback
-		auto quaternion = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
-		mbl_mw_datasignal_subscribe(quaternion, this, 
-			[](void* context, const MblMwData* data) {					
-				
+		// connecting to redis and defining call back (redis enabled)
+		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
+			
+			m_redis_client.connect();
+			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
+			
+			stream_callback = [](void* context, const MblMwData* data) {
+
+				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
+
 				// pulling orientation and time data
 				MblMwQuaternion* quaternion = (MblMwQuaternion*)data->value;
 				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::system_clock::now().time_since_epoch()).count();
 
-				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << quaternion->w 
-					<< "," << quaternion->x << "," << quaternion->y << "," << quaternion->z << std::endl;
-			});
+				// formatting the data
+				std::string output_str = std::to_string(time_stamp) + "," + std::to_string(quaternion->w) + ','
+					+ std::to_string(quaternion->x) + "," + std::to_string(quaternion->y) + "," + std::to_string(quaternion->z)
+					+ "\n";
 
+				// writing to the output file and redis
+				context_p->m_output_file << output_str;
+				context_p->m_redis_client.rpushx(context_p->m_redis_entry, output_str);
+				
+			};
+		
+		} 
+
+		// defining call back (redis disabled)
+		else {
+			stream_callback = [](void* context, const MblMwData* data) {
+
+				// pulling orientation and time data
+				MblMwQuaternion* quaternion = (MblMwQuaternion*)data->value;
+				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+					std::chrono::system_clock::now().time_since_epoch()).count();
+
+				// writing to the .csv file
+				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << quaternion->w
+					<< "," << quaternion->x << "," << quaternion->y << "," << quaternion->z << std::endl;
+			};
+		}
+
+		// defining the quaternion data and the associated callback
+		auto quaternion = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
+		mbl_mw_datasignal_subscribe(quaternion, this, stream_callback);
+			
 		// hooking the callback to the data signal
 		mbl_mw_sensor_fusion_enable_data(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
 		mbl_mw_sensor_fusion_start(m_metawear_board_p);
@@ -169,7 +203,11 @@ void MetaWearBluetoothClient::stop_data_stream(void){
 
 	// making sure device is streaming
 	if (m_device_connected && m_device_streaming) {
-		mbl_mw_sensor_fusion_stop(m_metawear_board_p);		
+
+		mbl_mw_sensor_fusion_stop(m_metawear_board_p);	
+		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
+			m_redis_client.disconnect();
+		} 
 		m_device_streaming = false;
 	}
 
@@ -226,9 +264,7 @@ void MetaWearBluetoothClient::device_disconnected(){
 		m_disconnect_handler(m_disconnect_event_caller, 0);
 	}
 
-	// reinitialize comunication variables
 	if(m_device_connected) clear_communication();
-
 }
 
 void MetaWearBluetoothClient::service_discovered(const QBluetoothUuid& gatt_uuid){

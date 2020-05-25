@@ -8,7 +8,8 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
-    *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}};
+    *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
+                     {"gyroscope_redis_entry", ""}};
 
 	// initialising the bluetooth interface
 	m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();

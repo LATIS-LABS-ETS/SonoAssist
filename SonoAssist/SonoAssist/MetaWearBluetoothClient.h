@@ -15,6 +15,8 @@
 #include <QtBluetooth/QLowEnergyController>
 #include <QtBluetooth/QBluetoothDeviceDiscoveryAgent>
 
+#include <cpp_redis/cpp_redis>
+
 #include "metawear/core/data.h"
 #include "metawear/core/types.h"
 #include "metawear/core/datasignal.h"
@@ -67,8 +69,10 @@ class MetaWearBluetoothClient : public QObject {
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
 
-		// output file vars
+		// output stream vars
 		std::ofstream m_output_file;
+		std::string m_redis_entry = "";
+		cpp_redis::client m_redis_client;
 
 		// metawear communication attributes
 		MblMwBtleConnection m_metawear_ble_interface = { 0 };
