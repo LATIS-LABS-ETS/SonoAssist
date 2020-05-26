@@ -159,13 +159,13 @@ void MetaWearBluetoothClient::start_data_stream() {
 				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
 
 				// pulling orientation and time data
-				MblMwQuaternion* quaternion = (MblMwQuaternion*)data->value;
+				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
 				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::system_clock::now().time_since_epoch()).count();
 
 				// formatting the data
-				std::string output_str = std::to_string(time_stamp) + "," + std::to_string(quaternion->w) + ','
-					+ std::to_string(quaternion->x) + "," + std::to_string(quaternion->y) + "," + std::to_string(quaternion->z)
+				std::string output_str = std::to_string(time_stamp) + "," + std::to_string(euler_angles->heading) + ','
+					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 					+ "\n";
 
 				// writing to the output file and redis
@@ -182,22 +182,22 @@ void MetaWearBluetoothClient::start_data_stream() {
 			stream_callback = [](void* context, const MblMwData* data) {
 
 				// pulling orientation and time data
-				MblMwQuaternion* quaternion = (MblMwQuaternion*)data->value;
+				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
 				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::system_clock::now().time_since_epoch()).count();
 
 				// writing to the .csv file
-				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << quaternion->w
-					<< "," << quaternion->x << "," << quaternion->y << "," << quaternion->z << std::endl;
+				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << euler_angles->heading
+					<< "," << euler_angles->pitch << "," << euler_angles->roll << "," << euler_angles->yaw << std::endl;
 			};
 		}
 
-		// defining the quaternion data and the associated callback
-		auto quaternion = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
-		mbl_mw_datasignal_subscribe(quaternion, this, stream_callback);
+		// defining the signal data type and the associated callback
+		auto euler_angles = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
+		mbl_mw_datasignal_subscribe(euler_angles, this, stream_callback);
 			
 		// hooking the callback to the data signal
-		mbl_mw_sensor_fusion_enable_data(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_QUATERNION);
+		mbl_mw_sensor_fusion_enable_data(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
 		mbl_mw_sensor_fusion_start(m_metawear_board_p);
 
 		m_device_streaming = true;
@@ -328,7 +328,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 		mbl_mw_metawearboard_initialize(m_metawear_board_p, this, [](void* context, MblMwMetaWearBoard* board, int32_t status) -> void {
 			
 			// configuring the device output stream
-			mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_IMU_PLUS);
+			mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_NDOF);
 			mbl_mw_sensor_fusion_set_acc_range(board, MBL_MW_SENSOR_FUSION_ACC_RANGE_8G);
 			mbl_mw_sensor_fusion_write_config(board);
 		
@@ -396,7 +396,7 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 		// writing the output file header
 		m_output_file.open(m_output_file_str);
-		m_output_file << "Time" << "," << "W" << "," << "X" << "," << "Y" << "," << "Z" << std::endl;
+		m_output_file << "Time" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
 		m_output_file.close();
 		m_output_file_loaded = true;
 

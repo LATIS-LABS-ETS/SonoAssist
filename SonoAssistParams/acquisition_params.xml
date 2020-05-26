@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <params>
-	<gyroscope_to_redis>true</gyroscope_to_redis>
+	<gyroscope_to_redis>false</gyroscope_to_redis>
 	<gyroscope_redis_entry>gyro_data</gyroscope_redis_entry>
 	<gyroscope_ble_address>F3:AC:8B:CE:E1:10</gyroscope_ble_address>
 </params>
