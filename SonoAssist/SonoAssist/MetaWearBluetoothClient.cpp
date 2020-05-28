@@ -146,13 +146,16 @@ void MetaWearBluetoothClient::start_data_stream() {
 
 		// connecting to redis and defining call back (redis enabled)
 		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
-			
+
 			// connecting to redis and initializing the data list
 			m_redis_client.connect();
 			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
 			m_redis_client.del(std::vector<std::string>({m_redis_entry}));
 			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({""}));
 			m_redis_client.sync_commit();
+
+			// defining the data rate devider (controls data rate to redis)
+			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
 
 			stream_callback = [](void* context, const MblMwData* data) {
 
@@ -168,11 +171,18 @@ void MetaWearBluetoothClient::start_data_stream() {
 					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 					+ "\n";
 
-				// writing to the output file and redis
+				// writing to the output file
 				context_p->m_output_file << output_str;
-				context_p->m_redis_client.rpushx(context_p->m_redis_entry, output_str);
-				context_p->m_redis_client.sync_commit();
-				
+
+				// writing to redis
+				if ((context_p->m_redis_data_count % context_p->m_redis_rate_div) == 0) {
+					context_p->m_redis_client.rpushx(context_p->m_redis_entry, output_str);
+					context_p->m_redis_client.sync_commit();
+					context_p->m_redis_data_count = 1;
+				} else {
+					context_p->m_redis_data_count ++;
+				}
+			
 			};
 		
 		} 

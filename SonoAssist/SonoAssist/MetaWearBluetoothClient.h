@@ -70,6 +70,8 @@ class MetaWearBluetoothClient : public QObject {
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
 
 		// output stream vars
+		int m_redis_rate_div = 2;
+		int m_redis_data_count = 1;
 		std::ofstream m_output_file;
 		std::string m_redis_entry = "";
 		cpp_redis::client m_redis_client;
