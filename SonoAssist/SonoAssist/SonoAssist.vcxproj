@@ -93,8 +93,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GazeTracker.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MetaWearBluetoothClient.cpp" />
+    <ClCompile Include="SensorDevice.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -108,6 +110,10 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="MetaWearBluetoothClient.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GazeTracker.h" />
+    <ClInclude Include="SensorDevice.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

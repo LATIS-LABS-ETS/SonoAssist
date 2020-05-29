@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SensorDevice.h"
+
 #include <queue>
 #include <tuple>
 #include <memory>
@@ -28,7 +30,6 @@
 #define DISCOVER_DETAILS_DELAY 1000
 #define DESCRIPTOR_WRITE_DELAY 500
 
-typedef std::map<std::string, std::string> config_map;
 typedef std::map<QString, std::tuple<const void*, MblMwFnIntVoidPtrArray>> bytes_callback_map;
 typedef std::queue<std::tuple<const void*, MblMwFnIntVoidPtrArray>> bytes_callback_queue;
 
@@ -38,7 +39,14 @@ void write_gatt_char_wrap(void* context, const void* caller, MblMwGattCharWriteT
 void enable_notifications_wrap(void* context, const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt handler);
 
-class MetaWearBluetoothClient : public QObject {
+/*
+* Class to enable communication with the MetaWear C gyroscope/magnometer/accelerometer sensor.
+* 
+* Communication with the MetaWear C sensor is done via BLE.
+* This class can't utilise threads since it utilises the Bluetooth interface provided by Qt. The
+* call back functions provided by this interface can only run in the main thread.
+*/
+class MetaWearBluetoothClient : public QObject, public SensorDevice {
 
 	Q_OBJECT
 
@@ -46,21 +54,14 @@ class MetaWearBluetoothClient : public QObject {
 	
 		MetaWearBluetoothClient();
 		~MetaWearBluetoothClient();
+		
+		// SeonsorDevice interface functions
+		void stop_stream(void);
+		void start_stream(void);
+		void connect_device(void);
+		void disconnect_device(void);
 
-		// setters and getters
-		bool get_device_status();
-		void set_device_status(bool state);
-		void set_output_file(std::string output_file_path, std::string extension);
-		void set_configuration(std::shared_ptr<config_map> config_ptr);
-
-		void clear_communication(void);
-
-		// ui interface functions
-		void stop_data_stream(void);
-		void start_data_stream(void);
-		void connect_to_metawear_board(void);
-
-		// metawear interface functions
+		// metawear integration functions
 		void read_gatt_char(const void* caller,
 			const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler);
 		void write_gatt_char(const void* caller, MblMwGattCharWriteType writeType,
@@ -68,6 +69,9 @@ class MetaWearBluetoothClient : public QObject {
 		void enable_notifications(const void* caller, const MblMwGattChar* characteristic,
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
+
+		// setters and getters
+		void set_output_file(std::string output_file_path, std::string extension);
 
 		// output stream vars
 		int m_redis_rate_div = 2;
@@ -98,14 +102,7 @@ class MetaWearBluetoothClient : public QObject {
 		void device_status_change(bool is_connected);
 
 	private:
-
-		bool m_device_connected = false;
-		bool m_device_streaming = false;
-		
-		// config vars 
-		bool m_config_loaded = false;
-		std::shared_ptr<config_map> m_config_ptr;
-
+	
 		// output file vars
 		bool m_output_file_loaded = false;
 		std::string m_output_file_str = "";

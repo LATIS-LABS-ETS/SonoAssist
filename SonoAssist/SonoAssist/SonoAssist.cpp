@@ -26,7 +26,7 @@ void SonoAssist::on_gyro_connect_button_clicked(){
     if (m_config_is_loaded && m_output_is_loaded) {
         m_metawear_client_p->set_configuration(m_app_params);
         m_metawear_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
-        m_metawear_client_p->connect_to_metawear_board();
+        m_metawear_client_p->connect_device();
     } 
     
     // displaying warning message
@@ -44,17 +44,17 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     if (!m_stream_is_active) {
 
         // making sure devices are ready for acquisition (synchronisation)
-        if (m_metawear_client_p->get_device_status()) {
+        if (m_metawear_client_p->get_connection_status()) {
             m_stream_is_active = true;
             set_acquisition_label(m_stream_is_active);
-            m_metawear_client_p->start_data_stream();
+            m_metawear_client_p->start_stream();
         }
 
         // displaying warning message
         else {
             QString title = "Acquisition can not be started";
             QString message = "The following devices are not ready for acquisition : [";
-            if (!m_metawear_client_p->get_device_status()) message += "MetaMotionC (gyroscope) ,";
+            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (gyroscope) ,";
             message += "].";
             display_warning_message(title, message);
         }
@@ -76,7 +76,7 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     if(m_stream_is_active) {
         m_stream_is_active = false;
         set_acquisition_label(false);
-        m_metawear_client_p->stop_data_stream();
+        m_metawear_client_p->stop_stream();
     } 
     
     // displaying warning message

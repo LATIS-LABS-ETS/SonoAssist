@@ -122,21 +122,23 @@ MetaWearBluetoothClient::MetaWearBluetoothClient(){
 }
 
 MetaWearBluetoothClient::~MetaWearBluetoothClient() {
-	clear_communication();
+	disconnect_device();
 }
 
-void MetaWearBluetoothClient::connect_to_metawear_board() {
+void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
 	if (m_config_loaded && m_output_file_loaded) {
-		if (m_device_connected) clear_communication();
+		// disconnect the device if already connected
+		if (m_device_connected) disconnect_device();
+		// launching device discovery
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
 	}
 
 }
 
-void MetaWearBluetoothClient::start_data_stream() {
+void MetaWearBluetoothClient::start_stream() {
 
 	// making sure device is ready to stream
 	if (m_device_connected && !m_device_streaming) {
@@ -215,7 +217,7 @@ void MetaWearBluetoothClient::start_data_stream() {
 
 }
 
-void MetaWearBluetoothClient::stop_data_stream(void){
+void MetaWearBluetoothClient::stop_stream(void){
 
 	// making sure device is streaming
 	if (m_device_connected && m_device_streaming) {
@@ -262,7 +264,7 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 		connect(m_metawear_device_controller_p.get(), 
 			static_cast<void (QLowEnergyController::*)(QLowEnergyController::Error)>(&QLowEnergyController::error),
 			[this](QLowEnergyController::Error error) {
-				this->clear_communication();
+				this->disconnect_device();
 				qDebug() << "\nMetaWearBluetoothClient - ble device communication level error occured, code : " << error;
 			});
 	
@@ -280,7 +282,8 @@ void MetaWearBluetoothClient::device_disconnected(){
 		m_disconnect_handler(m_disconnect_event_caller, 0);
 	}
 
-	if(m_device_connected) clear_communication();
+	// moving to a disconnected device state
+	if(m_device_connected) disconnect_device();
 }
 
 void MetaWearBluetoothClient::service_discovered(const QBluetoothUuid& gatt_uuid){
@@ -343,7 +346,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 			mbl_mw_sensor_fusion_write_config(board);
 		
 			// notifying the main window
-			(static_cast<MetaWearBluetoothClient*>(context))->set_device_status(true);
+			(static_cast<MetaWearBluetoothClient*>(context))->set_connection_status(true);
 			emit(static_cast<MetaWearBluetoothClient*>(context))->device_status_change(true);
 		});
 	
@@ -416,25 +419,12 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 }
 
-void MetaWearBluetoothClient::set_configuration(std::shared_ptr<config_map> config_ptr){
-	m_config_ptr = config_ptr;
-	m_config_loaded = true;
-}
-
-bool MetaWearBluetoothClient::get_device_status() {
-	return m_device_connected;
-}
-
-void MetaWearBluetoothClient::set_device_status(bool state) {
-	m_device_connected = state;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// conveniance functions
 
-void MetaWearBluetoothClient::clear_communication() {
+void MetaWearBluetoothClient::disconnect_device() {
 
 	// stopping the data stream
-	stop_data_stream();
+	stop_stream();
 	m_device_connected = false;
 	if (m_output_file.is_open()) m_output_file.close();
 

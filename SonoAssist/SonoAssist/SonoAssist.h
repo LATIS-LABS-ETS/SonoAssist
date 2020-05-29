@@ -47,8 +47,11 @@ class SonoAssist : public QMainWindow{
 		bool m_config_is_loaded = false;
 		bool m_output_is_loaded = false;
 
+		// config vars
 		std::shared_ptr<config_map> m_app_params;
 		std::string m_output_file_path = "";
+		
+		// data streaming vars
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 
 		bool load_config_file(QString param_file_path);
