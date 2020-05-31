@@ -112,7 +112,7 @@
     <QtMoc Include="MetaWearBluetoothClient.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GazeTracker.h" />
+    <QtMoc Include="GazeTracker.h" />
     <ClInclude Include="SensorDevice.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

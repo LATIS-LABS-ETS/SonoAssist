@@ -144,21 +144,23 @@ void MetaWearBluetoothClient::start_stream() {
 	if (m_device_connected && !m_device_streaming) {
 
 		MblMwFnData stream_callback;
+
+		// opening the output file
 		m_output_file.open(m_output_file_str, std::fstream::app);
 
 		// connecting to redis and defining call back (redis enabled)
 		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 
+			// loading redis parameters
+			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
+			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
+
 			// connecting to redis and initializing the data list
 			m_redis_client.connect();
-			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
 			m_redis_client.del(std::vector<std::string>({m_redis_entry}));
 			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({""}));
 			m_redis_client.sync_commit();
-
-			// defining the data rate devider (controls data rate to redis)
-			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
-
+			
 			stream_callback = [](void* context, const MblMwData* data) {
 
 				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
@@ -222,10 +224,15 @@ void MetaWearBluetoothClient::stop_stream(void){
 	// making sure device is streaming
 	if (m_device_connected && m_device_streaming) {
 
-		mbl_mw_sensor_fusion_stop(m_metawear_board_p);	
+		// stoping stream from board
+		mbl_mw_sensor_fusion_stop(m_metawear_board_p);
+
+		// closing the output file and redis connection
+		m_output_file.close();
 		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 			m_redis_client.disconnect();
-		} 
+		}
+
 		m_device_streaming = false;
 	}
 
@@ -404,7 +411,7 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 		// defining the output file path
 		auto extension_pos = output_file_path.find(extension);
-		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), ".csv");
+		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), "_gyro.csv");
 		if (m_output_file.is_open()) m_output_file.close();
 
 		// writing the output file header

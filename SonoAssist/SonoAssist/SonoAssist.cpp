@@ -5,28 +5,56 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 	// setting up the gui
 	ui.setupUi(this);
     on_gyro_status_change(false);
+    on_eye_tracker_status_change(false);
 
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
-                     {"gyroscope_redis_entry", ""}, {"gyroscope_redis_rate_div", ""}};
+                     {"gyroscope_redis_entry", ""}, {"gyroscope_redis_rate_div", ""}, 
+                     {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
+                     {"eye_tracker_redis_entry", ""}};
 
-	// initialising the bluetooth interface
+	// initialising the gyroroscope client
 	m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
     connect(m_metawear_client_p.get(), &MetaWearBluetoothClient::device_status_change,
         this, &SonoAssist::on_gyro_status_change);
 
+    // initializing the eye tracker client
+    m_tracker_client_p = std::make_shared<GazeTracker>();
+    connect(m_tracker_client_p.get(), &GazeTracker::device_status_change, 
+        this, &SonoAssist::on_eye_tracker_status_change);
+
+}
+
+SonoAssist::~SonoAssist(){
+
+    // making sur the streams are shut off
+    try {
+        if (m_tracker_client_p->get_stream_status()) m_tracker_client_p->stop_stream();
+        if (m_metawear_client_p->get_stream_status()) m_metawear_client_p->stop_stream();
+    } catch (...) {
+        qDebug() << "n\SonoAssist -failed to stop the devices from treaming (in destructor)";
+    }
+ 
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// slots
 
-void SonoAssist::on_gyro_connect_button_clicked(){
+void SonoAssist::on_sensor_connect_button_clicked(){
 
     // connecting to the gyro device once requirements are filled
     if (m_config_is_loaded && m_output_is_loaded) {
+      
+        // connecting the eye tracker client
+        m_tracker_client_p->set_configuration(m_app_params);
+        m_tracker_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
+        m_tracker_client_p->connect_device();
+
+        // connecting the gyroscope client
         m_metawear_client_p->set_configuration(m_app_params);
         m_metawear_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
         m_metawear_client_p->connect_device();
+      
     } 
     
     // displaying warning message
@@ -44,10 +72,11 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     if (!m_stream_is_active) {
 
         // making sure devices are ready for acquisition (synchronisation)
-        if (m_metawear_client_p->get_connection_status()) {
+        if (m_metawear_client_p->get_connection_status() && m_tracker_client_p->get_connection_status()) {
+            m_tracker_client_p->start_stream();
+            m_metawear_client_p->start_stream();
             m_stream_is_active = true;
             set_acquisition_label(m_stream_is_active);
-            m_metawear_client_p->start_stream();
         }
 
         // displaying warning message
@@ -55,6 +84,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             QString title = "Acquisition can not be started";
             QString message = "The following devices are not ready for acquisition : [";
             if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (gyroscope) ,";
+            if (!m_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker) ,";
             message += "].";
             display_warning_message(title, message);
         }
@@ -74,9 +104,10 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     
     // stopping the stream
     if(m_stream_is_active) {
+        m_tracker_client_p->stop_stream();
+        m_metawear_client_p->stop_stream();
         m_stream_is_active = false;
         set_acquisition_label(false);
-        m_metawear_client_p->stop_stream();
     } 
     
     // displaying warning message
@@ -124,16 +155,30 @@ void SonoAssist::on_output_file_browse_clicked(void) {
 
 }
 
-void SonoAssist::on_gyro_status_change(bool device_satus) {
+void SonoAssist::on_gyro_status_change(bool device_status) {
 
     // updating the gyroscope label
     QString gyro_label = "gyroscope status : ";
-    if(device_satus) {
-        gyro_label += "connected";
+    if(device_status) {
+        gyro_label += "(connected)";
     } else {
-        gyro_label += "disconnected";
+        gyro_label += "(disconnected)";
     }
     ui.gyro_status_label->setText(gyro_label);
+
+}
+
+void SonoAssist::on_eye_tracker_status_change(bool device_status) {
+
+    // updating the gyroscope label
+    QString tracker_label = "eye tracker status : ";
+    if (device_status) {
+        tracker_label += "(connected)";
+    }
+    else {
+        tracker_label += "(disconnected)";
+    }
+    ui.eye_tracker_status_label->setText(tracker_label);
 
 }
 

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <memory>
 
 #include <QFile>
@@ -8,6 +9,7 @@
 #include <QtXML/QDomDocument>
 #include <QtWidgets/QMainWindow>
 
+#include "GazeTracker.h"
 #include "ui_SonoAssist.h"
 #include "MetaWearBluetoothClient.h"
 
@@ -15,18 +17,20 @@
 
 typedef std::map<std::string, std::string> config_map;
 
-class SonoAssist : public QMainWindow{
+class SonoAssist : public QMainWindow {
 	
 	Q_OBJECT
 
 	public:
 		SonoAssist(QWidget *parent = Q_NULLPTR);
+		~SonoAssist();
 
 	public slots:
 		
 		// device connection
-		void on_gyro_connect_button_clicked(void);
-		void on_gyro_status_change(bool device_satus);
+		void on_sensor_connect_button_clicked(void);
+		void on_gyro_status_change(bool device_status);
+		void on_eye_tracker_status_change(bool device_status);
 
 		// stream data (start/stop)
 		void on_start_acquisition_button_clicked(void);
@@ -52,6 +56,7 @@ class SonoAssist : public QMainWindow{
 		std::string m_output_file_path = "";
 		
 		// data streaming vars
+		std::shared_ptr<GazeTracker> m_tracker_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 
 		bool load_config_file(QString param_file_path);
