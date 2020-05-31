@@ -122,41 +122,45 @@ MetaWearBluetoothClient::MetaWearBluetoothClient(){
 }
 
 MetaWearBluetoothClient::~MetaWearBluetoothClient() {
-	clear_communication();
+	disconnect_device();
 }
 
-void MetaWearBluetoothClient::connect_to_metawear_board() {
+void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
 	if (m_config_loaded && m_output_file_loaded) {
-		if (m_device_connected) clear_communication();
+		// disconnect the device if already connected
+		if (m_device_connected) disconnect_device();
+		// launching device discovery
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
 	}
 
 }
 
-void MetaWearBluetoothClient::start_data_stream() {
+void MetaWearBluetoothClient::start_stream() {
 
 	// making sure device is ready to stream
 	if (m_device_connected && !m_device_streaming) {
 
 		MblMwFnData stream_callback;
+
+		// opening the output file
 		m_output_file.open(m_output_file_str, std::fstream::app);
 
 		// connecting to redis and defining call back (redis enabled)
 		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 
+			// loading redis parameters
+			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
+			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
+
 			// connecting to redis and initializing the data list
 			m_redis_client.connect();
-			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
 			m_redis_client.del(std::vector<std::string>({m_redis_entry}));
 			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({""}));
 			m_redis_client.sync_commit();
-
-			// defining the data rate devider (controls data rate to redis)
-			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
-
+			
 			stream_callback = [](void* context, const MblMwData* data) {
 
 				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
@@ -215,15 +219,20 @@ void MetaWearBluetoothClient::start_data_stream() {
 
 }
 
-void MetaWearBluetoothClient::stop_data_stream(void){
+void MetaWearBluetoothClient::stop_stream(void){
 
 	// making sure device is streaming
 	if (m_device_connected && m_device_streaming) {
 
-		mbl_mw_sensor_fusion_stop(m_metawear_board_p);	
+		// stoping stream from board
+		mbl_mw_sensor_fusion_stop(m_metawear_board_p);
+
+		// closing the output file and redis connection
+		m_output_file.close();
 		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 			m_redis_client.disconnect();
-		} 
+		}
+
 		m_device_streaming = false;
 	}
 
@@ -262,7 +271,7 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 		connect(m_metawear_device_controller_p.get(), 
 			static_cast<void (QLowEnergyController::*)(QLowEnergyController::Error)>(&QLowEnergyController::error),
 			[this](QLowEnergyController::Error error) {
-				this->clear_communication();
+				this->disconnect_device();
 				qDebug() << "\nMetaWearBluetoothClient - ble device communication level error occured, code : " << error;
 			});
 	
@@ -280,7 +289,8 @@ void MetaWearBluetoothClient::device_disconnected(){
 		m_disconnect_handler(m_disconnect_event_caller, 0);
 	}
 
-	if(m_device_connected) clear_communication();
+	// moving to a disconnected device state
+	if(m_device_connected) disconnect_device();
 }
 
 void MetaWearBluetoothClient::service_discovered(const QBluetoothUuid& gatt_uuid){
@@ -343,7 +353,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 			mbl_mw_sensor_fusion_write_config(board);
 		
 			// notifying the main window
-			(static_cast<MetaWearBluetoothClient*>(context))->set_device_status(true);
+			(static_cast<MetaWearBluetoothClient*>(context))->set_connection_status(true);
 			emit(static_cast<MetaWearBluetoothClient*>(context))->device_status_change(true);
 		});
 	
@@ -401,7 +411,7 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 		// defining the output file path
 		auto extension_pos = output_file_path.find(extension);
-		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), ".csv");
+		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), "_gyro.csv");
 		if (m_output_file.is_open()) m_output_file.close();
 
 		// writing the output file header
@@ -416,25 +426,12 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 }
 
-void MetaWearBluetoothClient::set_configuration(std::shared_ptr<config_map> config_ptr){
-	m_config_ptr = config_ptr;
-	m_config_loaded = true;
-}
-
-bool MetaWearBluetoothClient::get_device_status() {
-	return m_device_connected;
-}
-
-void MetaWearBluetoothClient::set_device_status(bool state) {
-	m_device_connected = state;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// conveniance functions
 
-void MetaWearBluetoothClient::clear_communication() {
+void MetaWearBluetoothClient::disconnect_device() {
 
 	// stopping the data stream
-	stop_data_stream();
+	stop_stream();
 	m_device_connected = false;
 	if (m_output_file.is_open()) m_output_file.close();
 

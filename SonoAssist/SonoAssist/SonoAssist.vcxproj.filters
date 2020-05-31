@@ -34,12 +34,21 @@
     <ClCompile Include="MetaWearBluetoothClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GazeTracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SensorDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="MetaWearBluetoothClient.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="GazeTracker.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -52,5 +61,10 @@
     <QtRcc Include="SonoAssist.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SensorDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
