@@ -13,6 +13,7 @@
 #include "ui_SonoAssist.h"
 #include "MetaWearBluetoothClient.h"
 
+#define GREEN_TEXT "#71ff3d"
 #define MAIN_OUTPUT_EXTENSION ".sono"
 
 typedef std::map<std::string, std::string> config_map;

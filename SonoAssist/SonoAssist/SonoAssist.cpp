@@ -4,9 +4,10 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
 	// setting up the gui
 	ui.setupUi(this);
+    set_acquisition_label(false);
     on_gyro_status_change(false);
     on_eye_tracker_status_change(false);
-
+   
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
@@ -158,27 +159,35 @@ void SonoAssist::on_output_file_browse_clicked(void) {
 void SonoAssist::on_gyro_status_change(bool device_status) {
 
     // updating the gyroscope label
+    QString style_sheet;
     QString gyro_label = "gyroscope status : ";
     if(device_status) {
         gyro_label += "(connected)";
+        style_sheet = QString("QLabel {color : %1;}").arg(QString(GREEN_TEXT));
     } else {
         gyro_label += "(disconnected)";
+        style_sheet = "QLabel {color : red;}";
     }
     ui.gyro_status_label->setText(gyro_label);
+    ui.gyro_status_label->setStyleSheet(style_sheet);
 
 }
 
 void SonoAssist::on_eye_tracker_status_change(bool device_status) {
 
     // updating the gyroscope label
+    QString style_sheet;
     QString tracker_label = "eye tracker status : ";
     if (device_status) {
         tracker_label += "(connected)";
+        style_sheet = QString("QLabel {color : %1;}").arg(QString(GREEN_TEXT));
     }
     else {
         tracker_label += "(disconnected)";
+        style_sheet = "QLabel {color : red;}";
     }
     ui.eye_tracker_status_label->setText(tracker_label);
+    ui.eye_tracker_status_label->setStyleSheet(style_sheet);
 
 }
 
@@ -186,13 +195,17 @@ void SonoAssist::on_eye_tracker_status_change(bool device_status) {
 
 void SonoAssist::set_acquisition_label(bool active) {
 
+    QString style_sheet;
     QString label_text = "acquisition status : ";
     if(active) {
-        label_text += "in progress";
+        label_text += "(in progress)";
+        style_sheet = QString("QLabel {color : %1;}").arg(QString(GREEN_TEXT));
     } else {
-        label_text += "inactive";
+        label_text += "(inactive)";
+        style_sheet = "QLabel {color : red;}";
     }
     ui.acquisition_label->setText(label_text);
+    ui.acquisition_label->setStyleSheet(style_sheet);
 
 }
 
