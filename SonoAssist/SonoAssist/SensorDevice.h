@@ -3,6 +3,9 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <chrono>
+
+#include <cpp_redis/cpp_redis>
 
 typedef std::map<std::string, std::string> config_map;
 
@@ -17,14 +20,20 @@ class SensorDevice{
 	public : 
 
 		// status getters and setters
-		bool get_stream_status(void);
-		bool get_connection_status(void);
+		bool get_stream_status(void) const;
+		bool get_connection_status(void) const;
 		void set_stream_status(bool state);
 		void set_connection_status(bool state);
-
-		// config related functions
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
+		// redis communication functions
+		void connect_to_redis(void);
+		void disconnect_from_redis(void);
+		void write_to_redis(std::string data_str);
+
+		// helper functions
+		std::string get_millis_timestamp(void) const;
+		
 		// connection functions
 		virtual void connect_device(void) = 0;
 		virtual void disconnect_device(void) = 0;
@@ -40,6 +49,12 @@ class SensorDevice{
 
 		bool m_config_loaded = false;
 		std::shared_ptr<config_map> m_config_ptr;
+
+		// redis output attributes
+		int m_redis_rate_div = 2;
+		int m_redis_data_count = 1;
+		std::string m_redis_entry = "";
+		cpp_redis::client m_redis_client;
 
 };
 

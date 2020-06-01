@@ -1,11 +1,13 @@
 #include "SensorDevice.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
+
 void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 	m_config_ptr = config_ptr;
 	m_config_loaded = true;
 }
 
-bool SensorDevice::get_connection_status() {
+bool SensorDevice::get_connection_status() const {
 	return m_device_connected;
 }
 
@@ -13,10 +15,53 @@ void SensorDevice::set_connection_status(bool state) {
 	m_device_connected = state;
 }
 
-bool SensorDevice::get_stream_status() {
+bool SensorDevice::get_stream_status() const {
 	return m_device_streaming;
 }
 
 void SensorDevice::set_stream_status(bool state) {
 	m_device_streaming = state;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods
+
+void SensorDevice::connect_to_redis(void) {
+
+	// connecting to redis and initializing the data list
+	m_redis_client.connect();
+	m_redis_client.del(std::vector<std::string>({m_redis_entry}));
+	m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
+	m_redis_client.sync_commit();
+
+}
+
+void SensorDevice::disconnect_from_redis(void) {
+	m_redis_client.disconnect();
+}
+
+void SensorDevice::write_to_redis(std::string data_str){
+
+	// writing to redis
+	if (m_redis_client.is_connected()) {
+		if ((m_redis_data_count % m_redis_rate_div) == 0) {
+			m_redis_client.rpushx(m_redis_entry, data_str);
+			m_redis_client.sync_commit();
+			m_redis_data_count = 1;
+		}
+		else {
+			m_redis_data_count++;
+		}
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helpers
+
+std::string SensorDevice::get_millis_timestamp(void) const {
+
+	auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch()).count();
+
+	return std::to_string(time_stamp);
+
 }

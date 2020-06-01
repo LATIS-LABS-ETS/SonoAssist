@@ -4,14 +4,11 @@
 
 #include <string>
 #include <thread>
-#include <chrono>
 #include <fstream>
 #include <exception>
 
 #include <tobii/tobii.h>
 #include <tobii/tobii_streams.h>
-
-#include <cpp_redis/cpp_redis>
 
 #include <QDebug>
 
@@ -43,12 +40,6 @@ class GazeTracker : public QObject, public SensorDevice {
 
 		// output file attributes
 		std::ofstream m_output_file;
-
-		// redis output attributes
-		int m_redis_rate_div = 2;
-		int m_redis_data_count = 1;
-		std::string m_redis_entry = "";
-		cpp_redis::client m_redis_client;
 
 	signals:
 		void device_status_change(bool is_connected);

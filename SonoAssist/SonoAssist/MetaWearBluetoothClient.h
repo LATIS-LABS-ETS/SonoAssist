@@ -6,8 +6,6 @@
 #include <tuple>
 #include <memory>
 #include <string>
-#include <chrono>
-#include <exception>
 #include <fstream>
 
 #include <QThread>
@@ -16,8 +14,6 @@
 #include <QtBluetooth/QBluetoothDeviceInfo>
 #include <QtBluetooth/QLowEnergyController>
 #include <QtBluetooth/QBluetoothDeviceDiscoveryAgent>
-
-#include <cpp_redis/cpp_redis>
 
 #include "metawear/core/data.h"
 #include "metawear/core/types.h"
@@ -75,12 +71,6 @@ class MetaWearBluetoothClient : public QObject, public SensorDevice {
 
 		// file output attributes
 		std::ofstream m_output_file;
-
-		// redis output attributes
-		int m_redis_rate_div = 2;
-		int m_redis_data_count = 1;
-		std::string m_redis_entry = "";
-		cpp_redis::client m_redis_client;
 
 		// metawear communication attributes
 		MblMwBtleConnection m_metawear_ble_interface = { 0 };

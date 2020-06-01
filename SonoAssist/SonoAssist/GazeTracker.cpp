@@ -20,27 +20,14 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		// getting the eye tracker manager
 		GazeTracker* manager = (GazeTracker*)user_data;
 
-		// generating millisecond time stamp and output string
-		auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count();
-		std::string output_str = std::to_string(time_stamp) + "," + std::to_string(gaze_point->position_xy[0]) + ","
+		// generating the output string
+		std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
 			+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
-		// writing to the output file
+		// writing to the output file and redis (if redis enabled)
+		manager->write_to_redis(output_str);
 		manager->m_output_file << output_str;
-		
-		// writing to redis
-		if (manager->m_redis_client.is_connected()) {
-			if ((manager->m_redis_data_count % manager->m_redis_rate_div) == 0) {
-				manager->m_redis_client.rpushx(manager->m_redis_entry, output_str);
-				manager->m_redis_client.sync_commit();
-				manager->m_redis_data_count = 1;
-			}
-			else {
-				manager->m_redis_data_count++;
-			}
-		}
-
+	
 	}
 
 }
@@ -109,19 +96,11 @@ void GazeTracker::start_stream() {
 		// opening the output file
 		m_output_file.open(m_output_file_str, std::fstream::app);
 
-		// connecting to redis (redis enabled)
+		// connecting to redis (if redis enabled)
 		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
-
-			// loading redis parameters
 			m_redis_entry = (*m_config_ptr)["eye_tracker_redis_entry"];
 			m_redis_rate_div = std::atoi((*m_config_ptr)["eye_tracker_redis_rate_div"].c_str());
-
-			// connecting to redis and initializing the data list
-			m_redis_client.connect();
-			m_redis_client.del(std::vector<std::string>({ m_redis_entry }));
-			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
-			m_redis_client.sync_commit();
-
+			connect_to_redis();
 		}
 
 		// launching the collection thread
@@ -145,7 +124,7 @@ void GazeTracker::stop_stream() {
 		// closing the output file redis connection
 		m_output_file.close();
 		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
-			m_redis_client.disconnect();
+			disconnect_from_redis();
 		}
 
 		m_device_streaming = false;

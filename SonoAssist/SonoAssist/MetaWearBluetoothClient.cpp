@@ -129,8 +129,10 @@ void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
 	if (m_config_loaded && m_output_file_loaded) {
+		
 		// disconnect the device if already connected
 		if (m_device_connected) disconnect_device();
+		
 		// launching device discovery
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
@@ -147,65 +149,32 @@ void MetaWearBluetoothClient::start_stream() {
 
 		// opening the output file
 		m_output_file.open(m_output_file_str, std::fstream::app);
-
-		// connecting to redis and defining call back (redis enabled)
-		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
-
-			// loading redis parameters
+		
+		// connecting to redis (if redis enabled)
+		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
 			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
-
-			// connecting to redis and initializing the data list
-			m_redis_client.connect();
-			m_redis_client.del(std::vector<std::string>({m_redis_entry}));
-			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({""}));
-			m_redis_client.sync_commit();
-			
-			stream_callback = [](void* context, const MblMwData* data) {
-
-				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
-
-				// pulling orientation and time data
-				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::system_clock::now().time_since_epoch()).count();
-
-				// formatting the data
-				std::string output_str = std::to_string(time_stamp) + "," + std::to_string(euler_angles->heading) + ','
-					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
-					+ "\n";
-
-				// writing to the output file
-				context_p->m_output_file << output_str;
-
-				// writing to redis
-				if ((context_p->m_redis_data_count % context_p->m_redis_rate_div) == 0) {
-					context_p->m_redis_client.rpushx(context_p->m_redis_entry, output_str);
-					context_p->m_redis_client.sync_commit();
-					context_p->m_redis_data_count = 1;
-				} else {
-					context_p->m_redis_data_count ++;
-				}
-			
-			};
-		
-		} 
-
-		// defining call back (redis disabled)
-		else {
-			stream_callback = [](void* context, const MblMwData* data) {
-
-				// pulling orientation and time data
-				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::system_clock::now().time_since_epoch()).count();
-
-				// writing to the .csv file
-				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << euler_angles->heading
-					<< "," << euler_angles->pitch << "," << euler_angles->roll << "," << euler_angles->yaw << std::endl;
-			};
+			connect_to_redis();
 		}
+			
+		stream_callback = [](void* context, const MblMwData* data) {
 
+			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
+
+			// pulling orientation data
+			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
+		
+			// formatting the data
+			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
+				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
+				+ "\n";
+
+			// writing to the output file and redis (if redis enabled)
+			context_p->write_to_redis(output_str);
+			context_p->m_output_file << output_str;
+
+		};
+		
 		// defining the signal data type and the associated callback
 		auto euler_angles = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
 		mbl_mw_datasignal_subscribe(euler_angles, this, stream_callback);
@@ -230,7 +199,7 @@ void MetaWearBluetoothClient::stop_stream(void){
 		// closing the output file and redis connection
 		m_output_file.close();
 		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
-			m_redis_client.disconnect();
+			disconnect_from_redis();
 		}
 
 		m_device_streaming = false;
