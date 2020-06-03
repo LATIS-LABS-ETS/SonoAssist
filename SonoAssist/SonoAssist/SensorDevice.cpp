@@ -25,6 +25,9 @@ void SensorDevice::set_stream_status(bool state) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods
 
+/**
+* Connects to redis and creates a list with a name specified by the (m_redis_entry) variable
+*/
 void SensorDevice::connect_to_redis(void) {
 
 	// connecting to redis and initializing the data list
@@ -39,6 +42,11 @@ void SensorDevice::disconnect_from_redis(void) {
 	m_redis_client.disconnect();
 }
 
+
+/**
+* Once every (m_redis_rate_div) function calls, the provided data is appended to the
+* (m_redis_entry) list
+*/
 void SensorDevice::write_to_redis(std::string data_str){
 
 	// writing to redis
@@ -57,6 +65,11 @@ void SensorDevice::write_to_redis(std::string data_str){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helpers
 
+/**
+* Generates a milliseconds precision timestamp
+* 
+* @returns string of millisecond count since epoch
+*/
 std::string SensorDevice::get_millis_timestamp(void) const {
 
 	auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(

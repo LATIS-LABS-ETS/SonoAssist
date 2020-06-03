@@ -8,7 +8,7 @@ void read_gatt_char_wrap(void* context, const void* caller, const MblMwGattChar*
 
 void write_gatt_char_wrap(void* context, const void* caller, MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
 	const uint8_t* value, uint8_t length) {
-	(static_cast<MetaWearBluetoothClient*>(context))->write_gatt_char(caller, writeType, characteristic, value, length);
+	(static_cast<MetaWearBluetoothClient*>(context))->write_gatt_char(writeType, characteristic, value, length);
 }
 
 void enable_notifications_wrap(void* context, const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler,
@@ -22,6 +22,14 @@ void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// methods for the MblMwBtleConnection interface
 
+/*
+* Reads the specified BLE characteristic from the currently connected device.
+* The function does nothing if no device is not connected or if the provided characteristic is invalid.
+* 
+* @param [in] caller Voided context variable to pass in to the call back function when the requested char data is recevied.
+* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] handler Callback function to call when the characteristic data is received. 
+*/
 void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler) {
 
 	// proceed if the required characteristic is valid
@@ -39,7 +47,17 @@ void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGatt
 
 }
 
-void MetaWearBluetoothClient::write_gatt_char(const void* caller, MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
+
+/*
+* Writes the specified data to the target BLE characteristic.
+* The function does nothing if no device is not connected or if the provided characteristic is invalid.
+* 
+* @param [in] writeType Specifies if the write operation should prompt an update (not really usefull).
+* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] value payload to be sent to the target characteristic 
+* @param [in] length length of the value array 
+*/
+void MetaWearBluetoothClient::write_gatt_char(MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
 	const uint8_t* value, uint8_t length) {
 
 	// proceed if the required characteristic is valid
@@ -66,6 +84,16 @@ void MetaWearBluetoothClient::write_gatt_char(const void* caller, MblMwGattCharW
 
 }
 
+/*
+* Turns on value change notifications for the specified characteristic. 
+* In the future, when the characteristic the specified handler will be called.
+* The function does nothing if no device is not connected or if the provided characteristic is invalid.
+*
+* @param [in] caller Voided context variable to pass in to the call back function when the requested char data is recevied.
+* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] handler function to be called when the characteristic changes value.
+* @param [in] ready function to call when the enable procedure is finished (at the end of this function).
+*/
 void MetaWearBluetoothClient::enable_notifications(const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler,
 	MblMwFnVoidVoidPtrInt ready) {
 
@@ -95,6 +123,12 @@ void MetaWearBluetoothClient::enable_notifications(const void* caller, const Mbl
 
 }
 
+/*
+* Registers the provided (handler) function as a callback function when the device disconnects.
+*
+* @param [in] caller Voided context variable to pass in to the call back function when the requested char data is recevied.
+* @param [in] handler function to register as a callback.
+*/
 void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler) {
 
 	// setting the handler and enabling it
@@ -137,6 +171,33 @@ void MetaWearBluetoothClient::connect_device() {
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
 	}
+
+}
+
+void MetaWearBluetoothClient::disconnect_device() {
+
+	// stopping the data stream
+	stop_stream();
+	m_device_connected = false;
+	if (m_output_file.is_open()) m_output_file.close();
+
+	// clearing the metawear related vars
+	mbl_mw_metawearboard_free(m_metawear_board_p);
+	m_metawear_ble_interface = { 0 };
+
+	// clearing qt communication vars
+	m_metawear_services_p.clear();
+	m_metawear_device_controller_p.reset();
+
+	// clearing callback structures / vars
+	m_char_update_callback_map.clear();
+	bytes_callback_queue empty_queue;
+	std::swap(m_char_read_callback_queue, empty_queue);
+	m_disconnect_event_caller = nullptr;
+	m_disconnect_handler = nullptr;
+
+	// changing the device state
+	emit device_status_change(false);
 
 }
 
@@ -396,33 +457,6 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// conveniance functions
-
-void MetaWearBluetoothClient::disconnect_device() {
-
-	// stopping the data stream
-	stop_stream();
-	m_device_connected = false;
-	if (m_output_file.is_open()) m_output_file.close();
-
-	// clearing the metawear related vars
-	mbl_mw_metawearboard_free(m_metawear_board_p);
-	m_metawear_ble_interface = {0};
-
-	// clearing qt communication vars
-	m_metawear_services_p.clear();
-	m_metawear_device_controller_p.reset();
-	
-	// clearing callback structures / vars
-	m_char_update_callback_map.clear();
-	bytes_callback_queue empty_queue;
-	std::swap(m_char_read_callback_queue, empty_queue);
-	m_disconnect_event_caller = nullptr;
-	m_disconnect_handler = nullptr;
-
-	// changing the device state
-	emit device_status_change(false);
-
-}
 
  QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str) const {
 

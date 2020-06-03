@@ -60,8 +60,8 @@ class MetaWearBluetoothClient : public QObject, public SensorDevice {
 		// metawear integration functions
 		void read_gatt_char(const void* caller,
 			const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler);
-		void write_gatt_char(const void* caller, MblMwGattCharWriteType writeType,
-			const MblMwGattChar* characteristic, const uint8_t* value, uint8_t length);
+		void write_gatt_char(MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
+			const uint8_t* value, uint8_t length);
 		void enable_notifications(const void* caller, const MblMwGattChar* characteristic,
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);

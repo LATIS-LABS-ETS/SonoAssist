@@ -2,6 +2,9 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helper / callback functions
 
+/*
+* Copies the url in to the user data
+*/
 void url_receiver(char const* url, void* user_data){
 	
 	char* buffer = (char*) user_data;
@@ -12,6 +15,14 @@ void url_receiver(char const* url, void* user_data){
 		strcpy(buffer, url);
 }
 
+/*
+* Callback function for the collection of gaze point data
+* This function is called by the collection thread every time a new gaze point is available
+*
+* @param [in] gaze_point structure containing the gaze point data ( relative x, y coordinates)
+* @param [in] user_data voided context variable which was passed to the API upon callback registration. 
+			  Pointer to the GazeTracker object interfacing with the eyetracker.
+*/
 void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 	
 	// making sure data is valid
@@ -133,6 +144,11 @@ void GazeTracker::stop_stream() {
 
 }
 
+/*
+* Gaze data collection function
+* This function is meant to be ran in a seperate thread. It waits for gaze data to be available then
+* triggers a call to the "gaze_data_callback" callback via the "tobii_device_process_callbacks" function.
+*/
 void GazeTracker::collect_gaze_data(void) {
 
 	// continuously wait for data and call callbacks

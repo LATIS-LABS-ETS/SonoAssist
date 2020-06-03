@@ -14,8 +14,6 @@
 
 /*
 * Class to enable communication with the tobii eye tracker 4C
-*
-* The "start_stream" method launches acquisition of gaze data in a seperate thread (collect_gaze_data)
 */
 class GazeTracker : public QObject, public SensorDevice {
 

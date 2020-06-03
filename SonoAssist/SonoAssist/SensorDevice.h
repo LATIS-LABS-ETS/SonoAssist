@@ -12,8 +12,8 @@ typedef std::map<std::string, std::string> config_map;
 /*
 * Interface class for the implementation of sensor devices
 *
-* A sensor device is expected to connect/disconnect to a data source and stream it's contents
-* to one or multiple destinations.
+* Classes which communicate with sesnors to pull data from them must implement this interface.
+* It provides practical functions and public functions which will allow simple integration to the UI.
 */
 class SensorDevice{
 
