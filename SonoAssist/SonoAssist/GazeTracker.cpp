@@ -32,8 +32,11 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		GazeTracker* manager = (GazeTracker*)user_data;
 
 		// generating the output string
-		std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
+		std::string output_str = std::to_string(gaze_point->timestamp_us) + "," + std::to_string(gaze_point->position_xy[0]) + ","
 			+ std::to_string(gaze_point->position_xy[1]) + "\n";
+
+		// saving the latest acquisition string
+		manager->set_latest_acquisition(*gaze_point);
 
 		// writing to the output file and redis (if redis enabled)
 		manager->write_to_redis(output_str);
@@ -116,8 +119,8 @@ void GazeTracker::start_stream() {
 
 		// launching the collection thread
 		m_collect_data = true;
-		m_device_streaming = true;
 		m_collection_thread = std::thread(&GazeTracker::collect_gaze_data, this);
+		m_device_streaming = true;
 	
 	}
 
@@ -161,6 +164,14 @@ void GazeTracker::collect_gaze_data(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
+tobii_gaze_point_t GazeTracker::get_latest_acquisition(void) {
+	return m_latest_acquisition;
+}
+
+void GazeTracker::set_latest_acquisition(tobii_gaze_point_t data) {
+	m_latest_acquisition = data;
+}
+
 void GazeTracker::set_output_file(std::string output_file_path, std::string extension) {
 
 	try {
@@ -172,7 +183,7 @@ void GazeTracker::set_output_file(std::string output_file_path, std::string exte
 
 		// writing the output file header
 		m_output_file.open(m_output_file_str);
-		m_output_file << "Time" << "," << "X coordinate" << "," << "Y coordinate" << std::endl;
+		m_output_file << "Time (us)" << "," << "X coordinate" << "," << "Y coordinate" << std::endl;
 		m_output_file.close();
 		m_output_file_loaded = true;
 

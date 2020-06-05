@@ -11,6 +11,7 @@
 
 #include "GazeTracker.h"
 #include "ui_SonoAssist.h"
+#include "RGBDCameraClient.h"
 #include "MetaWearBluetoothClient.h"
 
 #define GREEN_TEXT "#71ff3d"
@@ -30,6 +31,7 @@ class SonoAssist : public QMainWindow {
 		
 		// device connection
 		void on_sensor_connect_button_clicked(void);
+		void on_camera_status_change(bool status);
 		void on_gyro_status_change(bool device_status);
 		void on_eye_tracker_status_change(bool device_status);
 
@@ -58,6 +60,7 @@ class SonoAssist : public QMainWindow {
 		
 		// data streaming vars
 		std::shared_ptr<GazeTracker> m_tracker_client_p;
+		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 
 		bool load_config_file(QString param_file_path);

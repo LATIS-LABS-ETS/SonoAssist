@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <params>
-	<eye_tracker_to_redis>true</eye_tracker_to_redis>
+	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>5</eye_tracker_redis_rate_div>
 	<eye_tracker_redis_entry>eye_tracker_data</eye_tracker_redis_entry>
-	<gyroscope_to_redis>true</gyroscope_to_redis>
+	<gyroscope_to_redis>false</gyroscope_to_redis>
 	<gyroscope_redis_rate_div>15</gyroscope_redis_rate_div>
 	<gyroscope_redis_entry>gyro_data</gyroscope_redis_entry>
 	<gyroscope_ble_address>F3:AC:8B:CE:E1:10</gyroscope_ble_address>

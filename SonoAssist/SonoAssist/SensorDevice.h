@@ -7,6 +7,8 @@
 
 #include <cpp_redis/cpp_redis>
 
+#include <QObject>
+
 typedef std::map<std::string, std::string> config_map;
 
 /*
@@ -15,7 +17,9 @@ typedef std::map<std::string, std::string> config_map;
 * Classes which communicate with sesnors to pull data from them must implement this interface.
 * It provides practical functions and public functions which will allow simple integration to the UI.
 */
-class SensorDevice{
+class SensorDevice : public QObject {
+
+	Q_OBJECT
 
 	public : 
 
@@ -25,6 +29,10 @@ class SensorDevice{
 		void set_stream_status(bool state);
 		void set_connection_status(bool state);
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
+
+		// acquisition data getter
+		void* get_latest_acquisition(void);
+		void set_latest_acquisition(void* acquisition_data);
 
 		// redis communication functions
 		void connect_to_redis(void);
@@ -41,6 +49,9 @@ class SensorDevice{
 		// stream functions
 		virtual void stop_stream(void) = 0;
 		virtual void start_stream(void) = 0;
+
+	signals:
+		void device_status_change(bool is_connected);
 
 	protected:
 

@@ -40,15 +40,15 @@
     <ClCompile Include="SensorDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RGBDCameraClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="MetaWearBluetoothClient.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="GazeTracker.h">
+    <QtMoc Include="SensorDevice.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -63,7 +63,13 @@
     </QtRcc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SensorDevice.h">
+    <ClInclude Include="RGBDCameraClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MetaWearBluetoothClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GazeTracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

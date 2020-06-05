@@ -226,9 +226,12 @@ void MetaWearBluetoothClient::start_stream() {
 			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
 		
 			// formatting the data
-			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
+			std::string output_str = std::to_string(data->epoch) + "," + std::to_string(euler_angles->heading) + ','
 				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 				+ "\n";
+
+			// saving the latest acquisition string
+			context_p->set_latest_acquisition(*euler_angles);
 
 			// writing to the output file and redis (if redis enabled)
 			context_p->write_to_redis(output_str);
@@ -435,6 +438,14 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
+MblMwEulerAngles MetaWearBluetoothClient::get_latest_acquisition(void) {
+	return m_latest_acquisition;
+}
+
+void MetaWearBluetoothClient::set_latest_acquisition(MblMwEulerAngles data) {
+	m_latest_acquisition = data;
+}
+
 void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std::string extension){
 	
 	try {
@@ -446,7 +457,7 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 		// writing the output file header
 		m_output_file.open(m_output_file_str);
-		m_output_file << "Time" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
+		m_output_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
 		m_output_file.close();
 		m_output_file_loaded = true;
 

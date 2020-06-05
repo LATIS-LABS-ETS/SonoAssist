@@ -42,9 +42,7 @@ void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt
 * This class can't utilise threads since it utilises the Bluetooth interface provided by Qt. The
 * call back functions provided by this interface can only run in the main thread.
 */
-class MetaWearBluetoothClient : public QObject, public SensorDevice {
-
-	Q_OBJECT
+class MetaWearBluetoothClient : public SensorDevice {
 
 	public:
 	
@@ -67,6 +65,8 @@ class MetaWearBluetoothClient : public QObject, public SensorDevice {
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
 
 		// setters and getters
+		MblMwEulerAngles get_latest_acquisition(void);
+		void set_latest_acquisition(MblMwEulerAngles data);
 		void set_output_file(std::string output_file_path, std::string extension);
 
 		// file output attributes
@@ -90,14 +90,14 @@ class MetaWearBluetoothClient : public QObject, public SensorDevice {
 		void service_characteristic_read(const QLowEnergyCharacteristic& descriptor, const QByteArray& value);
 		void service_characteristic_changed(const QLowEnergyCharacteristic& characteristic, const QByteArray& newValue);
 
-	signals:
-		void device_status_change(bool is_connected);
-
 	private:
 	
 		// output file vars
 		bool m_output_file_loaded = false;
 		std::string m_output_file_str = "";
+
+		// data acquisition var
+		MblMwEulerAngles m_latest_acquisition;
 
 		// device disconnect handling vars
 		const void* m_disconnect_event_caller = nullptr;
