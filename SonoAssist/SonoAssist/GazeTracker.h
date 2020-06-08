@@ -4,25 +4,18 @@
 
 #include <string>
 #include <thread>
-#include <chrono>
 #include <fstream>
 #include <exception>
 
 #include <tobii/tobii.h>
 #include <tobii/tobii_streams.h>
 
-#include <cpp_redis/cpp_redis>
-
 #include <QDebug>
 
 /*
 * Class to enable communication with the tobii eye tracker 4C
-*
-* The "start_stream" method launches acquisition of gaze data in a seperate thread (collect_gaze_data)
 */
-class GazeTracker : public QObject, public SensorDevice {
-
-	Q_OBJECT
+class GazeTracker : public SensorDevice {
 
 	public:
 
@@ -39,19 +32,12 @@ class GazeTracker : public QObject, public SensorDevice {
 		void collect_gaze_data(void);
 
 		// setters and getters
+		tobii_gaze_point_t get_latest_acquisition(void);
+		void set_latest_acquisition(tobii_gaze_point_t data);
 		void set_output_file(std::string output_file_path, std::string extension);
 
 		// output file attributes
 		std::ofstream m_output_file;
-
-		// redis output attributes
-		int m_redis_rate_div = 2;
-		int m_redis_data_count = 1;
-		std::string m_redis_entry = "";
-		cpp_redis::client m_redis_client;
-
-	signals:
-		void device_status_change(bool is_connected);
 
 	private:
 
@@ -63,6 +49,9 @@ class GazeTracker : public QObject, public SensorDevice {
 		// output file vars
 		bool m_output_file_loaded = false;
 		std::string m_output_file_str = "";
+
+		// acquisition vars
+		tobii_gaze_point_t m_latest_acquisition;
 
 		// streaming vars
 		bool m_collect_data = false;

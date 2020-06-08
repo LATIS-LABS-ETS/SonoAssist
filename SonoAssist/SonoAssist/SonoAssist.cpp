@@ -4,10 +4,14 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
 	// setting up the gui
 	ui.setupUi(this);
+    build_sensor_panel();
     set_acquisition_label(false);
-    on_gyro_status_change(false);
-    on_eye_tracker_status_change(false);
    
+    // setting the scene widget
+    m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
+    ui.graphicsView->setScene(m_main_scene_p.get());
+    ui.graphicsView->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
@@ -25,14 +29,24 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     connect(m_tracker_client_p.get(), &GazeTracker::device_status_change, 
         this, &SonoAssist::on_eye_tracker_status_change);
 
+    // initializing the camera client
+    m_camera_client_p = std::make_shared<RGBDCameraClient>();
+    connect(m_camera_client_p.get(), &RGBDCameraClient::device_status_change, 
+        this, &SonoAssist::on_camera_status_change);
+    connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame,
+        this, &SonoAssist::on_new_camera_image);
+
 }
 
 SonoAssist::~SonoAssist(){
 
     // making sur the streams are shut off
     try {
+
+        if (m_camera_client_p->get_stream_status()) m_camera_client_p->stop_stream();
         if (m_tracker_client_p->get_stream_status()) m_tracker_client_p->stop_stream();
         if (m_metawear_client_p->get_stream_status()) m_metawear_client_p->stop_stream();
+
     } catch (...) {
         qDebug() << "n\SonoAssist -failed to stop the devices from treaming (in destructor)";
     }
@@ -40,6 +54,12 @@ SonoAssist::~SonoAssist(){
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// slots
+
+void SonoAssist::on_new_camera_image(QImage new_image) {
+    // updating the image on the main scene
+    m_main_scene_p->clear();
+    m_main_scene_p->addItem(new QGraphicsPixmapItem(QPixmap::fromImage(new_image)));
+}
 
 void SonoAssist::on_sensor_connect_button_clicked(){
 
@@ -50,6 +70,11 @@ void SonoAssist::on_sensor_connect_button_clicked(){
         m_tracker_client_p->set_configuration(m_app_params);
         m_tracker_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
         m_tracker_client_p->connect_device();
+
+        // connecting the camera client
+        m_camera_client_p->set_configuration(m_app_params);
+        m_camera_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
+        m_camera_client_p->connect_device();
 
         // connecting the gyroscope client
         m_metawear_client_p->set_configuration(m_app_params);
@@ -73,11 +98,16 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     if (!m_stream_is_active) {
 
         // making sure devices are ready for acquisition (synchronisation)
-        if (m_metawear_client_p->get_connection_status() && m_tracker_client_p->get_connection_status()) {
+        if (m_metawear_client_p->get_connection_status() && m_tracker_client_p->get_connection_status()
+            && m_camera_client_p->get_connection_status()) {
+            
+            m_camera_client_p->start_stream();
             m_tracker_client_p->start_stream();
             m_metawear_client_p->start_stream();
+
             m_stream_is_active = true;
-            set_acquisition_label(m_stream_is_active);
+            set_acquisition_label(true);
+        
         }
 
         // displaying warning message
@@ -86,6 +116,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             QString message = "The following devices are not ready for acquisition : [";
             if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (gyroscope) ,";
             if (!m_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker) ,";
+            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD) ";
             message += "].";
             display_warning_message(title, message);
         }
@@ -105,10 +136,17 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     
     // stopping the stream
     if(m_stream_is_active) {
+       
+        // stoping the sensor streams
+        m_camera_client_p->stop_stream();
         m_tracker_client_p->stop_stream();
         m_metawear_client_p->stop_stream();
+        
+        // updating state and UI
         m_stream_is_active = false;
+        m_main_scene_p->clear();
         set_acquisition_label(false);
+
     } 
     
     // displaying warning message
@@ -156,42 +194,73 @@ void SonoAssist::on_output_file_browse_clicked(void) {
 
 }
 
-void SonoAssist::on_gyro_status_change(bool device_status) {
-
-    // updating the gyroscope label
-    QString style_sheet;
-    QString gyro_label = "gyroscope status : ";
-    if(device_status) {
-        gyro_label += "(connected)";
-        style_sheet = QString("QLabel {color : %1;}").arg(QString(GREEN_TEXT));
-    } else {
-        gyro_label += "(disconnected)";
-        style_sheet = "QLabel {color : red;}";
-    }
-    ui.gyro_status_label->setText(gyro_label);
-    ui.gyro_status_label->setStyleSheet(style_sheet);
-
+void SonoAssist::on_gyro_status_change(bool device_status){
+    set_device_status(device_status, GYROSCOPE);
 }
 
 void SonoAssist::on_eye_tracker_status_change(bool device_status) {
+    set_device_status(device_status, EYETRACKER);
+}
 
-    // updating the gyroscope label
-    QString style_sheet;
-    QString tracker_label = "eye tracker status : ";
-    if (device_status) {
-        tracker_label += "(connected)";
-        style_sheet = QString("QLabel {color : %1;}").arg(QString(GREEN_TEXT));
+void SonoAssist::on_camera_status_change(bool device_status) {
+    set_device_status(device_status, CAMERA);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility / graphic functions
+
+void SonoAssist::build_sensor_panel(void) {
+
+    int index;
+
+    // defining table dimensions and headers
+    ui.sensor_status_table->setRowCount(3);
+    ui.sensor_status_table->setColumnCount(1);
+    ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
+    ui.sensor_status_table->setVerticalHeaderLabels(QStringList{"Gyroscope", "Eye tracker", "Camera"});
+
+    // adding the widgets to the table
+    for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
+        ui.sensor_status_table->setItem(index, 0, new QTableWidgetItem());
     }
-    else {
-        tracker_label += "(disconnected)";
-        style_sheet = "QLabel {color : red;}";
+
+    // streatching the headers
+    ui.sensor_status_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    // ajusting the height of the side panel
+    auto panelHeight = ui.sensor_status_table->horizontalHeader()->height();
+    for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
+        panelHeight += ui.sensor_status_table->rowHeight(index);
     }
-    ui.eye_tracker_status_label->setText(tracker_label);
-    ui.eye_tracker_status_label->setStyleSheet(style_sheet);
+    
+    // setting default widget content
+    set_device_status(false, GYROSCOPE);
+    set_device_status(false, EYETRACKER);
+    set_device_status(false, CAMERA);
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
+void SonoAssist::set_device_status(bool device_status, sensor_device_t device) {
+
+    // pointing to the target table entry
+    QTableWidgetItem* device_field = ui.sensor_status_table->item(device, 0);
+    
+    // preparing widget text and color
+    QString color_str = "";
+    QString status_str = "";
+    if (device_status) {
+        status_str += "connected";
+        color_str = QString(GREEN_TEXT);
+    }
+    else {
+        status_str += "disconnected";
+        color_str = "red";
+    }
+
+    // applying changes to the widget
+    device_field->setText(status_str);
+    device_field->setForeground(QBrush(QColor(color_str)));
+    
+}
 
 void SonoAssist::set_acquisition_label(bool active) {
 
@@ -244,4 +313,3 @@ bool SonoAssist::load_config_file(QString param_file_path) {
 void SonoAssist::display_warning_message(QString title, QString message){
     QMessageBox::warning(this, title, message);
 }
-

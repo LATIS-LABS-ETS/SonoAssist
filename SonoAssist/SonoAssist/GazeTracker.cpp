@@ -2,6 +2,9 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helper / callback functions
 
+/*
+* Copies the url in to the user data
+*/
 void url_receiver(char const* url, void* user_data){
 	
 	char* buffer = (char*) user_data;
@@ -12,6 +15,14 @@ void url_receiver(char const* url, void* user_data){
 		strcpy(buffer, url);
 }
 
+/*
+* Callback function for the collection of gaze point data
+* This function is called by the collection thread every time a new gaze point is available
+*
+* @param [in] gaze_point structure containing the gaze point data ( relative x, y coordinates)
+* @param [in] user_data voided context variable which was passed to the API upon callback registration. 
+			  Pointer to the GazeTracker object interfacing with the eyetracker.
+*/
 void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 	
 	// making sure data is valid
@@ -20,27 +31,17 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		// getting the eye tracker manager
 		GazeTracker* manager = (GazeTracker*)user_data;
 
-		// generating millisecond time stamp and output string
-		auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count();
-		std::string output_str = std::to_string(time_stamp) + "," + std::to_string(gaze_point->position_xy[0]) + ","
+		// generating the output string
+		std::string output_str = std::to_string(gaze_point->timestamp_us) + "," + std::to_string(gaze_point->position_xy[0]) + ","
 			+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
-		// writing to the output file
-		manager->m_output_file << output_str;
-		
-		// writing to redis
-		if (manager->m_redis_client.is_connected()) {
-			if ((manager->m_redis_data_count % manager->m_redis_rate_div) == 0) {
-				manager->m_redis_client.rpushx(manager->m_redis_entry, output_str);
-				manager->m_redis_client.sync_commit();
-				manager->m_redis_data_count = 1;
-			}
-			else {
-				manager->m_redis_data_count++;
-			}
-		}
+		// saving the latest acquisition string
+		manager->set_latest_acquisition(*gaze_point);
 
+		// writing to the output file and redis (if redis enabled)
+		manager->write_to_redis(output_str);
+		manager->m_output_file << output_str;
+	
 	}
 
 }
@@ -109,25 +110,17 @@ void GazeTracker::start_stream() {
 		// opening the output file
 		m_output_file.open(m_output_file_str, std::fstream::app);
 
-		// connecting to redis (redis enabled)
+		// connecting to redis (if redis enabled)
 		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
-
-			// loading redis parameters
 			m_redis_entry = (*m_config_ptr)["eye_tracker_redis_entry"];
 			m_redis_rate_div = std::atoi((*m_config_ptr)["eye_tracker_redis_rate_div"].c_str());
-
-			// connecting to redis and initializing the data list
-			m_redis_client.connect();
-			m_redis_client.del(std::vector<std::string>({ m_redis_entry }));
-			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
-			m_redis_client.sync_commit();
-
+			connect_to_redis();
 		}
 
 		// launching the collection thread
 		m_collect_data = true;
-		m_device_streaming = true;
 		m_collection_thread = std::thread(&GazeTracker::collect_gaze_data, this);
+		m_device_streaming = true;
 	
 	}
 
@@ -145,7 +138,7 @@ void GazeTracker::stop_stream() {
 		// closing the output file redis connection
 		m_output_file.close();
 		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
-			m_redis_client.disconnect();
+			disconnect_from_redis();
 		}
 
 		m_device_streaming = false;
@@ -154,6 +147,11 @@ void GazeTracker::stop_stream() {
 
 }
 
+/*
+* Gaze data collection function
+* This function is meant to be ran in a seperate thread. It waits for gaze data to be available then
+* triggers a call to the "gaze_data_callback" callback via the "tobii_device_process_callbacks" function.
+*/
 void GazeTracker::collect_gaze_data(void) {
 
 	// continuously wait for data and call callbacks
@@ -166,6 +164,14 @@ void GazeTracker::collect_gaze_data(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
+tobii_gaze_point_t GazeTracker::get_latest_acquisition(void) {
+	return m_latest_acquisition;
+}
+
+void GazeTracker::set_latest_acquisition(tobii_gaze_point_t data) {
+	m_latest_acquisition = data;
+}
+
 void GazeTracker::set_output_file(std::string output_file_path, std::string extension) {
 
 	try {
@@ -177,7 +183,7 @@ void GazeTracker::set_output_file(std::string output_file_path, std::string exte
 
 		// writing the output file header
 		m_output_file.open(m_output_file_str);
-		m_output_file << "Time" << "," << "X coordinate" << "," << "Y coordinate" << std::endl;
+		m_output_file << "Time (us)" << "," << "X coordinate" << "," << "Y coordinate" << std::endl;
 		m_output_file.close();
 		m_output_file_loaded = true;
 

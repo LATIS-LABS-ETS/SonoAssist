@@ -8,7 +8,7 @@ void read_gatt_char_wrap(void* context, const void* caller, const MblMwGattChar*
 
 void write_gatt_char_wrap(void* context, const void* caller, MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
 	const uint8_t* value, uint8_t length) {
-	(static_cast<MetaWearBluetoothClient*>(context))->write_gatt_char(caller, writeType, characteristic, value, length);
+	(static_cast<MetaWearBluetoothClient*>(context))->write_gatt_char(writeType, characteristic, value, length);
 }
 
 void enable_notifications_wrap(void* context, const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler,
@@ -22,6 +22,14 @@ void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// methods for the MblMwBtleConnection interface
 
+/*
+* Reads the specified BLE characteristic from the currently connected device.
+* The function does nothing if no device is not connected or if the provided characteristic is invalid.
+* 
+* @param [in] caller Voided context variable to pass in to the call back function when the requested char data is recevied.
+* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] handler Callback function to call when the characteristic data is received. 
+*/
 void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler) {
 
 	// proceed if the required characteristic is valid
@@ -39,7 +47,17 @@ void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGatt
 
 }
 
-void MetaWearBluetoothClient::write_gatt_char(const void* caller, MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
+
+/*
+* Writes the specified data to the target BLE characteristic.
+* The function does nothing if no device is not connected or if the provided characteristic is invalid.
+* 
+* @param [in] writeType Specifies if the write operation should prompt an update (not really usefull).
+* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] value payload to be sent to the target characteristic 
+* @param [in] length length of the value array 
+*/
+void MetaWearBluetoothClient::write_gatt_char(MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
 	const uint8_t* value, uint8_t length) {
 
 	// proceed if the required characteristic is valid
@@ -66,6 +84,16 @@ void MetaWearBluetoothClient::write_gatt_char(const void* caller, MblMwGattCharW
 
 }
 
+/*
+* Turns on value change notifications for the specified characteristic. 
+* In the future, when the characteristic the specified handler will be called.
+* The function does nothing if no device is not connected or if the provided characteristic is invalid.
+*
+* @param [in] caller Voided context variable to pass in to the call back function when the requested char data is recevied.
+* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] handler function to be called when the characteristic changes value.
+* @param [in] ready function to call when the enable procedure is finished (at the end of this function).
+*/
 void MetaWearBluetoothClient::enable_notifications(const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler,
 	MblMwFnVoidVoidPtrInt ready) {
 
@@ -95,6 +123,12 @@ void MetaWearBluetoothClient::enable_notifications(const void* caller, const Mbl
 
 }
 
+/*
+* Registers the provided (handler) function as a callback function when the device disconnects.
+*
+* @param [in] caller Voided context variable to pass in to the call back function when the requested char data is recevied.
+* @param [in] handler function to register as a callback.
+*/
 void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler) {
 
 	// setting the handler and enabling it
@@ -129,12 +163,41 @@ void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
 	if (m_config_loaded && m_output_file_loaded) {
+		
 		// disconnect the device if already connected
 		if (m_device_connected) disconnect_device();
+		
 		// launching device discovery
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
 	}
+
+}
+
+void MetaWearBluetoothClient::disconnect_device() {
+
+	// stopping the data stream
+	stop_stream();
+	m_device_connected = false;
+	if (m_output_file.is_open()) m_output_file.close();
+
+	// clearing the metawear related vars
+	mbl_mw_metawearboard_free(m_metawear_board_p);
+	m_metawear_ble_interface = { 0 };
+
+	// clearing qt communication vars
+	m_metawear_services_p.clear();
+	m_metawear_device_controller_p.reset();
+
+	// clearing callback structures / vars
+	m_char_update_callback_map.clear();
+	bytes_callback_queue empty_queue;
+	std::swap(m_char_read_callback_queue, empty_queue);
+	m_disconnect_event_caller = nullptr;
+	m_disconnect_handler = nullptr;
+
+	// changing the device state
+	emit device_status_change(false);
 
 }
 
@@ -147,65 +210,35 @@ void MetaWearBluetoothClient::start_stream() {
 
 		// opening the output file
 		m_output_file.open(m_output_file_str, std::fstream::app);
-
-		// connecting to redis and defining call back (redis enabled)
-		if((*m_config_ptr)["gyroscope_to_redis"] == "true") {
-
-			// loading redis parameters
+		
+		// connecting to redis (if redis enabled)
+		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
 			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
-
-			// connecting to redis and initializing the data list
-			m_redis_client.connect();
-			m_redis_client.del(std::vector<std::string>({m_redis_entry}));
-			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({""}));
-			m_redis_client.sync_commit();
-			
-			stream_callback = [](void* context, const MblMwData* data) {
-
-				MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
-
-				// pulling orientation and time data
-				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::system_clock::now().time_since_epoch()).count();
-
-				// formatting the data
-				std::string output_str = std::to_string(time_stamp) + "," + std::to_string(euler_angles->heading) + ','
-					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
-					+ "\n";
-
-				// writing to the output file
-				context_p->m_output_file << output_str;
-
-				// writing to redis
-				if ((context_p->m_redis_data_count % context_p->m_redis_rate_div) == 0) {
-					context_p->m_redis_client.rpushx(context_p->m_redis_entry, output_str);
-					context_p->m_redis_client.sync_commit();
-					context_p->m_redis_data_count = 1;
-				} else {
-					context_p->m_redis_data_count ++;
-				}
-			
-			};
-		
-		} 
-
-		// defining call back (redis disabled)
-		else {
-			stream_callback = [](void* context, const MblMwData* data) {
-
-				// pulling orientation and time data
-				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-				auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::system_clock::now().time_since_epoch()).count();
-
-				// writing to the .csv file
-				static_cast<MetaWearBluetoothClient*>(context)->m_output_file << time_stamp << "," << euler_angles->heading
-					<< "," << euler_angles->pitch << "," << euler_angles->roll << "," << euler_angles->yaw << std::endl;
-			};
+			connect_to_redis();
 		}
+			
+		stream_callback = [](void* context, const MblMwData* data) {
 
+			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
+
+			// pulling orientation data
+			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
+		
+			// formatting the data
+			std::string output_str = std::to_string(data->epoch) + "," + std::to_string(euler_angles->heading) + ','
+				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
+				+ "\n";
+
+			// saving the latest acquisition string
+			context_p->set_latest_acquisition(*euler_angles);
+
+			// writing to the output file and redis (if redis enabled)
+			context_p->write_to_redis(output_str);
+			context_p->m_output_file << output_str;
+
+		};
+		
 		// defining the signal data type and the associated callback
 		auto euler_angles = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
 		mbl_mw_datasignal_subscribe(euler_angles, this, stream_callback);
@@ -230,7 +263,7 @@ void MetaWearBluetoothClient::stop_stream(void){
 		// closing the output file and redis connection
 		m_output_file.close();
 		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
-			m_redis_client.disconnect();
+			disconnect_from_redis();
 		}
 
 		m_device_streaming = false;
@@ -405,6 +438,14 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
+MblMwEulerAngles MetaWearBluetoothClient::get_latest_acquisition(void) {
+	return m_latest_acquisition;
+}
+
+void MetaWearBluetoothClient::set_latest_acquisition(MblMwEulerAngles data) {
+	m_latest_acquisition = data;
+}
+
 void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std::string extension){
 	
 	try {
@@ -416,7 +457,7 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 
 		// writing the output file header
 		m_output_file.open(m_output_file_str);
-		m_output_file << "Time" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
+		m_output_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
 		m_output_file.close();
 		m_output_file_loaded = true;
 
@@ -427,33 +468,6 @@ void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std:
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// conveniance functions
-
-void MetaWearBluetoothClient::disconnect_device() {
-
-	// stopping the data stream
-	stop_stream();
-	m_device_connected = false;
-	if (m_output_file.is_open()) m_output_file.close();
-
-	// clearing the metawear related vars
-	mbl_mw_metawearboard_free(m_metawear_board_p);
-	m_metawear_ble_interface = {0};
-
-	// clearing qt communication vars
-	m_metawear_services_p.clear();
-	m_metawear_device_controller_p.reset();
-	
-	// clearing callback structures / vars
-	m_char_update_callback_map.clear();
-	bytes_callback_queue empty_queue;
-	std::swap(m_char_read_callback_queue, empty_queue);
-	m_disconnect_event_caller = nullptr;
-	m_disconnect_handler = nullptr;
-
-	// changing the device state
-	emit device_status_change(false);
-
-}
 
  QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str) const {
 
