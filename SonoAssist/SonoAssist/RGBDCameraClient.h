@@ -4,10 +4,12 @@
 
 #include <string>
 #include <thread>
+#include <chrono>
 
 #include <opencv2/opencv.hpp>
 #include <librealsense2/rs.hpp>
 
+#include <QImage>
 #include <QDebug>
 
 #define RGB_FPS 30
@@ -18,10 +20,15 @@
 #define DEPTH_HEIGTH 720
 #define N_SKIP_FRAMES 30
 
+#define DISPLAY_RESIZE_FACTOR 3
+#define DISPLAY_THREAD_DELAY_MS 150
+
 /*
 * Class to enable communication with the Intel Realsens D435 camera
 */
 class RGBDCameraClient : public SensorDevice {
+
+	Q_OBJECT
 
 	public:
 
@@ -37,8 +44,10 @@ class RGBDCameraClient : public SensorDevice {
 		void collect_camera_data(void);
 
 		// setters and getters
-		cv::Mat get_latest_frame(void);
 		void set_output_file(std::string output_file_path, std::string extension);
+
+	signals:
+		void new_video_frame(QImage image);
 
 	private:
 
@@ -54,5 +63,4 @@ class RGBDCameraClient : public SensorDevice {
 		bool m_output_file_loaded = false;
 		std::string m_camera_output_file_str = "";
 
-		cv::Mat m_latest_frame;
 };

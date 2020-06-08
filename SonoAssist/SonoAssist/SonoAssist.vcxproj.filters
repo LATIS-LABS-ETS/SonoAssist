@@ -51,6 +51,9 @@
     <QtMoc Include="SensorDevice.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="RGBDCameraClient.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="SonoAssist.ui">
@@ -63,9 +66,6 @@
     </QtRcc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RGBDCameraClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MetaWearBluetoothClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
