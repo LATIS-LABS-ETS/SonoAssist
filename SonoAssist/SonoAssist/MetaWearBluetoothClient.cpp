@@ -226,7 +226,7 @@ void MetaWearBluetoothClient::start_stream() {
 			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
 		
 			// formatting the data
-			std::string output_str = std::to_string(data->epoch) + "," + std::to_string(euler_angles->heading) + ','
+			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
 				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 				+ "\n";
 

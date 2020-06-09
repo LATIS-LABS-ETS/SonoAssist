@@ -32,7 +32,7 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		GazeTracker* manager = (GazeTracker*)user_data;
 
 		// generating the output string
-		std::string output_str = std::to_string(gaze_point->timestamp_us) + "," + std::to_string(gaze_point->position_xy[0]) + ","
+		std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
 			+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
 		// saving the latest acquisition string
