@@ -172,13 +172,12 @@ void GazeTracker::set_latest_acquisition(tobii_gaze_point_t data) {
 	m_latest_acquisition = data;
 }
 
-void GazeTracker::set_output_file(std::string output_file_path, std::string extension) {
+void GazeTracker::set_output_file(std::string output_folder_path) {
 
 	try {
 
 		// defining the output file path
-		auto extension_pos = output_file_path.find(extension);
-		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), "_eye_tracker.csv");
+		m_output_file_str = output_folder_path + "/eye_tracker.csv";
 		if (m_output_file.is_open()) m_output_file.close();
 
 		// writing the output file header

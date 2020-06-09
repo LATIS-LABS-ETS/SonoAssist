@@ -27,9 +27,9 @@ int main(int argc, char *argv[]){
 	w.show();
 	return a.exec();
 
+	// requirement for the use of redis
 	#ifdef _WIN32
 		WSACleanup();
 	#endif /* _WIN32 */
 
 }
-

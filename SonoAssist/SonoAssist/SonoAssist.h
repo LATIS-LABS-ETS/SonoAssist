@@ -1,5 +1,8 @@
 #pragma once
 
+#define _WINSOCKAPI_
+#include <windows.h>
+
 #include <memory>
 
 #include <QFile>
@@ -16,7 +19,6 @@
 #include "MetaWearBluetoothClient.h"
 
 #define GREEN_TEXT "#71ff3d"
-#define MAIN_OUTPUT_EXTENSION ".sono"
 
 enum sensor_device_t {GYROSCOPE=0, EYETRACKER=1, CAMERA=2};
 typedef std::map<std::string, std::string> config_map;
@@ -44,9 +46,9 @@ class SonoAssist : public QMainWindow {
 		// loading files / ui update
 		void on_new_camera_image(QImage);
 		void on_param_file_browse_clicked(void);
-		void on_output_file_browse_clicked(void);
+		void on_output_folder_browse_clicked(void);
 		void on_param_file_input_textChanged(const QString& text);
-		void on_output_file_input_textChanged(const QString& text);
+		void on_output_folder_input_textChanged(const QString& text);
 
 	private:
 

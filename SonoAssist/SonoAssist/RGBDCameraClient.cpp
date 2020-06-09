@@ -106,12 +106,11 @@ void RGBDCameraClient::collect_camera_data(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
-void RGBDCameraClient::set_output_file(std::string output_file_path, std::string extension) {
+void RGBDCameraClient::set_output_file(std::string output_folder_path) {
 
 	try {
 		// defining the output file path
-		auto extension_pos = output_file_path.find(extension);
-		m_camera_output_file_str = output_file_path.replace(extension_pos, extension.length(), "_camera_data.bag");
+		m_camera_output_file_str = output_folder_path + "/camera_data.bag";
 		m_output_file_loaded = true;
 
 	} catch (...) {
