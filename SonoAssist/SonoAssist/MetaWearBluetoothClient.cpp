@@ -226,7 +226,7 @@ void MetaWearBluetoothClient::start_stream() {
 			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
 		
 			// formatting the data
-			std::string output_str = std::to_string(data->epoch) + "," + std::to_string(euler_angles->heading) + ','
+			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
 				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 				+ "\n";
 
@@ -446,13 +446,12 @@ void MetaWearBluetoothClient::set_latest_acquisition(MblMwEulerAngles data) {
 	m_latest_acquisition = data;
 }
 
-void MetaWearBluetoothClient::set_output_file(std::string output_file_path, std::string extension){
+void MetaWearBluetoothClient::set_output_file(std::string output_folder_path){
 	
 	try {
 
 		// defining the output file path
-		auto extension_pos = output_file_path.find(extension);
-		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), "_gyro.csv");
+		m_output_file_str = output_folder_path + "/gyro.csv";
 		if (m_output_file.is_open()) m_output_file.close();
 
 		// writing the output file header

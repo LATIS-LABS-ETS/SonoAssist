@@ -67,7 +67,7 @@ class MetaWearBluetoothClient : public SensorDevice {
 		// setters and getters
 		MblMwEulerAngles get_latest_acquisition(void);
 		void set_latest_acquisition(MblMwEulerAngles data);
-		void set_output_file(std::string output_file_path, std::string extension);
+		void set_output_file(std::string output_folder_path);
 
 		// file output attributes
 		std::ofstream m_output_file;

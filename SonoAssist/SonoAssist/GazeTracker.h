@@ -34,7 +34,7 @@ class GazeTracker : public SensorDevice {
 		// setters and getters
 		tobii_gaze_point_t get_latest_acquisition(void);
 		void set_latest_acquisition(tobii_gaze_point_t data);
-		void set_output_file(std::string output_file_path, std::string extension);
+		void set_output_file(std::string output_folder_path);
 
 		// output file attributes
 		std::ofstream m_output_file;

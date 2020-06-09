@@ -63,27 +63,43 @@ void SonoAssist::on_new_camera_image(QImage new_image) {
 
 void SonoAssist::on_sensor_connect_button_clicked(){
 
+    // getting the output folder path
+    std::string outout_folder_path = ui.output_folder_input->text().toStdString();
+
     // connecting to the gyro device once requirements are filled
     if (m_config_is_loaded && m_output_is_loaded) {
       
-        // connecting the eye tracker client
-        m_tracker_client_p->set_configuration(m_app_params);
-        m_tracker_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
-        m_tracker_client_p->connect_device();
+        // creating the output folder (for data files)
+        if (CreateDirectory(outout_folder_path.c_str(), NULL) ||
+            ERROR_ALREADY_EXISTS == GetLastError()){
+            
+            // connecting the eye tracker client
+            m_tracker_client_p->set_configuration(m_app_params);
+            m_tracker_client_p->set_output_file(outout_folder_path);
+            m_tracker_client_p->connect_device();
 
-        // connecting the camera client
-        m_camera_client_p->set_configuration(m_app_params);
-        m_camera_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
-        m_camera_client_p->connect_device();
+            // connecting the camera client
+            m_camera_client_p->set_configuration(m_app_params);
+            m_camera_client_p->set_output_file(outout_folder_path);
+            m_camera_client_p->connect_device();
 
-        // connecting the gyroscope client
-        m_metawear_client_p->set_configuration(m_app_params);
-        m_metawear_client_p->set_output_file(ui.output_file_input->text().toStdString(), MAIN_OUTPUT_EXTENSION);
-        m_metawear_client_p->connect_device();
-      
+            // connecting the gyroscope client
+            m_metawear_client_p->set_configuration(m_app_params);
+            m_metawear_client_p->set_output_file(outout_folder_path);
+            m_metawear_client_p->connect_device();
+            
+        } 
+
+        // displaying warning message (folder creation)
+        else {
+            QString title = "Unable to create output folder";
+            QString message = "The application failed to create the output folder for data files.";
+            display_warning_message(title, message);
+        }
+     
     } 
     
-    // displaying warning message
+    // displaying warning message (file paths)
     else {
         QString title = "File paths not defined";
         QString message = "Paths to the config and output files must be defined.";
@@ -164,7 +180,7 @@ void SonoAssist::on_param_file_input_textChanged(const QString& text){
     }
 }
 
-void SonoAssist::on_output_file_input_textChanged(const QString& text) {
+void SonoAssist::on_output_folder_input_textChanged(const QString& text) {
     if(!text.isEmpty()) {
         m_output_is_loaded = true;
     }
@@ -181,15 +197,13 @@ void SonoAssist::on_param_file_browse_clicked(){
 
 }
 
-void SonoAssist::on_output_file_browse_clicked(void) {
+void SonoAssist::on_output_folder_browse_clicked(void) {
    
-    QString target_extension;
-    target_extension += (QString(MAIN_OUTPUT_EXTENSION) + " files (*" + QString(MAIN_OUTPUT_EXTENSION) + ")");
-    QString new_path = QFileDialog::getSaveFileName(this, "Select output file path", QString(), target_extension);
+    QString new_path = QFileDialog::getSaveFileName(this, "Select output file path", QString());
 
     // if user does not make a selection, dont override
     if (!new_path.isEmpty()) {
-        ui.output_file_input->setText(new_path);
+        ui.output_folder_input->setText(new_path);
     }
 
 }

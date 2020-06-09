@@ -32,7 +32,7 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		GazeTracker* manager = (GazeTracker*)user_data;
 
 		// generating the output string
-		std::string output_str = std::to_string(gaze_point->timestamp_us) + "," + std::to_string(gaze_point->position_xy[0]) + ","
+		std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
 			+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
 		// saving the latest acquisition string
@@ -172,13 +172,12 @@ void GazeTracker::set_latest_acquisition(tobii_gaze_point_t data) {
 	m_latest_acquisition = data;
 }
 
-void GazeTracker::set_output_file(std::string output_file_path, std::string extension) {
+void GazeTracker::set_output_file(std::string output_folder_path) {
 
 	try {
 
 		// defining the output file path
-		auto extension_pos = output_file_path.find(extension);
-		m_output_file_str = output_file_path.replace(extension_pos, extension.length(), "_eye_tracker.csv");
+		m_output_file_str = output_folder_path + "/eye_tracker.csv";
 		if (m_output_file.is_open()) m_output_file.close();
 
 		// writing the output file header
