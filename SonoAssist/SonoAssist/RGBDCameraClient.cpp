@@ -34,8 +34,8 @@ void RGBDCameraClient::start_stream() {
 		// definiing recording configurations
 		m_camera_cfg_p = std::make_unique<rs2::config>();
 		m_camera_cfg_p->enable_record_to_file(m_camera_output_file_str);
-		m_camera_cfg_p->enable_stream(RS2_STREAM_COLOR, RGB_WIDTH, RGB_HEIGTH, RS2_FORMAT_BGR8, RGB_FPS);
-		m_camera_cfg_p->enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGTH, RS2_FORMAT_Z16, DEPTH_FPS);
+		m_camera_cfg_p->enable_stream(RS2_STREAM_COLOR, RGB_WIDTH, RGB_HEIGHT, RS2_FORMAT_BGR8, RGB_FPS);
+		m_camera_cfg_p->enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGHT, RS2_FORMAT_Z16, DEPTH_FPS);
 
 		// starting pipeline and initializing video writters
 		m_camera_pipe_p = std::make_unique<rs2::pipeline>();
@@ -80,7 +80,7 @@ void RGBDCameraClient::collect_camera_data(void) {
 	// defining QImage for writting
 	void* frame_data_p = nullptr;
 	int resized_w = RGB_WIDTH / DISPLAY_RESIZE_FACTOR;
-	int resized_h = RGB_HEIGTH / DISPLAY_RESIZE_FACTOR;
+	int resized_h = RGB_HEIGHT / DISPLAY_RESIZE_FACTOR;
 	QImage q_image(resized_w, resized_h, QImage::Format_RGB888);
 
 	while (m_collect_data) {
@@ -89,7 +89,7 @@ void RGBDCameraClient::collect_camera_data(void) {
 		frame_data_p = (void*) m_camera_pipe_p->wait_for_frames().get_color_frame().get_data();
 
 		// converting captured frame to opencv Mat
-		cv::Mat color_frame(cv::Size(RGB_WIDTH, RGB_HEIGTH), CV_8UC3, frame_data_p, cv::Mat::AUTO_STEP);
+		cv::Mat color_frame(cv::Size(RGB_WIDTH, RGB_HEIGHT), CV_8UC3, frame_data_p, cv::Mat::AUTO_STEP);
 
 		// resizing the captured frame and binding to the Qimage
 		cv::Mat resized_color_frame(resized_h, resized_w, CV_8UC3, q_image.bits(), q_image.bytesPerLine());

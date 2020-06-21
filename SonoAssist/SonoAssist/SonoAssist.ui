@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>985</width>
-    <height>573</height>
+    <width>1038</width>
+    <height>615</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,8 +24,8 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>30000</width>
-    <height>30000</height>
+    <width>16777215</width>
+    <height>16777215</height>
    </size>
   </property>
   <property name="palette">
@@ -128,7 +128,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="input_fields_layout">
       <item row="0" column="2">
        <widget class="QPushButton" name="param_file_browse">
         <property name="text">
@@ -182,9 +182,9 @@
      </spacer>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="main_content_layout">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="graphic_scene_layout">
         <item>
          <widget class="QGraphicsView" name="graphicsView">
           <property name="sizePolicy">
@@ -201,8 +201,8 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>1920</width>
-            <height>1080</height>
+            <width>3000000</width>
+            <height>3000000</height>
            </size>
           </property>
           <property name="palette">
@@ -247,7 +247,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="side_panel_layout">
         <property name="sizeConstraint">
          <enum>QLayout::SetFixedSize</enum>
         </property>
@@ -293,73 +293,18 @@
          </widget>
         </item>
         <item>
-         <layout class="QGridLayout" name="gridLayout_3">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item row="0" column="1">
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>8</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="2">
-           <widget class="QPushButton" name="stop_acquisition_button">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>146</width>
-              <height>28</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>146</width>
-              <height>28</height>
-             </size>
-            </property>
+         <layout class="QHBoxLayout" name="acquisition_layout">
+          <item>
+           <widget class="QPushButton" name="start_acquisition_button">
             <property name="text">
-             <string>Stop acquisition</string>
+             <string>Start acquisition</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="0">
-           <widget class="QPushButton" name="start_acquisition_button">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>146</width>
-              <height>28</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>146</width>
-              <height>28</height>
-             </size>
-            </property>
+          <item>
+           <widget class="QPushButton" name="stop_acquisition_button">
             <property name="text">
-             <string>Start acquisition</string>
+             <string>Stop acquisition</string>
             </property>
            </widget>
           </item>
@@ -434,7 +379,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>985</width>
+     <width>1038</width>
      <height>26</height>
     </rect>
    </property>

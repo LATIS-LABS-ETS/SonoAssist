@@ -65,12 +65,11 @@ class MetaWearBluetoothClient : public SensorDevice {
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
 
 		// setters and getters
-		MblMwEulerAngles get_latest_acquisition(void);
-		void set_latest_acquisition(MblMwEulerAngles data);
 		void set_output_file(std::string output_folder_path);
 
 		// file output attributes
-		std::ofstream m_output_file;
+		std::ofstream m_output_ori_file;
+		std::ofstream m_output_acc_file;
 
 		// metawear communication attributes
 		MblMwBtleConnection m_metawear_ble_interface = { 0 };
@@ -92,12 +91,13 @@ class MetaWearBluetoothClient : public SensorDevice {
 
 	private:
 	
+		// synchronization status var
+		bool m_device_sync_streaming = false;
+
 		// output file vars
 		bool m_output_file_loaded = false;
-		std::string m_output_file_str = "";
-
-		// data acquisition var
-		MblMwEulerAngles m_latest_acquisition;
+		std::string m_output_ori_file_str = "";
+		std::string m_output_acc_file_str = "";
 
 		// device disconnect handling vars
 		const void* m_disconnect_event_caller = nullptr;

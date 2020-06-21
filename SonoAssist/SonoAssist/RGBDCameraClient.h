@@ -14,10 +14,10 @@
 
 #define RGB_FPS 30
 #define RGB_WIDTH 1920 
-#define RGB_HEIGTH 1080 
+#define RGB_HEIGHT 1080 
 #define DEPTH_FPS 30
 #define DEPTH_WIDTH 1280 
-#define DEPTH_HEIGTH 720
+#define DEPTH_HEIGHT 720
 #define N_SKIP_FRAMES 30
 
 #define DISPLAY_RESIZE_FACTOR 3

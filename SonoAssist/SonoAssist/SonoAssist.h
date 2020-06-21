@@ -18,7 +18,24 @@
 #include "RGBDCameraClient.h"
 #include "MetaWearBluetoothClient.h"
 
+#define RED_TEXT "#cc0000"
 #define GREEN_TEXT "#71ff3d"
+
+// US probe display
+#define PROBE_DISPLAY_WIDTH 640
+#define PROBE_DISPLAY_HEIGHT 360
+#define PROBE_DISPLAY_X_OFFSET 705
+#define PROBE_DISPLAY_Y_OFFSET 50
+
+// RGB D camera display
+#define CAMERA_DISPLAY_WIDTH 640
+#define CAMERA_DISPLAY_HEIGHT 360
+#define CAMERA_DISPLAY_X_OFFSET 50
+#define CAMERA_DISPLAY_Y_OFFSET 50
+
+// Eyetracker crosshairs dimensions
+#define EYETRACKER_CROSSHAIRS_WIDTH 50
+#define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 enum sensor_device_t {GYROSCOPE=0, EYETRACKER=1, CAMERA=2};
 typedef std::map<std::string, std::string> config_map;
@@ -43,8 +60,11 @@ class SonoAssist : public QMainWindow {
 		void on_start_acquisition_button_clicked(void);
 		void on_stop_acquisition_button_clicked(void);
 
-		// loading files / ui update
+		// ui update slots
 		void on_new_camera_image(QImage);
+		void on_new_gaze_point(float, float);
+
+		// loading file slots 
 		void on_param_file_browse_clicked(void);
 		void on_output_folder_browse_clicked(void);
 		void on_param_file_input_textChanged(const QString& text);
@@ -54,17 +74,28 @@ class SonoAssist : public QMainWindow {
 
 		Ui::MainWindow ui;
 
-		// ui vars
+		// main display vars 
 		std::unique_ptr<QGraphicsScene> m_main_scene_p;
+		
+		// RGB D camera display vars
+		std::unique_ptr<QPixmap> m_camera_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_camera_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
+
+		// eye tracker display vars
+		std::unique_ptr<QPixmap> m_eye_tracker_image_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// requirements check vars
+		bool m_sync_is_active = false;
 		bool m_stream_is_active = false;
 		bool m_config_is_loaded = false;
 		bool m_output_is_loaded = false;
 
 		// config vars
-		std::shared_ptr<config_map> m_app_params;
 		std::string m_output_file_path = "";
+		std::shared_ptr<config_map> m_app_params;
 		
 		// data streaming vars
 		std::shared_ptr<GazeTracker> m_tracker_client_p;
