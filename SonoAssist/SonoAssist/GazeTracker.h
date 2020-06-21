@@ -17,6 +17,8 @@
 */
 class GazeTracker : public SensorDevice {
 
+	Q_OBJECT
+
 	public:
 
 		GazeTracker();
@@ -39,6 +41,9 @@ class GazeTracker : public SensorDevice {
 		// output file attributes
 		std::ofstream m_output_file;
 
+	signals:
+		void new_gaze_point(float x , float y);
+
 	private:
 
 		// tobii communication vars
@@ -49,9 +54,6 @@ class GazeTracker : public SensorDevice {
 		// output file vars
 		bool m_output_file_loaded = false;
 		std::string m_output_file_str = "";
-
-		// acquisition vars
-		tobii_gaze_point_t m_latest_acquisition;
 
 		// streaming vars
 		bool m_collect_data = false;

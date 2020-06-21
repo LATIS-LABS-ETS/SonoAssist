@@ -179,7 +179,8 @@ void MetaWearBluetoothClient::disconnect_device() {
 	// stopping the data stream
 	stop_stream();
 	m_device_connected = false;
-	if (m_output_file.is_open()) m_output_file.close();
+	if (m_output_ori_file.is_open()) m_output_ori_file.close();
+	if (m_output_acc_file.is_open()) m_output_acc_file.close();
 
 	// clearing the metawear related vars
 	mbl_mw_metawearboard_free(m_metawear_board_p);
@@ -206,10 +207,9 @@ void MetaWearBluetoothClient::start_stream() {
 	// making sure device is ready to stream
 	if (m_device_connected && !m_device_streaming) {
 
-		MblMwFnData stream_callback;
-
-		// opening the output file
-		m_output_file.open(m_output_file_str, std::fstream::app);
+		// opening the output files
+		m_output_ori_file.open(m_output_ori_file_str, std::fstream::app);
+		m_output_acc_file.open(m_output_acc_file_str, std::fstream::app);
 		
 		// connecting to redis (if redis enabled)
 		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
@@ -218,39 +218,54 @@ void MetaWearBluetoothClient::start_stream() {
 			connect_to_redis();
 		}
 			
-		stream_callback = [](void* context, const MblMwData* data) {
+		MblMwFnData euler_angles_callback = [](void* context, const MblMwData* data) {
 
 			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
 
-			// pulling orientation data
+			// pulling and formatting 
 			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-		
-			// formatting the data
 			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
 				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 				+ "\n";
 
-			// saving the latest acquisition string
-			context_p->set_latest_acquisition(*euler_angles);
-
 			// writing to the output file and redis (if redis enabled)
 			context_p->write_to_redis(output_str);
-			context_p->m_output_file << output_str;
+			context_p->m_output_ori_file << output_str;
+
+		};
+
+		MblMwFnData acceleration_callback = [](void* context, const MblMwData* data) {
+
+			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
+
+			// pulling and formatting 
+			MblMwCartesianFloat* acceleration = (MblMwCartesianFloat*)data->value;
+			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(acceleration->x) + ','
+				+ std::to_string(acceleration->y) + "," + std::to_string(acceleration->z) + "\n";
+
+			// writing to the output file and redis (if redis enabled)
+			context_p->m_output_acc_file << output_str;
 
 		};
 		
-		// defining the signal data type and the associated callback
-		auto euler_angles = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
-		mbl_mw_datasignal_subscribe(euler_angles, this, stream_callback);
+		// setting up the callback for euler angles data
+		auto euler_angles_sig = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
+		mbl_mw_datasignal_subscribe(euler_angles_sig, this, euler_angles_callback);
+
+		// setting up the callback for cartesian acceleration
+		auto acceleration_sig = mbl_mw_sensor_fusion_get_data_signal(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_LINEAR_ACC);
+		mbl_mw_datasignal_subscribe(acceleration_sig, this, acceleration_callback);
 			
-		// hooking the callback to the data signal
+		// enabling the relevant signals and starting the acquisition
 		mbl_mw_sensor_fusion_enable_data(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_EULER_ANGLE);
+		mbl_mw_sensor_fusion_enable_data(m_metawear_board_p, MBL_MW_SENSOR_FUSION_DATA_LINEAR_ACC);
 		mbl_mw_sensor_fusion_start(m_metawear_board_p);
 
 		m_device_streaming = true;
 	}
 
 }
+
 
 void MetaWearBluetoothClient::stop_stream(void){
 
@@ -260,8 +275,9 @@ void MetaWearBluetoothClient::stop_stream(void){
 		// stoping stream from board
 		mbl_mw_sensor_fusion_stop(m_metawear_board_p);
 
-		// closing the output file and redis connection
-		m_output_file.close();
+		// closing the output files and redis connection
+		m_output_ori_file.close();
+		m_output_acc_file.close();
 		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
 			disconnect_from_redis();
 		}
@@ -438,26 +454,26 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
 
-MblMwEulerAngles MetaWearBluetoothClient::get_latest_acquisition(void) {
-	return m_latest_acquisition;
-}
-
-void MetaWearBluetoothClient::set_latest_acquisition(MblMwEulerAngles data) {
-	m_latest_acquisition = data;
-}
-
 void MetaWearBluetoothClient::set_output_file(std::string output_folder_path){
 	
 	try {
 
-		// defining the output file path
-		m_output_file_str = output_folder_path + "/gyro.csv";
-		if (m_output_file.is_open()) m_output_file.close();
+		// defining the output and sync output file paths
+		m_output_ori_file_str = output_folder_path + "/gyro_orientation.csv";
+		m_output_acc_file_str = output_folder_path + "/gyro_acceleration.csv";
+		if (m_output_ori_file.is_open()) m_output_ori_file.close();
+		if (m_output_acc_file.is_open()) m_output_acc_file.close();
 
-		// writing the output file header
-		m_output_file.open(m_output_file_str);
-		m_output_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
-		m_output_file.close();
+		// writing the orientation output file header
+		m_output_ori_file.open(m_output_ori_file_str);
+		m_output_ori_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
+		m_output_ori_file.close();
+
+		// writing the acceleration output file header
+		m_output_acc_file.open(m_output_acc_file_str);
+		m_output_acc_file << "Time (ms)" << "," << "ACC X" << "," << "ACC Y" << "," << "ACC Z" << std::endl;
+		m_output_acc_file.close();
+
 		m_output_file_loaded = true;
 
 	} catch(...) {

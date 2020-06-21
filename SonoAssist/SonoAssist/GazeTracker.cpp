@@ -35,13 +35,13 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
 			+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
-		// saving the latest acquisition string
-		manager->set_latest_acquisition(*gaze_point);
-
 		// writing to the output file and redis (if redis enabled)
 		manager->write_to_redis(output_str);
 		manager->m_output_file << output_str;
 	
+		// emitting gaze data towards UI
+		emit manager->new_gaze_point(gaze_point->position_xy[0], gaze_point->position_xy[1]);
+
 	}
 
 }
@@ -163,14 +163,6 @@ void GazeTracker::collect_gaze_data(void) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
-
-tobii_gaze_point_t GazeTracker::get_latest_acquisition(void) {
-	return m_latest_acquisition;
-}
-
-void GazeTracker::set_latest_acquisition(tobii_gaze_point_t data) {
-	m_latest_acquisition = data;
-}
 
 void GazeTracker::set_output_file(std::string output_folder_path) {
 

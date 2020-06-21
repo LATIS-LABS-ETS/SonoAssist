@@ -7,4 +7,5 @@
 	<gyroscope_redis_rate_div>15</gyroscope_redis_rate_div>
 	<gyroscope_redis_entry>gyro_data</gyroscope_redis_entry>
 	<gyroscope_ble_address>F3:AC:8B:CE:E1:10</gyroscope_ble_address>
+	<eye_tracker_crosshairs_path>C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/tracker_crosshair.png</eye_tracker_crosshairs_path>
 </params>

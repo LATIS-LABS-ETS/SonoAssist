@@ -1,6 +1,7 @@
 # ignoring log files
 *.log
 *.tlog
+.png
 
 # Prerequisites
 *.d
