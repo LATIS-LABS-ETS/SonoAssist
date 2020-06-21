@@ -10,7 +10,6 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // setting the scene widget
     m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
     ui.graphicsView->setScene(m_main_scene_p.get());
-    ui.graphicsView->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
     // creating the placeholder image for the camera viewfinder
     // positioning the placeholderon the scene
