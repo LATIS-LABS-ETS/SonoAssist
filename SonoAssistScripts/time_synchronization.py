@@ -7,5 +7,5 @@ parser.add_argument("config_path", help="path to the .json config file")
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    tracker = SonoTracker(args.config_path, debug=True)
+    tracker = SonoTracker(args.config_path)
     tracker.launch_tracking()

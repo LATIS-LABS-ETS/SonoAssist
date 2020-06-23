@@ -1,4 +1,11 @@
 {
-    "debug_video_path" : "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/media/acc_test_2.webm" 
-    
+    "debug_mode" : false,
+    "realsens_depth_fps" : 30,
+    "realsens_depth_width" : 1280,
+    "realsens_depth_height" : 720,
+    "realsens_color_fps" : 30,
+    "realsens_color_width" : 1920,
+    "realsens_color_height" : 1080,
+    "target_bag_path" : "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/media/example1/camera_data.bag",
+    "debug_video_path" : "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/media/debug_test_2.webm" 
 }
