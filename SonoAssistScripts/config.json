@@ -6,6 +6,6 @@
     "realsens_color_fps" : 30,
     "realsens_color_width" : 1920,
     "realsens_color_height" : 1080,
-    "target_bag_path" : "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/media/example1/camera_data.bag",
+    "recording_folder" : "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/media/example1",
     "debug_video_path" : "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/media/debug_test_2.webm" 
 }

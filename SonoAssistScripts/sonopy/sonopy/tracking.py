@@ -4,7 +4,7 @@ import cv2
 import imutils
 import pyrealsense2 as rs
 
-from .video_manager import VideoManager
+from .video import VideoManager
 from .config import ConfigurationManager
 
 
@@ -21,12 +21,13 @@ class SonoTracker:
 
     display_delay = 0.1
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, video_file_path):
 
         '''
         Parameters
         ----------
         config_path (str) : path to configuration file
+        video_file_path (str) : path to the video file to be loaded
         '''
 
         # loading configurations
@@ -35,7 +36,7 @@ class SonoTracker:
         self.debug = self.config_manager.config_data["debug_mode"]
         
         self.tracker = cv2.TrackerCSRT_create()
-        self.video_manager = VideoManager(config_path)
+        self.video_manager = VideoManager(config_path, video_file_path)
 
 
     def launch_tracking(self):

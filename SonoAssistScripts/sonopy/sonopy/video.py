@@ -12,12 +12,13 @@ class VideoManager:
 
     frame_timeout_ms = 500
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, video_file_path):
         
         '''
         Parameters
         ----------
         config_path (str) : path to configuration file
+        video_file_path (str) : path to the video file to be loaded
         '''
 
         # loading configurations
@@ -25,6 +26,12 @@ class VideoManager:
         self.config_manager = ConfigurationManager(config_path)
         self.debug = self.config_manager.config_data["debug_mode"]
         
+        # defining the video file path
+        if self.debug : 
+            self.video_file_path = self.config_manager.config_data["debug_video_path"]
+        else : self.video_file_path = video_file_path
+
+        # loading the video
         self.n_served_frames = 0
         self.get_video_source()
 
@@ -50,15 +57,14 @@ class VideoManager:
 
             # loading video from regular media file
             if self.debug :
-
-                self.video_source = cv2.VideoCapture(self.config_manager.config_data["debug_video_path"])
+                self.video_source = cv2.VideoCapture(self.video_file_path)
             
             # loading video from bag file
             else:
                 
                 self.video_source = rs.pipeline()
                 config = rs.config()
-                rs.config.enable_device_from_file(config, self.config_manager.config_data["target_bag_path"], repeat_playback=False)
+                rs.config.enable_device_from_file(config, self.video_file_path, repeat_playback=False)
                 config.enable_stream(rs.stream.color, 
                     self.config_manager.config_data["realsens_color_width"], 
                     self.config_manager.config_data["realsens_color_height"], 
