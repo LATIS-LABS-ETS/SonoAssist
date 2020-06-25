@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import imutils
 import numpy as np
@@ -39,7 +41,8 @@ class VideoManager:
     def __del__(self):
 
         if self.debug:
-            self.video_source.release()
+            try : self.video_source.release()
+            except : pass
 
 
     def get_video_source(self):
@@ -58,7 +61,7 @@ class VideoManager:
             # loading video from regular media file
             if self.debug :
                 self.video_source = cv2.VideoCapture(self.video_file_path)
-            
+
             # loading video from bag file
             else:
                 
@@ -145,3 +148,31 @@ class VideoManager:
                 self.n_served_frames -= 1
 
         return frame
+
+    
+    def play_video(self):
+
+        '''
+        Plays the loaded video with the appropriate frame rate
+        For bag files, the color video is played
+        '''
+
+        # defining the video fps
+        if self.debug : video_fps = self.config_manager.config_data["debug_video_fps"]
+        else : video_fps = self.config_manager.config_data["realsens_color_fps"]
+        sleep_time = 1 / video_fps
+
+        # displaying the video
+        video_frame = self.get_vide_frame()
+        while video_frame is not None:
+
+            cv2.imshow("Video", video_frame)
+            cv2.waitKey(1)
+
+            video_frame = self.get_vide_frame()
+            time.sleep(sleep_time)
+
+        # cleaning up
+        if self.debug : self.video_source.release()
+        self.get_video_source()
+        cv2.destroyAllWindows()
