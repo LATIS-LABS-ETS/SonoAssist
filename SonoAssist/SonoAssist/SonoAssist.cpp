@@ -34,26 +34,8 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
                      {"gyroscope_redis_entry", ""}, {"gyroscope_redis_rate_div", ""}, 
                      {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
-                     {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""} };
-
-	// initialising the gyroroscope client
-	m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
-    connect(m_metawear_client_p.get(), &MetaWearBluetoothClient::device_status_change,
-        this, &SonoAssist::on_gyro_status_change);
-
-    // initializing the eye tracker client
-    m_tracker_client_p = std::make_shared<GazeTracker>();
-    connect(m_tracker_client_p.get(), &GazeTracker::device_status_change, 
-        this, &SonoAssist::on_eye_tracker_status_change);
-    connect(m_tracker_client_p.get(), &GazeTracker::new_gaze_point,
-        this, &SonoAssist::on_new_gaze_point);
-
-    // initializing the camera client
-    m_camera_client_p = std::make_shared<RGBDCameraClient>();
-    connect(m_camera_client_p.get(), &RGBDCameraClient::device_status_change, 
-        this, &SonoAssist::on_camera_status_change);
-    connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame,
-        this, &SonoAssist::on_new_camera_image);
+                     {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""}, 
+                     {"camera_active", ""}, {"gyroscope_active" , ""}, {"eye_tracker_active", ""} };
 
 }
 
@@ -118,19 +100,25 @@ void SonoAssist::on_sensor_connect_button_clicked(){
             ERROR_ALREADY_EXISTS == GetLastError()){
             
             // connecting the eye tracker client
-            m_tracker_client_p->set_configuration(m_app_params);
-            m_tracker_client_p->set_output_file(outout_folder_path);
-            m_tracker_client_p->connect_device();
-
+            if (m_tracker_client_p->get_sensor_used()) {
+                m_tracker_client_p->set_configuration(m_app_params);
+                m_tracker_client_p->set_output_file(outout_folder_path);
+                m_tracker_client_p->connect_device();
+            }
+            
             // connecting the camera client
-            m_camera_client_p->set_configuration(m_app_params);
-            m_camera_client_p->set_output_file(outout_folder_path);
-            m_camera_client_p->connect_device();
+            if (m_camera_client_p->get_sensor_used()) {
+                m_camera_client_p->set_configuration(m_app_params);
+                m_camera_client_p->set_output_file(outout_folder_path);
+                m_camera_client_p->connect_device();
+            }
 
             // connecting the gyroscope client
-            m_metawear_client_p->set_configuration(m_app_params);
-            m_metawear_client_p->set_output_file(outout_folder_path);
-            m_metawear_client_p->connect_device();
+            if (m_metawear_client_p->get_sensor_used()) {
+                m_metawear_client_p->set_configuration(m_app_params);
+                m_metawear_client_p->set_output_file(outout_folder_path);
+                m_metawear_client_p->connect_device();
+            }
             
         } else {
             QString title = "Unable to create output folder";
@@ -152,12 +140,20 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     if (!m_stream_is_active) {
 
         // making sure devices are ready for acquisition (synchronisation)
-        if (m_metawear_client_p->get_connection_status() && m_tracker_client_p->get_connection_status()
-            && m_camera_client_p->get_connection_status()) {
+        bool devices_ready = true;
+        std::vector<std::shared_ptr<SensorDevice>> sensor_devices = {m_metawear_client_p, m_camera_client_p, m_tracker_client_p};
+        for (auto i = 0; i < sensor_devices.size(); i++) {
+            if (sensor_devices[i]->get_sensor_used()) {
+                devices_ready = sensor_devices[i]->get_connection_status();
+                if (!devices_ready) break;
+            }
+        }
+        
+        if (devices_ready) {
             
-            m_camera_client_p->start_stream();
-            m_tracker_client_p->start_stream();
-            m_metawear_client_p->start_stream();
+            if(m_camera_client_p->get_sensor_used()) m_camera_client_p->start_stream();
+            if(m_tracker_client_p->get_sensor_used()) m_tracker_client_p->start_stream();
+            if(m_metawear_client_p->get_sensor_used()) m_metawear_client_p->start_stream();
 
             m_stream_is_active = true;
             set_acquisition_label(true);
@@ -185,9 +181,9 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     if(m_stream_is_active) {
        
         // stoping the sensor streams
-        m_camera_client_p->stop_stream();
-        m_tracker_client_p->stop_stream();
-        m_metawear_client_p->stop_stream();
+        if (m_camera_client_p->get_sensor_used()) m_camera_client_p->stop_stream();
+        if (m_tracker_client_p->get_sensor_used()) m_tracker_client_p->stop_stream();
+        if (m_metawear_client_p->get_sensor_used()) m_metawear_client_p->stop_stream();
         
         // updating app state
         m_stream_is_active = false;
@@ -220,6 +216,35 @@ void SonoAssist::on_param_file_input_textChanged(const QString& text){
         // loading config dependant components
         if (m_config_is_loaded) {
 
+            // initializing the gyroroscope client
+            m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
+            if (QString((*m_app_params)["gyroscope_active"].c_str()) == "true") {
+                m_metawear_client_p->set_sensor_used(true);
+                connect(m_metawear_client_p.get(), &MetaWearBluetoothClient::device_status_change,
+                    this, &SonoAssist::on_gyro_status_change);
+            }
+
+            // initializing the eye tracker client
+            m_tracker_client_p = std::make_shared<GazeTracker>();
+            if (QString((*m_app_params)["eye_tracker_active"].c_str()) == "true") {
+                m_tracker_client_p->set_sensor_used(true);
+                connect(m_tracker_client_p.get(), &GazeTracker::device_status_change,
+                    this, &SonoAssist::on_eye_tracker_status_change);
+                connect(m_tracker_client_p.get(), &GazeTracker::new_gaze_point,
+                    this, &SonoAssist::on_new_gaze_point);
+            }
+
+            // initializing the camera client
+            m_camera_client_p = std::make_shared<RGBDCameraClient>();
+            if (QString((*m_app_params)["camera_active"].c_str()) == "true") {
+                qDebug() << "testing";
+                m_camera_client_p->set_sensor_used(true);
+                connect(m_camera_client_p.get(), &RGBDCameraClient::device_status_change,
+                    this, &SonoAssist::on_camera_status_change);
+                connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame,
+                    this, &SonoAssist::on_new_camera_image);
+            }
+
             // loading the eyetracking crosshair
             QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_crosshairs_path"].c_str()));
             crosshair_img = crosshair_img.scaled(EYETRACKER_CROSSHAIRS_WIDTH, EYETRACKER_CROSSHAIRS_HEIGHT, Qt::KeepAspectRatio);
@@ -250,6 +275,7 @@ void SonoAssist::on_param_file_browse_clicked(){
     
     // if user does not make a selection, dont override
     if (!new_path.isEmpty()) {
+        ui.param_file_input->setText("");
         ui.param_file_input->setText(new_path);
     }
 

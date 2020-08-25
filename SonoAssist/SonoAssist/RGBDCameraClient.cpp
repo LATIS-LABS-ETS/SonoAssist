@@ -9,9 +9,20 @@ RGBDCameraClient::~RGBDCameraClient() {
 void RGBDCameraClient::connect_device(void) {
 
 	// making sure requirements are filled
-	if (m_config_loaded && m_output_file_loaded) {
-		m_device_connected = true;
-		emit device_status_change(true);
+	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
+	
+		// testing connection with the camera
+		try {
+			rs2::pipeline p;
+			p.start();
+			p.stop();
+			m_device_connected = true;
+		} catch (...) {
+			m_device_connected = false;
+		}
+
+		emit device_status_change(m_device_connected);
+	
 	}
 
 }

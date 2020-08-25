@@ -65,7 +65,7 @@ void GazeTracker::connect_device(void) {
 	char url[256] = { 0 };
 
 	// making sure requirements are filled
-	if (m_tobii_api_valid && m_config_loaded && m_output_file_loaded) {
+	if (m_tobii_api_valid && m_config_loaded && m_output_file_loaded && m_sensor_used) {
 
 		// making sure device is disconnected
 		disconnect_device();
