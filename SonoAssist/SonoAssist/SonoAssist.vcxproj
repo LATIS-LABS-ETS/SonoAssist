@@ -100,6 +100,7 @@
     <ClCompile Include="RGBDCameraClient.cpp" />
     <ClCompile Include="SensorDevice.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
+    <ClCompile Include="WindowPainter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h" />
@@ -112,6 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MetaWearBluetoothClient.h" />
+    <ClInclude Include="WindowPainter.h" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="GazeTracker.h" />

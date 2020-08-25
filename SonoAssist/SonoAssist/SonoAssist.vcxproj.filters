@@ -43,6 +43,9 @@
     <ClCompile Include="RGBDCameraClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WindowPainter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
@@ -70,6 +73,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MetaWearBluetoothClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowPainter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,6 +4,7 @@
 	<camera_active>false</camera_active>
 	<gyroscope_active>true</gyroscope_active>
 	<eye_tracker_active>false</eye_tracker_active>
+	<us_window_capture_active>true</us_window_capture_active>
 	
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
@@ -15,6 +16,7 @@
 	
 	<gyroscope_ble_address>F3:AC:8B:CE:E1:10</gyroscope_ble_address>
 	
+	<us_window_name>Notepad</us_window_name>
 	<eye_tracker_crosshairs_path>C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/tracker_crosshair.png</eye_tracker_crosshairs_path>
 	
 </params>

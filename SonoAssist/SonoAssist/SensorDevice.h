@@ -32,10 +32,6 @@ class SensorDevice : public QObject {
 		void set_connection_status(bool state);
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
-		// acquisition data getter
-		void* get_latest_acquisition(void);
-		void set_latest_acquisition(void* acquisition_data);
-
 		// redis communication functions
 		void connect_to_redis(void);
 		void disconnect_from_redis(void);
