@@ -68,11 +68,13 @@ class VideoManager:
                 self.video_source = rs.pipeline()
                 config = rs.config()
                 rs.config.enable_device_from_file(config, self.video_file_path, repeat_playback=False)
+                
                 config.enable_stream(rs.stream.color, 
-                    self.config_manager.config_data["realsens_color_width"], 
-                    self.config_manager.config_data["realsens_color_height"], 
-                    rs.format.bgr8, 
-                    self.config_manager.config_data["realsens_color_fps"])
+                    self.config_manager.config_data["realsens_color_width"], self.config_manager.config_data["realsens_color_height"], 
+                    rs.format.bgr8, self.config_manager.config_data["realsens_color_fps"])
+                config.enable_stream(rs.stream.depth, 
+                    self.config_manager.config_data["realsens_depth_width"], self.config_manager.config_data["realsens_depth_height"], 
+                    rs.format.bgr8, self.config_manager.config_data["realsens_depth_fps"])
                 
                 profile = self.video_source.start(config)
                 profile.get_device().as_playback().set_real_time(False)
@@ -127,14 +129,14 @@ class VideoManager:
         
         Returns
         -------
-        (np.array) next frame from the video source
+        tuple(color frame (np.array) , depth frame (np.array or None)) next frame from the video source
         '''
 
-        frame = None
+        frames = (None, None)
         self.n_served_frames += 1
 
         # getting next frame from normal video media file
-        if self.debug : frame = self.video_source.read()[1]
+        if self.debug : frames[0] = self.video_source.read()[1]
         
         # getting next frame from color video in .bag file
         else :
@@ -142,12 +144,16 @@ class VideoManager:
             try :
                 frame_set = self.video_source.wait_for_frames(self.frame_timeout_ms)
                 color_frame = frame_set.get_color_frame()
-                frame =  np.asanyarray(color_frame.get_data())
+                depth_frame = frame_set.get_depth_frame()
+                frames[0] = np.asanyarray(color_frame.get_data())
+                frames[1] = np.asanyarray(depth_frame.get_data())
+            
             except Exception as e:
-                frame = None
+                frames = None
                 self.n_served_frames -= 1
+                print("failed to serve frame, returned None : {}".format(e))
 
-        return frame
+        return frames
 
     
     def play_video(self):

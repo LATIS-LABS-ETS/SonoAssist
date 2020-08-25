@@ -162,7 +162,7 @@ MetaWearBluetoothClient::~MetaWearBluetoothClient() {
 void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
-	if (m_config_loaded && m_output_file_loaded) {
+	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
 		
 		// disconnect the device if already connected
 		if (m_device_connected) disconnect_device();

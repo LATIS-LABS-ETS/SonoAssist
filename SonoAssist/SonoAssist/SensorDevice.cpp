@@ -7,6 +7,14 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 	m_config_loaded = true;
 }
 
+bool SensorDevice::get_sensor_used() const {
+	return m_sensor_used;
+}
+
+void SensorDevice::set_sensor_used(bool state) {
+	m_sensor_used = state;
+}
+
 bool SensorDevice::get_connection_status() const {
 	return m_device_connected;
 }
