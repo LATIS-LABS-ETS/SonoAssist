@@ -43,6 +43,9 @@
     <ClCompile Include="RGBDCameraClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WindowPainter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
@@ -55,6 +58,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="GazeTracker.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="WindowPainter.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

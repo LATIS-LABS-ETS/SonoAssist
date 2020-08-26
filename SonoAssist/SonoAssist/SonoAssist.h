@@ -14,6 +14,7 @@
 #include <QtWidgets/QMainWindow>
 
 #include "GazeTracker.h"
+#include "WindowPainter.h"
 #include "ui_SonoAssist.h"
 #include "RGBDCameraClient.h"
 #include "MetaWearBluetoothClient.h"
@@ -37,7 +38,7 @@
 #define EYETRACKER_CROSSHAIRS_WIDTH 50
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
-enum sensor_device_t {GYROSCOPE=0, EYETRACKER=1, CAMERA=2};
+enum sensor_device_t {GYROSCOPE=0, EYETRACKER=1, CAMERA=2, US_WINDOW=3};
 typedef std::map<std::string, std::string> config_map;
 
 class SonoAssist : public QMainWindow {
@@ -54,6 +55,7 @@ class SonoAssist : public QMainWindow {
 		void on_sensor_connect_button_clicked(void);
 		void on_camera_status_change(bool status);
 		void on_gyro_status_change(bool device_status);
+		void on_us_window_status_change(bool device_status);
 		void on_eye_tracker_status_change(bool device_status);
 
 		// stream data (start/stop)
@@ -63,6 +65,7 @@ class SonoAssist : public QMainWindow {
 		// ui update slots
 		void on_new_camera_image(QImage);
 		void on_new_gaze_point(float, float);
+		void on_new_us_screen_capture(QImage);
 
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
@@ -83,8 +86,9 @@ class SonoAssist : public QMainWindow {
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
 
 		// eye tracker display vars
-		std::unique_ptr<QPixmap> m_eye_tracker_image_p;
+		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_pixmap_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// requirements check vars
@@ -99,6 +103,7 @@ class SonoAssist : public QMainWindow {
 		
 		// data streaming vars
 		std::shared_ptr<GazeTracker> m_tracker_client_p;
+		std::shared_ptr<WindowPainter> m_us_window_client_p;
 		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 

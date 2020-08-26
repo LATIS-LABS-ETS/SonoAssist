@@ -22,9 +22,9 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
     // creating the backgroud image for the eyetracker display
     // positioning the image on the scene
-    m_eye_tracker_image_p = std::make_unique<QPixmap>(PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT);
-    m_eye_tracker_image_p->fill(QColor("#FFFFFF"));
-    m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_image_p.get()));
+    m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT);
+    m_eye_tracker_bg_i_p->fill(QColor("#FFFFFF"));
+    m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_bg_i_p.get()));
     m_main_scene_p->addItem(m_eye_tracker_bg_p.get());
     m_eye_tracker_bg_p->setPos(PROBE_DISPLAY_X_OFFSET, PROBE_DISPLAY_Y_OFFSET);
     m_eye_tracker_bg_p->setZValue(1);
@@ -34,8 +34,8 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
                      {"gyroscope_redis_entry", ""}, {"gyroscope_redis_rate_div", ""}, 
                      {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
-                     {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""}, 
-                     {"camera_active", ""}, {"gyroscope_active" , ""}, {"eye_tracker_active", ""} };
+                     {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
+                     {"camera_active", ""}, {"gyroscope_active" , ""}, {"eye_tracker_active", ""}, {"us_window_capture_active", ""} };
 
 }
 
@@ -47,6 +47,7 @@ SonoAssist::~SonoAssist(){
         if (m_camera_client_p->get_stream_status()) m_camera_client_p->stop_stream();
         if (m_tracker_client_p->get_stream_status()) m_tracker_client_p->stop_stream();
         if (m_metawear_client_p->get_stream_status()) m_metawear_client_p->stop_stream();
+        if (m_us_window_client_p->get_stream_status()) m_us_window_client_p->stop_stream();
 
     } catch (...) {
         qDebug() << "n\SonoAssist -failed to stop the devices from treaming (in destructor)";
@@ -66,10 +67,10 @@ void SonoAssist::on_new_camera_image(QImage new_image) {
 
     // defining the new image and adding it to the scene
     m_camera_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
+    m_main_scene_p->addItem(m_camera_pixmap_p.get());
     m_camera_pixmap_p->setZValue(2);
     m_camera_pixmap_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
-    m_main_scene_p->addItem(m_camera_pixmap_p.get());
-
+  
 }
 
 void SonoAssist::on_new_gaze_point(float x, float y) {
@@ -84,6 +85,22 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
     int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH * x) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
     int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT * y) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
     m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
+
+}
+
+void SonoAssist::on_new_us_screen_capture(QImage new_image) {
+
+    // removing the old image
+    if (m_eyetracker_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
+        m_eyetracker_pixmap_p.reset();
+    }
+
+    // defining the new image and adding it to the scene (under the gazepoint)
+    m_eyetracker_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
+    m_eyetracker_pixmap_p->setPos(PROBE_DISPLAY_X_OFFSET, PROBE_DISPLAY_Y_OFFSET);
+    m_eyetracker_pixmap_p->setZValue(2);
+    m_main_scene_p->addItem(m_eyetracker_pixmap_p.get());
 
 }
 
@@ -119,6 +136,12 @@ void SonoAssist::on_sensor_connect_button_clicked(){
                 m_metawear_client_p->set_output_file(outout_folder_path);
                 m_metawear_client_p->connect_device();
             }
+
+            // connecting the US screen capture client
+            if (m_us_window_client_p->get_sensor_used()) {
+                m_us_window_client_p->set_configuration(m_app_params);
+                m_us_window_client_p->connect_device();
+            }
             
         } else {
             QString title = "Unable to create output folder";
@@ -141,7 +164,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
 
         // making sure devices are ready for acquisition (synchronisation)
         bool devices_ready = true;
-        std::vector<std::shared_ptr<SensorDevice>> sensor_devices = {m_metawear_client_p, m_camera_client_p, m_tracker_client_p};
+        std::vector<std::shared_ptr<SensorDevice>> sensor_devices = {m_metawear_client_p, m_camera_client_p, m_tracker_client_p, m_us_window_client_p};
         for (auto i = 0; i < sensor_devices.size(); i++) {
             if (sensor_devices[i]->get_sensor_used()) {
                 devices_ready = sensor_devices[i]->get_connection_status();
@@ -151,9 +174,10 @@ void SonoAssist::on_start_acquisition_button_clicked() {
         
         if (devices_ready) {
             
-            if(m_camera_client_p->get_sensor_used()) m_camera_client_p->start_stream();
-            if(m_tracker_client_p->get_sensor_used()) m_tracker_client_p->start_stream();
-            if(m_metawear_client_p->get_sensor_used()) m_metawear_client_p->start_stream();
+            if (m_camera_client_p->get_sensor_used()) m_camera_client_p->start_stream();
+            if (m_tracker_client_p->get_sensor_used()) m_tracker_client_p->start_stream();
+            if (m_metawear_client_p->get_sensor_used()) m_metawear_client_p->start_stream();
+            if (m_us_window_client_p->get_sensor_used()) m_us_window_client_p->start_stream();
 
             m_stream_is_active = true;
             set_acquisition_label(true);
@@ -161,9 +185,10 @@ void SonoAssist::on_start_acquisition_button_clicked() {
         } else {
             QString title = "Acquisition can not be started";
             QString message = "The following devices are not ready for acquisition : [";
-            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (gyroscope) ,";
-            if (!m_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker) ,";
-            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD) ";
+            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (gyroscope), ";
+            if (!m_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker), ";
+            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD), ";
+            if (!m_us_window_client_p->get_connection_status()) message += "US window capture ";
             message += "].";
             display_warning_message(title, message);
         }
@@ -184,16 +209,25 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         if (m_camera_client_p->get_sensor_used()) m_camera_client_p->stop_stream();
         if (m_tracker_client_p->get_sensor_used()) m_tracker_client_p->stop_stream();
         if (m_metawear_client_p->get_sensor_used()) m_metawear_client_p->stop_stream();
+        if (m_us_window_client_p->get_sensor_used()) m_us_window_client_p->stop_stream();
         
         // updating app state
         m_stream_is_active = false;
         set_acquisition_label(false);
 
-        // updating the UI
+        // removing the last camera image
         if (m_camera_pixmap_p.get() != nullptr) {
             m_main_scene_p->removeItem(m_camera_pixmap_p.get());
             m_camera_pixmap_p.reset();
         }
+
+        // removing the last US image
+        if (m_eyetracker_pixmap_p.get() != nullptr) {
+            m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
+            m_eyetracker_pixmap_p.reset();
+        }
+
+        // placing the gaze crosshair back to the center
         int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
         int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
         m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
@@ -237,12 +271,21 @@ void SonoAssist::on_param_file_input_textChanged(const QString& text){
             // initializing the camera client
             m_camera_client_p = std::make_shared<RGBDCameraClient>();
             if (QString((*m_app_params)["camera_active"].c_str()) == "true") {
-                qDebug() << "testing";
                 m_camera_client_p->set_sensor_used(true);
                 connect(m_camera_client_p.get(), &RGBDCameraClient::device_status_change,
                     this, &SonoAssist::on_camera_status_change);
                 connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame,
                     this, &SonoAssist::on_new_camera_image);
+            }
+
+            // initializing the US window capture client
+            m_us_window_client_p = std::make_shared<WindowPainter>();
+            if (QString((*m_app_params)["us_window_capture_active"].c_str()) == "true") {
+                m_us_window_client_p->set_sensor_used(true);
+                connect(m_us_window_client_p.get(), &WindowPainter::device_status_change,
+                    this, &SonoAssist::on_us_window_status_change);
+                connect(m_us_window_client_p.get(), &WindowPainter::new_window_capture,
+                    this, &SonoAssist::on_new_us_screen_capture);
             }
 
             // loading the eyetracking crosshair
@@ -253,9 +296,9 @@ void SonoAssist::on_param_file_input_textChanged(const QString& text){
             // placing the crosshair in the middle of the display
             int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
             int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
-            m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
-            m_eyetracker_crosshair_p->setZValue(3);
             m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
+            m_eyetracker_crosshair_p->setZValue(3);
+            m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
            
         }
 
@@ -304,6 +347,10 @@ void SonoAssist::on_camera_status_change(bool device_status) {
     set_device_status(device_status, CAMERA);
 }
 
+void SonoAssist::on_us_window_status_change(bool device_status) {
+    set_device_status(device_status, US_WINDOW);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility / graphic functions
 
 void SonoAssist::build_sensor_panel(void) {
@@ -311,10 +358,10 @@ void SonoAssist::build_sensor_panel(void) {
     int index;
 
     // defining table dimensions and headers
-    ui.sensor_status_table->setRowCount(3);
+    ui.sensor_status_table->setRowCount(4);
     ui.sensor_status_table->setColumnCount(1);
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
-    ui.sensor_status_table->setVerticalHeaderLabels(QStringList{"Gyroscope", "Eye tracker", "Camera"});
+    ui.sensor_status_table->setVerticalHeaderLabels(QStringList{"Gyroscope", "Eye tracker", "Camera", "US Capture"});
 
     // adding the widgets to the table
     for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
@@ -331,9 +378,10 @@ void SonoAssist::build_sensor_panel(void) {
     }
     
     // setting default widget content
+    set_device_status(false, CAMERA);
+    set_device_status(false, US_WINDOW);
     set_device_status(false, GYROSCOPE);
     set_device_status(false, EYETRACKER);
-    set_device_status(false, CAMERA);
 
 }
 
