@@ -65,6 +65,7 @@ class SonoAssist : public QMainWindow {
 		// ui update slots
 		void on_new_camera_image(QImage);
 		void on_new_gaze_point(float, float);
+		void on_new_us_screen_capture(QImage);
 
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
@@ -85,8 +86,9 @@ class SonoAssist : public QMainWindow {
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
 
 		// eye tracker display vars
-		std::unique_ptr<QPixmap> m_eye_tracker_image_p;
+		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_pixmap_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// requirements check vars

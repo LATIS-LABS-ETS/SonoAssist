@@ -90,8 +90,8 @@ void RGBDCameraClient::collect_camera_data(void) {
 
 	// defining QImage for writting
 	void* frame_data_p = nullptr;
-	int resized_w = RGB_WIDTH / DISPLAY_RESIZE_FACTOR;
-	int resized_h = RGB_HEIGHT / DISPLAY_RESIZE_FACTOR;
+	int resized_w = RGB_WIDTH / CAMERA_DISPLAY_RESIZE_FACTOR;
+	int resized_h = RGB_HEIGHT / CAMERA_DISPLAY_RESIZE_FACTOR;
 	QImage q_image(resized_w, resized_h, QImage::Format_RGB888);
 
 	while (m_collect_data) {
@@ -109,7 +109,7 @@ void RGBDCameraClient::collect_camera_data(void) {
 
 		// emiting the frame and waiting
 		emit new_video_frame(std::move(q_image.copy()));
-		std::this_thread::sleep_for(std::chrono::milliseconds(DISPLAY_THREAD_DELAY_MS));
+		std::this_thread::sleep_for(std::chrono::milliseconds(CAMERA_DISPLAY_THREAD_DELAY_MS));
 
 	}
 

@@ -113,7 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MetaWearBluetoothClient.h" />
-    <ClInclude Include="WindowPainter.h" />
+    <QtMoc Include="WindowPainter.h" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="GazeTracker.h" />

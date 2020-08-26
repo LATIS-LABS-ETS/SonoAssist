@@ -20,8 +20,8 @@
 #define DEPTH_HEIGHT 720
 #define N_SKIP_FRAMES 30
 
-#define DISPLAY_RESIZE_FACTOR 3
-#define DISPLAY_THREAD_DELAY_MS 150
+#define CAMERA_DISPLAY_RESIZE_FACTOR 3
+#define CAMERA_DISPLAY_THREAD_DELAY_MS 150
 
 /*
 * Class to enable communication with the Intel Realsens D435 camera
