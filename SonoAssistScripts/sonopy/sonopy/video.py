@@ -132,7 +132,7 @@ class VideoManager:
         tuple(color frame (np.array) , depth frame (np.array or None)) next frame from the video source
         '''
 
-        frames = (None, None)
+        frames = [None, None]
         self.n_served_frames += 1
 
         # getting next frame from normal video media file
@@ -153,7 +153,7 @@ class VideoManager:
                 self.n_served_frames -= 1
                 print("failed to serve frame, returned None : {}".format(e))
 
-        return frames
+        return tuple(frames)
 
     
     def play_video(self):
