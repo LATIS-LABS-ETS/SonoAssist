@@ -142,7 +142,8 @@ class SonoTracker:
 
                         target_object = cv2.selectROI("Video", color_frame, fromCenter=False, showCrosshair=True)
                         if not target_object == (0,0,0,0):
-                            self.tracker.init(color_frame, target_object)
+                            self.tracker = cv2.TrackerCSRT_create()
+                            self.tracker.init(frame, target_object)
                             detection_failed = False
                             cv2.destroyAllWindows()
 
