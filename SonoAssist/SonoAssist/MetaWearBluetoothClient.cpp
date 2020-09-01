@@ -137,7 +137,7 @@ void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidP
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// MetaWearBluetoothClient public interface
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// MetaWearBluetoothClient public methods
 
 MetaWearBluetoothClient::MetaWearBluetoothClient(){
 
@@ -283,6 +283,35 @@ void MetaWearBluetoothClient::stop_stream(void){
 		}
 
 		m_device_streaming = false;
+	}
+
+}
+
+void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
+
+	try {
+
+		// defining the output and sync output file paths
+		m_output_ori_file_str = output_folder_path + "/gyro_orientation.csv";
+		m_output_acc_file_str = output_folder_path + "/gyro_acceleration.csv";
+		if (m_output_ori_file.is_open()) m_output_ori_file.close();
+		if (m_output_acc_file.is_open()) m_output_acc_file.close();
+
+		// writing the orientation output file header
+		m_output_ori_file.open(m_output_ori_file_str);
+		m_output_ori_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
+		m_output_ori_file.close();
+
+		// writing the acceleration output file header
+		m_output_acc_file.open(m_output_acc_file_str);
+		m_output_acc_file << "Time (ms)" << "," << "ACC X" << "," << "ACC Y" << "," << "ACC Z" << std::endl;
+		m_output_acc_file.close();
+
+		m_output_file_loaded = true;
+
+	}
+	catch (...) {
+		qDebug() << "\nMetaWearBluetoothClient - error occured while setting the output file";
 	}
 
 }
@@ -448,36 +477,6 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 			newValue.length()
 		);
 			
-	}
-
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
-
-void MetaWearBluetoothClient::set_output_file(std::string output_folder_path){
-	
-	try {
-
-		// defining the output and sync output file paths
-		m_output_ori_file_str = output_folder_path + "/gyro_orientation.csv";
-		m_output_acc_file_str = output_folder_path + "/gyro_acceleration.csv";
-		if (m_output_ori_file.is_open()) m_output_ori_file.close();
-		if (m_output_acc_file.is_open()) m_output_acc_file.close();
-
-		// writing the orientation output file header
-		m_output_ori_file.open(m_output_ori_file_str);
-		m_output_ori_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
-		m_output_ori_file.close();
-
-		// writing the acceleration output file header
-		m_output_acc_file.open(m_output_acc_file_str);
-		m_output_acc_file << "Time (ms)" << "," << "ACC X" << "," << "ACC Y" << "," << "ACC Z" << std::endl;
-		m_output_acc_file.close();
-
-		m_output_file_loaded = true;
-
-	} catch(...) {
-		qDebug() << "\nMetaWearBluetoothClient - error occured while setting the output file";
 	}
 
 }

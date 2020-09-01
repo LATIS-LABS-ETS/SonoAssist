@@ -1,14 +1,23 @@
 
 #include "SonoAssist.h"
-#include "MetaWearBluetoothClient.h"
 
+#include <QDebug>
 #include <QtWidgets/QApplication>
 
 #ifdef _WIN32
 	#include <Winsock2.h>
 #endif _WIN32
 
+SonoAssist* app_window_p;
+
 int main(int argc, char *argv[]){
+
+	int return_code;
+
+    // defining the Qt application and main window
+    QApplication a(argc, argv);
+	SonoAssist w;
+	app_window_p = &w;
 
 	// requirement for the use of redis
 	#ifdef _WIN32
@@ -21,15 +30,15 @@ int main(int argc, char *argv[]){
 		}
 	#endif /* _WIN32 */
 
-	// Qt GUI stuff
-	QApplication a(argc, argv);
-	SonoAssist w;
+	// running the application
 	w.show();
-	return a.exec();
+	return_code = a.exec();
 
 	// requirement for the use of redis
 	#ifdef _WIN32
 		WSACleanup();
 	#endif /* _WIN32 */
+
+	return return_code;
 
 }

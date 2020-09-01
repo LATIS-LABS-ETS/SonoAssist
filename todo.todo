@@ -1,0 +1,18 @@
+Acquisition tool
+- [x] Modular sensor streams
+- [x] Display US images
+- [] Acquisition of Clarius IMU data (real time)
+- [] Acquisition of probe images (real time)
+- [] Full screen display for acquired probe images
+- [] Recover IMU orientation display script
+- [] Installer for the acquisition tool
+
+Processing scripts
+- [x] fix current tracking tool
+- [] UI tool for probe tracking
+- [] generate visual saliency maps
+
+Models
+- [] Build SonoEyeNet CNN with tensor flow
+
+

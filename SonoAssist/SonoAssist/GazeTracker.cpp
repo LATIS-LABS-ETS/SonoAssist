@@ -147,23 +147,6 @@ void GazeTracker::stop_stream() {
 
 }
 
-/*
-* Gaze data collection function
-* This function is meant to be ran in a seperate thread. It waits for gaze data to be available then
-* triggers a call to the "gaze_data_callback" callback via the "tobii_device_process_callbacks" function.
-*/
-void GazeTracker::collect_gaze_data(void) {
-
-	// continuously wait for data and call callbacks
-	while (m_collect_data) {
-		tobii_wait_for_callbacks(1, &m_tobii_device);
-		tobii_device_process_callbacks(m_tobii_device);
-	}
-
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
-
 void GazeTracker::set_output_file(std::string output_folder_path) {
 
 	try {
@@ -178,8 +161,24 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 		m_output_file.close();
 		m_output_file_loaded = true;
 
-	} catch (...) {
+	}
+	catch (...) {
 		qDebug() << "n\GazeTracker - error occured while setting the output file";
+	}
+
+}
+
+/*
+* Gaze data collection function
+* This function is meant to be ran in a seperate thread. It waits for gaze data to be available then
+* triggers a call to the "gaze_data_callback" callback via the "tobii_device_process_callbacks" function.
+*/
+void GazeTracker::collect_gaze_data(void) {
+
+	// continuously wait for data and call callbacks
+	while (m_collect_data) {
+		tobii_wait_for_callbacks(1, &m_tobii_device);
+		tobii_device_process_callbacks(m_tobii_device);
 	}
 
 }

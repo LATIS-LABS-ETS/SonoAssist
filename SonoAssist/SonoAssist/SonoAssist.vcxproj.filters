@@ -46,12 +46,12 @@
     <ClCompile Include="WindowPainter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ClariusProbeClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="SensorDevice.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="RGBDCameraClient.h">
@@ -61,6 +61,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="WindowPainter.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="SensorDevice.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ClariusProbeClient.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -54,6 +54,7 @@ class MetaWearBluetoothClient : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
+		void set_output_file(std::string output_folder);
 
 		// metawear integration functions
 		void read_gatt_char(const void* caller,
@@ -63,9 +64,6 @@ class MetaWearBluetoothClient : public SensorDevice {
 		void enable_notifications(const void* caller, const MblMwGattChar* characteristic,
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
-
-		// setters and getters
-		void set_output_file(std::string output_folder_path);
 
 		// file output attributes
 		std::ofstream m_output_ori_file;
