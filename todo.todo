@@ -1,6 +1,8 @@
 Acquisition tool
 - [x] Modular sensor streams
 - [x] Display US images
+- [] Better sensor client var names, class names and config param names
+- [] Update the configs documentation
 - [] Acquisition of Clarius IMU data (real time)
 - [] Acquisition of probe images (real time)
 - [] Full screen display for acquired probe images

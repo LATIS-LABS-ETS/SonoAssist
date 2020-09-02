@@ -142,7 +142,7 @@ void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidP
 MetaWearBluetoothClient::MetaWearBluetoothClient(){
 
 	// configuring the discovery agent
-	m_discovery_agent.setLowEnergyDiscoveryTimeout(DISCOVERYTIMEOUT);
+	m_discovery_agent.setLowEnergyDiscoveryTimeout(DISCOVERY_TIMEOUT);
 
 	// hooking scanning events to their handler
 	QObject::connect(&m_discovery_agent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, 
@@ -212,9 +212,9 @@ void MetaWearBluetoothClient::start_stream() {
 		m_output_acc_file.open(m_output_acc_file_str, std::fstream::app);
 		
 		// connecting to redis (if redis enabled)
-		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
-			m_redis_entry = (*m_config_ptr)["gyroscope_redis_entry"];
-			m_redis_rate_div = std::atoi((*m_config_ptr)["gyroscope_redis_rate_div"].c_str());
+		if ((*m_config_ptr)["ext_imu_to_redis"] == "true") {
+			m_redis_entry = (*m_config_ptr)["ext_imu_redis_entry"];
+			m_redis_rate_div = std::atoi((*m_config_ptr)["ext_imu_redis_rate_div"].c_str());
 			connect_to_redis();
 		}
 			
@@ -278,7 +278,7 @@ void MetaWearBluetoothClient::stop_stream(void){
 		// closing the output files and redis connection
 		m_output_ori_file.close();
 		m_output_acc_file.close();
-		if ((*m_config_ptr)["gyroscope_to_redis"] == "true") {
+		if ((*m_config_ptr)["ext_imu_to_redis"] == "true") {
 			disconnect_from_redis();
 		}
 
@@ -322,7 +322,7 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 	
 	// only interested in the target device
 	QString incoming_adress_str = device.address().toString();
-	QString target_device_adress((*m_config_ptr)["gyroscope_ble_address"].c_str());
+	QString target_device_adress((*m_config_ptr)["ext_imu_ble_address"].c_str());
 	if((incoming_adress_str == target_device_adress) && !m_metawear_device_controller_p) {
 		
 		qDebug() << "\nMetaWearBluetoothClient - device with address : " << incoming_adress_str << "discovered\n";

@@ -1,6 +1,6 @@
-#include "WindowPainter.h"
+#include "ScreenRecorder.h"
 
-void WindowPainter::connect_device() {
+void ScreenRecorder::connect_device() {
 
 	// making sure requirements are filled
 	if (m_config_loaded && m_sensor_used) {
@@ -18,7 +18,7 @@ void WindowPainter::connect_device() {
 
 }
 
-void WindowPainter::disconnect_device() {
+void ScreenRecorder::disconnect_device() {
 
 	// making sure requirements are filled
 	if (m_device_connected) {
@@ -28,21 +28,21 @@ void WindowPainter::disconnect_device() {
 
 }
 
-void WindowPainter::start_stream() {
+void ScreenRecorder::start_stream() {
 
 	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming) {
 	
 		// launching the acquisition thread
 		m_collect_data = true;
-		m_collection_thread = std::thread(&WindowPainter::collect_window_captures, this);
+		m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
 		m_device_streaming = true;
 
 	}
 
 }
 
-void WindowPainter::stop_stream() {
+void ScreenRecorder::stop_stream() {
 
 	if (m_device_streaming) {
 		
@@ -62,7 +62,7 @@ void WindowPainter::stop_stream() {
 * Collects the most recent screen capture and makes it available to the main window.
 * This function is meant to be executed in a seperate thread.
 */
-void WindowPainter::collect_window_captures(void) {
+void ScreenRecorder::collect_window_captures(void) {
   
     // defining QImage for writting
     void* frame_data_p = nullptr;
@@ -95,7 +95,7 @@ void WindowPainter::collect_window_captures(void) {
 Converts the window's bitmap format to a cv::Mat
 Source : https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
 */
-cv::Mat WindowPainter::hwnd2mat() {
+cv::Mat ScreenRecorder::hwnd2mat() {
 
     cv::Mat src;
     HBITMAP hbwindow;

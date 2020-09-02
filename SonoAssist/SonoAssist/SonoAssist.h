@@ -14,7 +14,7 @@
 #include <QtWidgets/QMainWindow>
 
 #include "GazeTracker.h"
-#include "WindowPainter.h"
+#include "ScreenRecorder.h"
 #include "ui_SonoAssist.h"
 #include "RGBDCameraClient.h"
 #include "ClariusProbeClient.h"
@@ -39,7 +39,7 @@
 #define EYETRACKER_CROSSHAIRS_WIDTH 50
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
-enum sensor_device_t {GYROSCOPE=0, EYETRACKER=1, CAMERA=2, US_PROBE=3, US_WINDOW=4};
+enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;
 
 class SonoAssist : public QMainWindow {
@@ -54,11 +54,11 @@ class SonoAssist : public QMainWindow {
 		
 		// device connection
 		void on_sensor_connect_button_clicked(void);
-		void on_camera_status_change(bool status);
-		void on_gyro_status_change(bool device_status);
+		void on_rgbd_camera_status_change(bool status);
+		void on_ext_imu_status_change(bool device_status);
 		void on_us_probe_status_change(bool device_status);
-		void on_us_window_status_change(bool device_status);
 		void on_eye_tracker_status_change(bool device_status);
+		void on_screen_recorder_status_change(bool device_status);
 
 		// stream data (start/stop)
 		void on_start_acquisition_button_clicked(void);
@@ -104,10 +104,10 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<config_map> m_app_params;
 		
 		// sensor devices
-		std::shared_ptr<GazeTracker> m_tracker_client_p;
-		std::shared_ptr<WindowPainter> m_us_window_client_p;
 		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
+		std::shared_ptr<GazeTracker> m_gaze_tracker_client_p;
 		std::shared_ptr<ClariusProbeClient> m_us_probe_client_p;
+		std::shared_ptr<ScreenRecorder> m_screen_recorder_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
 

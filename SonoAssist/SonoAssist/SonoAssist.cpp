@@ -30,22 +30,22 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_eye_tracker_bg_p->setZValue(1);
  
     // creating the sensor clients
-    m_tracker_client_p = std::make_shared<GazeTracker>();
+    m_gaze_tracker_client_p = std::make_shared<GazeTracker>();
     m_camera_client_p = std::make_shared<RGBDCameraClient>();
-    m_us_window_client_p = std::make_shared<WindowPainter>();
+    m_screen_recorder_client_p = std::make_shared<ScreenRecorder>();
     m_us_probe_client_p = std::make_shared<ClariusProbeClient>();
     m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
-    m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>({ m_tracker_client_p, m_camera_client_p , m_us_window_client_p, 
+    m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>({ m_gaze_tracker_client_p, m_camera_client_p , m_screen_recorder_client_p, 
                                                                     m_us_probe_client_p, m_metawear_client_p});
    
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
-    *m_app_params = {{"gyroscope_ble_address", ""}, {"gyroscope_to_redis", ""}, 
-                     {"gyroscope_redis_entry", ""}, {"gyroscope_redis_rate_div", ""}, 
+    *m_app_params = {{"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""}, 
+                     {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
                      {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
                      {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
-                     {"camera_active", ""}, {"gyroscope_active" , ""}, {"eye_tracker_active", ""}, 
-                     {"us_window_capture_active", ""}, {"us_probe_capture_active", ""} };
+                     {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""}, 
+                     {"screen_recorder_active", ""}, {"us_probe_active", ""} };
 
 }
 
@@ -177,12 +177,12 @@ void SonoAssist::on_start_acquisition_button_clicked() {
 
         } else {
             QString title = "Acquisition can not be started";
-            QString message = "The following devices are not ready for acquisition : [";
-            if (!m_us_window_client_p->get_connection_status()) message += "US window capture,";
-            if (!m_us_probe_client_p->get_connection_status()) message += "US Probe (Clarius) ";
-            if (!m_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker), ";
-            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (gyroscope), ";
-            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD), ";
+            QString message = "The following devices are not ready for acquisition : [ ";
+            if (!m_us_probe_client_p->get_connection_status()) message += "US Probe (Clarius),";
+            if (!m_screen_recorder_client_p->get_connection_status()) message += "Screen recorder,";
+            if (!m_gaze_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker), ";
+            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (external IMU), ";
+            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD camera) ";
             message += "].";
             display_warning_message(title, message);
         }
@@ -245,43 +245,43 @@ void SonoAssist::on_param_file_input_textChanged(const QString& text){
         if (m_config_is_loaded) {
 
             // initializing the gyroroscope client
-            if (QString((*m_app_params)["gyroscope_active"].c_str()) == "true") {
+            if (QString((*m_app_params)["ext_imu_active"].c_str()) == "true") {
                 m_metawear_client_p->set_sensor_used(true);
                 connect(m_metawear_client_p.get(), &MetaWearBluetoothClient::device_status_change,
-                    this, &SonoAssist::on_gyro_status_change);
+                    this, &SonoAssist::on_ext_imu_status_change);
             }
 
             // initializing the eye tracker client
             if (QString((*m_app_params)["eye_tracker_active"].c_str()) == "true") {
-                m_tracker_client_p->set_sensor_used(true);
-                connect(m_tracker_client_p.get(), &GazeTracker::device_status_change,
+                m_gaze_tracker_client_p->set_sensor_used(true);
+                connect(m_gaze_tracker_client_p.get(), &GazeTracker::device_status_change,
                     this, &SonoAssist::on_eye_tracker_status_change);
-                connect(m_tracker_client_p.get(), &GazeTracker::new_gaze_point,
+                connect(m_gaze_tracker_client_p.get(), &GazeTracker::new_gaze_point,
                     this, &SonoAssist::on_new_gaze_point);
             }
 
             // initializing the camera client
-            if (QString((*m_app_params)["camera_active"].c_str()) == "true") {
+            if (QString((*m_app_params)["rgb_camera_active"].c_str()) == "true") {
                 m_camera_client_p->set_sensor_used(true);
                 connect(m_camera_client_p.get(), &RGBDCameraClient::device_status_change,
-                    this, &SonoAssist::on_camera_status_change);
+                    this, &SonoAssist::on_rgbd_camera_status_change);
                 connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame,
                     this, &SonoAssist::on_new_camera_image);
             }
 
             // initializing the US window capture client
-            if (QString((*m_app_params)["us_window_capture_active"].c_str()) == "true") {
-                m_us_window_client_p->set_sensor_used(true);
-                connect(m_us_window_client_p.get(), &WindowPainter::device_status_change,
-                    this, &SonoAssist::on_us_window_status_change);
-                connect(m_us_window_client_p.get(), &WindowPainter::new_window_capture,
+            if (QString((*m_app_params)["screen_recorder_active"].c_str()) == "true") {
+                m_screen_recorder_client_p->set_sensor_used(true);
+                connect(m_screen_recorder_client_p.get(), &ScreenRecorder::device_status_change,
+                    this, &SonoAssist::on_screen_recorder_status_change);
+                connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture,
                     this, &SonoAssist::on_new_us_screen_capture);
             }
 
             // initializing the US probe client
-            if (QString((*m_app_params)["us_probe_capture_active"].c_str()) == "true") {
+            if (QString((*m_app_params)["us_probe_active"].c_str()) == "true") {
                 m_us_probe_client_p->set_sensor_used(true);
-                connect(m_us_probe_client_p.get(), &WindowPainter::device_status_change,
+                connect(m_us_probe_client_p.get(), &ScreenRecorder::device_status_change,
                     this, &SonoAssist::on_us_probe_status_change);
             }
 
@@ -332,20 +332,20 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
 
 }
 
-void SonoAssist::on_gyro_status_change(bool device_status){
-    set_device_status(device_status, GYROSCOPE);
+void SonoAssist::on_ext_imu_status_change(bool device_status){
+    set_device_status(device_status, EXT_IMU);
 }
 
 void SonoAssist::on_eye_tracker_status_change(bool device_status) {
-    set_device_status(device_status, EYETRACKER);
+    set_device_status(device_status, EYE_TRACKER);
 }
 
-void SonoAssist::on_camera_status_change(bool device_status) {
-    set_device_status(device_status, CAMERA);
+void SonoAssist::on_rgbd_camera_status_change(bool device_status) {
+    set_device_status(device_status, RGBD_CAMERA);
 }
 
-void SonoAssist::on_us_window_status_change(bool device_status) {
-    set_device_status(device_status, US_WINDOW);
+void SonoAssist::on_screen_recorder_status_change(bool device_status) {
+    set_device_status(device_status, SCREEN_RECORDER);
 }
 
 void SonoAssist::on_us_probe_status_change(bool device_status) {
@@ -412,7 +412,7 @@ void SonoAssist::build_sensor_panel(void) {
     ui.sensor_status_table->setRowCount(5);
     ui.sensor_status_table->setColumnCount(1);
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
-    ui.sensor_status_table->setVerticalHeaderLabels(QStringList{"Gyroscope", "Eye tracker", "Camera", "US Probe", "US Screen Projection"});
+    ui.sensor_status_table->setVerticalHeaderLabels(QStringList{"Ext IMU", "Eye tracker", "RGBD camera", "US Probe", "Screen recorder"});
 
     // adding the widgets to the table
     for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
@@ -429,11 +429,11 @@ void SonoAssist::build_sensor_panel(void) {
     }
     
     // setting default widget content
-    set_device_status(false, CAMERA);
+    set_device_status(false, EXT_IMU);
     set_device_status(false, US_PROBE);
-    set_device_status(false, US_WINDOW);
-    set_device_status(false, GYROSCOPE);
-    set_device_status(false, EYETRACKER);
+    set_device_status(false, RGBD_CAMERA);
+    set_device_status(false, EYE_TRACKER);
+    set_device_status(false, SCREEN_RECORDER);
 
 }
 
