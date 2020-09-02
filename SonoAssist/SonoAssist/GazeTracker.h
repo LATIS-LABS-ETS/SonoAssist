@@ -29,14 +29,10 @@ class GazeTracker : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
+		void set_output_file(std::string output_folder);
 
 		// threaded collection method and callback
 		void collect_gaze_data(void);
-
-		// setters and getters
-		tobii_gaze_point_t get_latest_acquisition(void);
-		void set_latest_acquisition(tobii_gaze_point_t data);
-		void set_output_file(std::string output_folder_path);
 
 		// output file attributes
 		std::ofstream m_output_file;

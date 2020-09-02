@@ -80,6 +80,20 @@ void RGBDCameraClient::stop_stream() {
 
 }
 
+void RGBDCameraClient::set_output_file(std::string output_folder_path) {
+
+	try {
+		// defining the output file path
+		m_camera_output_file_str = output_folder_path + "/camera_data.bag";
+		m_output_file_loaded = true;
+
+	}
+	catch (...) {
+		qDebug() << "n\RGBDCameraClient - error occured while setting the output file";
+	}
+
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// collection function
 
 /*
@@ -111,21 +125,6 @@ void RGBDCameraClient::collect_camera_data(void) {
 		emit new_video_frame(std::move(q_image.copy()));
 		std::this_thread::sleep_for(std::chrono::milliseconds(CAMERA_DISPLAY_THREAD_DELAY_MS));
 
-	}
-
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
-
-void RGBDCameraClient::set_output_file(std::string output_folder_path) {
-
-	try {
-		// defining the output file path
-		m_camera_output_file_str = output_folder_path + "/camera_data.bag";
-		m_output_file_loaded = true;
-
-	} catch (...) {
-		qDebug() << "n\RGBDCameraClient - error occured while setting the output file";
 	}
 
 }

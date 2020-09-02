@@ -40,13 +40,12 @@ class SensorDevice : public QObject {
 		// helper functions
 		std::string get_millis_timestamp(void) const;
 		
-		// connection functions
-		virtual void connect_device(void) = 0;
-		virtual void disconnect_device(void) = 0;
-
-		// stream functions
+		// interface
 		virtual void stop_stream(void) = 0;
 		virtual void start_stream(void) = 0;
+		virtual void connect_device(void) = 0;
+		virtual void disconnect_device(void) = 0;
+		virtual void set_output_file(std::string ouput_folder) = 0;
 
 	signals:
 		void device_status_change(bool is_connected);

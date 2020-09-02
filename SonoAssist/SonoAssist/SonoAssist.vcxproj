@@ -40,8 +40,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\src;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\includes;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\tacopie\includes;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\dist\Release\lib\x64;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\msvc15\x64\Debug;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\src;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\includes;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\tacopie\includes;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\clarius_listener\src\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\dist\Release\lib\x64;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\msvc15\x64\Debug;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\Users\david\Documents\MedicalUltrasound\Dependencies\clarius_listener\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
@@ -75,7 +75,7 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>MetaWear.Win32.lib;tobii_stream_engine.lib;opencv_calib3d3410d.lib;opencv_core3410d.lib;opencv_dnn3410d.lib;opencv_features2d3410d.lib;opencv_flann3410d.lib;opencv_highgui3410d.lib;opencv_imgcodecs3410d.lib;opencv_imgproc3410d.lib;opencv_ml3410d.lib;opencv_objdetect3410d.lib;opencv_photo3410d.lib;opencv_shape3410d.lib;opencv_stitching3410d.lib;opencv_superres3410d.lib;opencv_video3410d.lib;opencv_videoio3410d.lib;opencv_videostab3410d.lib;cpp_redis.lib;tacopie.lib;realsense2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MetaWear.Win32.lib;tobii_stream_engine.lib;opencv_calib3d3410d.lib;opencv_core3410d.lib;opencv_dnn3410d.lib;opencv_features2d3410d.lib;opencv_flann3410d.lib;opencv_highgui3410d.lib;opencv_imgcodecs3410d.lib;opencv_imgproc3410d.lib;opencv_ml3410d.lib;opencv_objdetect3410d.lib;opencv_photo3410d.lib;opencv_shape3410d.lib;opencv_stitching3410d.lib;opencv_superres3410d.lib;opencv_video3410d.lib;opencv_videoio3410d.lib;opencv_videostab3410d.lib;cpp_redis.lib;tacopie.lib;realsense2.lib;listen.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -97,6 +97,7 @@
     <ClCompile Include="GazeTracker.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MetaWearBluetoothClient.cpp" />
+    <ClCompile Include="ClariusProbeClient.cpp" />
     <ClCompile Include="RGBDCameraClient.cpp" />
     <ClCompile Include="SensorDevice.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
@@ -113,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MetaWearBluetoothClient.h" />
+    <QtMoc Include="ClariusProbeClient.h" />
     <QtMoc Include="WindowPainter.h" />
   </ItemGroup>
   <ItemGroup>

@@ -39,12 +39,10 @@ class RGBDCameraClient : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
+		void set_output_file(std::string output_folder);
 
 		// threaded data collection function
 		void collect_camera_data(void);
-
-		// setters and getters
-		void set_output_file(std::string output_folder_path);
 
 	signals:
 		void new_video_frame(QImage image);

@@ -24,6 +24,7 @@ class WindowPainter : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
+		void set_output_file(std::string output_folder) {};
 
 		// threaded collection function
 		void collect_window_captures(void);
