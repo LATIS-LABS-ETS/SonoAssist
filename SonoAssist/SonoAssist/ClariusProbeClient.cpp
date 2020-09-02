@@ -16,7 +16,7 @@ void ClariusProbeClient::connect_device() {
         // making sure the device is disconnected
         disconnect_device();
 
-        // generating application level events from probe events
+        // mapping the listener's events to Qt application level events
         // source : https://github.com/clariusdev/listener/blob/master/src/example/qt/main.cpp
         if (!clariusInitListener(0, nullptr, QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
             // new image callback
@@ -78,7 +78,14 @@ void ClariusProbeClient::connect_device() {
             },
             nullptr, PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT) != 0)
         {
-            m_device_connected = true;
+
+            // connecting to the probe
+            try {
+                if (clariusConnect((*m_config_ptr)["us_probe_ip_address"].c_str(), std::stoi((*m_config_ptr)["us_probe_udp_port"]), nullptr) < 0) {
+                    m_device_connected = true;
+                }
+            } catch (...) {}
+            
         }
 
     }
@@ -91,9 +98,13 @@ void ClariusProbeClient::disconnect_device() {
     
     // making sure requirements are filled
     if (m_device_connected) { 
+        
+        clariusDisconnect(nullptr);
         clariusDestroyListener();
+        
         m_device_connected = false;
         emit device_status_change(false);
+
     }
 
 }

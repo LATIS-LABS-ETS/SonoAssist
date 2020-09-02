@@ -39,7 +39,26 @@
 #define PROGRESS_EVENT static_cast<QEvent::Type>(QEvent::User + 6)
 #define RAWDATA_EVENT static_cast<QEvent::Type>(QEvent::User + 7)
 
-// defining clarius probe event
+/*
+* Class to enable communication with a Clarius ultrasound probe
+*/
+class ClariusProbeClient : public SensorDevice {
+
+    Q_OBJECT
+
+public:
+
+    // SensorDevice interface functions
+    void stop_stream(void);
+    void start_stream(void);
+    void connect_device(void);
+    void disconnect_device(void);
+    void set_output_file(std::string output_folder) {};
+
+};
+
+
+// defining clarius probe events
 // source : https://github.com/clariusdev/listener/blob/master/src/example/qt/listener.h
 namespace event {
 
@@ -192,19 +211,4 @@ namespace event {
         private:
             bool success_;  ///< the current progress
     };
-};
-
-class ClariusProbeClient : public SensorDevice {
-
-    Q_OBJECT
-
-    public:
-
-        // SensorDevice interface functions
-        void stop_stream(void);
-        void start_stream(void);
-        void connect_device(void);
-        void disconnect_device(void);
-        void set_output_file(std::string output_folder) {};
-
 };

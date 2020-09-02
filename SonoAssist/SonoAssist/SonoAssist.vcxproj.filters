@@ -63,10 +63,10 @@
     <QtMoc Include="SensorDevice.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="ClariusProbeClient.h">
+    <QtMoc Include="ScreenRecorder.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="ScreenRecorder.h">
+    <QtMoc Include="ClariusProbeClient.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

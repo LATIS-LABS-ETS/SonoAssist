@@ -41,6 +41,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {{"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""}, 
+                     {"us_probe_ip_address", ""}, {"us_probe_udp_port", ""},
                      {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
                      {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
                      {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},

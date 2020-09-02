@@ -1,12 +1,12 @@
 Acquisition tool
 - [x] Modular sensor streams
 - [x] Display US images
-- [] Better sensor client var names, class names and config param names
-- [] Update the configs documentation
+- [x] Better sensor client var names, class names and config param names
 - [] Acquisition of Clarius IMU data (real time)
 - [] Acquisition of probe images (real time)
 - [] Full screen display for acquired probe images
 - [] Recover IMU orientation display script
+- [] Update the configs documentation
 - [] Installer for the acquisition tool
 
 Processing scripts
