@@ -1,10 +1,14 @@
 #include "SonoAssist.h"
 #include "ClariusProbeClient.h"
 
-// defining reception buffers for image deep copies
+// defining reception buffers for (image) and (IMU data) deep copies
+static ClariusPosInfo _imu;
 static std::vector<char> _image;
 static std::vector<char> _rawImage;
-extern SonoAssist* app_window_p;
+const int imu_data_size = sizeof(ClariusPosInfo);
+
+// global pointers (for the Clarius callback(s))
+static ClariusProbeClient* probe_client_p = nullptr;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ClariusProbeClient public methods
 
@@ -16,76 +20,32 @@ void ClariusProbeClient::connect_device() {
         // making sure the device is disconnected
         disconnect_device();
 
+        // updating the global instance pointer (for the clarius callbacks)
+        if (probe_client_p == nullptr) probe_client_p = this;
+
+        // defining the (processed image) event callback
+        auto new_processed_image_callback = [](const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos) {
+   
+            // deep copy of the image data since we have to post the event
+            // ignore warning, dimension sizes will never cause overflow
+            int data_size = nfo->width * nfo->height * (nfo->bitsPerPixel / 8);
+            if (_image.size() < data_size) _image.resize(data_size);
+            memcpy(_image.data(), img, data_size);
+
+            // copying the IMU data
+            if (npos) memcpy(&_imu, pos, imu_data_size);
+
+            // emitting an image ...
+
+        };
+
         // mapping the listener's events to Qt application level events
-        // source : https://github.com/clariusdev/listener/blob/master/src/example/qt/main.cpp
-        if (!clariusInitListener(0, nullptr, QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
-            // new image callback
-            [](const void* img, const ClariusProcessedImageInfo* nfo, int, const ClariusPosInfo*)
-            {
-                // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
-                size_t sz = nfo->width * nfo->height * (nfo->bitsPerPixel / 8);
-                if (_image.size() < sz)
-                    _image.resize(sz);
-                memcpy(_image.data(), img, sz);
-
-                if (app_window_p != nullptr) {
-                    QApplication::postEvent(app_window_p, new event::Image(_image.data(), nfo->width, nfo->height, nfo->bitsPerPixel));
-                }
-
-            },
-            // new raw image callback
-            [](const void* img, const ClariusRawImageInfo* nfo, int, const ClariusPosInfo*)
-            {
-                // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
-                size_t sz = nfo->lines * nfo->samples * (nfo->bitsPerSample / 8);
-                if (_rawImage.size() < sz)
-                    _rawImage.resize(sz);
-                memcpy(_rawImage.data(), img, sz);
-
-                if (app_window_p != nullptr) {
-                    QApplication::postEvent(app_window_p, new event::PreScanImage(_rawImage.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, nfo->jpeg));
-                }
-            },
-            // freeze state change callback
-            [](int frozen)
-            {
-                if (app_window_p != nullptr) {
-                    // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-                    QApplication::postEvent(app_window_p, new event::Freeze(frozen ? true : false));
-                }
-            },
-            // button press callback
-            [](int btn, int clicks)
-            {
-                // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-                QApplication::postEvent(app_window_p, new event::Button(btn, clicks));
-            },
-            // download progress state change callback
-            [](int progress)
-            {
-                if (app_window_p != nullptr) {
-                    // post event here, as the gui (proress bar) will be updated directly, and it needs to come from the application thread
-                    QApplication::postEvent(app_window_p, new event::Progress(progress));
-                }
-            },
-            // error message callback
-            [](const char* err)
-            {
-                if (app_window_p != nullptr) {
-                    // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-                    QApplication::postEvent(app_window_p, new event::Error(err));
-                }
-            },
-            nullptr, PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT) != 0)
+        if (!clariusInitListener(0, nullptr, 
+                QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
+                new_processed_image_callback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT))
         {
-
-            // connecting to the probe
-            try {
-                if (clariusConnect((*m_config_ptr)["us_probe_ip_address"].c_str(), std::stoi((*m_config_ptr)["us_probe_udp_port"]), nullptr) < 0) {
-                    m_device_connected = true;
-                }
-            } catch (...) {}
-            
+            m_device_connected = true;
         }
 
     }
@@ -98,10 +58,10 @@ void ClariusProbeClient::disconnect_device() {
     
     // making sure requirements are filled
     if (m_device_connected) { 
-        
-        clariusDisconnect(nullptr);
+
+        // destroying the event mapping
         clariusDestroyListener();
-        
+
         m_device_connected = false;
         emit device_status_change(false);
 
@@ -113,7 +73,16 @@ void ClariusProbeClient::start_stream() {
     
     // making sure requirements are filled
     if (m_device_connected && !m_device_streaming) {
-        m_device_streaming = true;
+        
+        // connecting to the probe events
+        try {
+            if (clariusConnect((*m_config_ptr)["us_probe_ip_address"].c_str(), 
+                    std::stoi((*m_config_ptr)["us_probe_udp_port"]), nullptr) < 0) 
+            {    
+                m_device_streaming = true;
+            }
+        } catch (...) {}
+
     }
 
 }
@@ -122,6 +91,7 @@ void ClariusProbeClient::stop_stream() {
     
     // making sure requirements are filled
     if (m_device_streaming) {
+        clariusDisconnect(nullptr);
         m_device_streaming = false;
     }
 

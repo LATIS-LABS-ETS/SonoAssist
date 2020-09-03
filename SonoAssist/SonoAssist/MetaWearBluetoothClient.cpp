@@ -266,7 +266,6 @@ void MetaWearBluetoothClient::start_stream() {
 
 }
 
-
 void MetaWearBluetoothClient::stop_stream(void){
 
 	// making sure device is streaming

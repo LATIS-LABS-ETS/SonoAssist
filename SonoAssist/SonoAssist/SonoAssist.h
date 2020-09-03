@@ -60,7 +60,8 @@ class SonoAssist : public QMainWindow {
 		void on_eye_tracker_status_change(bool device_status);
 		void on_screen_recorder_status_change(bool device_status);
 
-		// stream data (start/stop)
+		// data streaming
+		void on_acquisition_preview_box_clicked(void);
 		void on_start_acquisition_button_clicked(void);
 		void on_stop_acquisition_button_clicked(void);
 
@@ -72,8 +73,8 @@ class SonoAssist : public QMainWindow {
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
 		void on_output_folder_browse_clicked(void);
-		void on_param_file_input_textChanged(const QString& text);
-		void on_output_folder_input_textChanged(const QString& text);
+		void on_param_file_input_editingFinished();
+		void on_output_folder_input_editingFinished();
 
 	private:
 
@@ -93,14 +94,15 @@ class SonoAssist : public QMainWindow {
 		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_pixmap_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
-		// requirements check vars
-		bool m_sync_is_active = false;
+		// state check vars
 		bool m_stream_is_active = false;
+		bool m_preview_is_active = false;
+		
 		bool m_config_is_loaded = false;
 		bool m_output_is_loaded = false;
 
 		// config vars
-		std::string m_output_file_path = "";
+		std::string m_output_folder_path = "";
 		std::shared_ptr<config_map> m_app_params;
 		
 		// sensor devices
@@ -111,9 +113,6 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
 
-		// custom event handler (Clarius probe)
-		bool event(QEvent* event);
-
 		// graphic functions
 		void build_sensor_panel(void);
 		void set_acquisition_label(bool active);
@@ -121,4 +120,7 @@ class SonoAssist : public QMainWindow {
 		void set_device_status(bool device_status, sensor_device_t device);
 		void display_warning_message(QString title, QString message);
 
+		// utilities
+		void configure_device_clients(void);
+		bool check_device_connections(void);
 };
