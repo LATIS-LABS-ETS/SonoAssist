@@ -101,7 +101,7 @@
     <ClCompile Include="RGBDCameraClient.cpp" />
     <ClCompile Include="SensorDevice.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
-    <ClCompile Include="WindowPainter.cpp" />
+    <ClCompile Include="ScreenRecorder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h" />
@@ -115,7 +115,7 @@
   <ItemGroup>
     <ClInclude Include="MetaWearBluetoothClient.h" />
     <QtMoc Include="ClariusProbeClient.h" />
-    <QtMoc Include="WindowPainter.h" />
+    <QtMoc Include="ScreenRecorder.h" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="GazeTracker.h" />

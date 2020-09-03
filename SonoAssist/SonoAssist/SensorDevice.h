@@ -27,9 +27,12 @@ class SensorDevice : public QObject {
 		bool get_sensor_used(void) const;
 		bool get_stream_status(void) const;
 		bool get_connection_status(void) const;
+		bool get_stream_preview_status(void) const;
+
 		void set_sensor_used(bool state);
 		void set_stream_status(bool state);
 		void set_connection_status(bool state);
+		void set_stream_preview_status(bool state);
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
 		// redis communication functions
@@ -53,6 +56,7 @@ class SensorDevice : public QObject {
 	protected:
 
 		bool m_sensor_used = false;
+		bool m_stream_preview = false;
 		bool m_device_connected = false;
 		bool m_device_streaming = false;
 

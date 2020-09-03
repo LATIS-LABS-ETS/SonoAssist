@@ -1,11 +1,6 @@
 #include "SensorDevice.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// setters and getters
-
-void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
-	m_config_ptr = config_ptr;
-	m_config_loaded = true;
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////// getters and setters
 
 bool SensorDevice::get_sensor_used() const {
 	return m_sensor_used;
@@ -29,6 +24,21 @@ bool SensorDevice::get_stream_status() const {
 
 void SensorDevice::set_stream_status(bool state) {
 	m_device_streaming = state;
+}
+
+bool SensorDevice::get_stream_preview_status() const {
+	return m_stream_preview;
+}
+
+void SensorDevice::set_stream_preview_status(bool state) {
+	if (m_device_connected && !m_device_streaming) {
+		m_stream_preview = state;
+	}
+}
+
+void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
+	m_config_ptr = config_ptr;
+	m_config_loaded = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods

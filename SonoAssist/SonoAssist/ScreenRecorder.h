@@ -13,7 +13,7 @@
 #define CAPTURE_DISPLAY_RESIZE_FACTOR 3
 #define CAPTURE_DISPLAY_THREAD_DELAY_MS 150
 
-class WindowPainter : public SensorDevice {
+class ScreenRecorder : public SensorDevice {
 
 	Q_OBJECT
 

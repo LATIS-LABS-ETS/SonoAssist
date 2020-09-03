@@ -22,7 +22,7 @@
 #include "metawear/sensor/accelerometer.h"
 #include "metawear/sensor/sensor_fusion.h"
 
-#define DISCOVERYTIMEOUT 5000
+#define DISCOVERY_TIMEOUT 5000
 #define DISCOVER_DETAILS_DELAY 1000
 #define DESCRIPTOR_WRITE_DELAY 500
 
@@ -36,7 +36,7 @@ void enable_notifications_wrap(void* context, const void* caller, const MblMwGat
 void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt handler);
 
 /*
-* Class to enable communication with the MetaWear C gyroscope/magnometer/accelerometer sensor.
+* Class to enable communication with the MetaWear MetaMotionC gyroscope/magnometer/accelerometer (IMU) sensor.
 * 
 * Communication with the MetaWear C sensor is done via BLE.
 * This class can't utilise threads since it utilises the Bluetooth interface provided by Qt. The

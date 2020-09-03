@@ -43,10 +43,10 @@
     <ClCompile Include="RGBDCameraClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowPainter.cpp">
+    <ClCompile Include="ClariusProbeClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ClariusProbeClient.cpp">
+    <ClCompile Include="ScreenRecorder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -60,10 +60,10 @@
     <QtMoc Include="GazeTracker.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="WindowPainter.h">
+    <QtMoc Include="SensorDevice.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="SensorDevice.h">
+    <QtMoc Include="ScreenRecorder.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ClariusProbeClient.h">

@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <params>
 
-	<camera_active>false</camera_active>
-	<gyroscope_active>false</gyroscope_active>
+	<ext_imu_active>true</ext_imu_active>
+	<us_probe_active>false</us_probe_active>
+	<rgb_camera_active>false</rgb_camera_active>
 	<eye_tracker_active>false</eye_tracker_active>
-	<us_probe_capture_active>true</us_probe_capture_active>
-	<us_window_capture_active>false</us_window_capture_active>
+	<screen_recorder_active>false</screen_recorder_active>
 	
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
 	<eye_tracker_redis_entry>eye_tracker_data</eye_tracker_redis_entry>
+
+	<ext_imu_to_redis>false</ext_imu_to_redis>
+	<ext_imu_redis_rate_div>20</ext_imu_redis_rate_div>
+	<ext_imu_redis_entry>gyro_data</ext_imu_redis_entry>
 	
-	<gyroscope_to_redis>false</gyroscope_to_redis>
-	<gyroscope_redis_rate_div>20</gyroscope_redis_rate_div>
-	<gyroscope_redis_entry>gyro_data</gyroscope_redis_entry>
-	
-	<gyroscope_ble_address>F3:AC:8B:CE:E1:10</gyroscope_ble_address>
+	<ext_imu_ble_address>F3:AC:8B:CE:E1:10</ext_imu_ble_address>
+
+	<us_probe_udp_port>44513</us_probe_udp_port>
+	<us_probe_ip_address>192.168.1.1</us_probe_ip_address>
 
 	<eye_tracker_crosshairs_path>C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/tracker_crosshair.png</eye_tracker_crosshairs_path>
 	

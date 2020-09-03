@@ -8,8 +8,6 @@
 	#include <Winsock2.h>
 #endif _WIN32
 
-SonoAssist* app_window_p;
-
 int main(int argc, char *argv[]){
 
 	int return_code;
@@ -17,7 +15,6 @@ int main(int argc, char *argv[]){
     // defining the Qt application and main window
     QApplication a(argc, argv);
 	SonoAssist w;
-	app_window_p = &w;
 
 	// requirement for the use of redis
 	#ifdef _WIN32

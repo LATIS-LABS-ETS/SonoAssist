@@ -311,6 +311,13 @@
          </layout>
         </item>
         <item>
+         <widget class="QCheckBox" name="acquisition_preview_box">
+          <property name="text">
+           <string>Acquisition preview</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QLabel" name="acquisition_label">
           <property name="palette">
            <palette>

@@ -1,10 +1,14 @@
 Acquisition tool
 - [x] Modular sensor streams
-- [x] Display US images
-- [] Acquisition of Clarius IMU data (real time)
-- [] Acquisition of probe images (real time)
+- [x] Better sensor client var names, class names and config param names
+- [] Data preview mode (displays) only no saves
+- [x] Screen recorder functionality for probe images
+- [x] Acquisition of Clarius IMU data (real time)
+- [x] Acquisition of probe images (real time)
 - [] Full screen display for acquired probe images
-- [] Recover IMU orientation display script
+- [] Display of probe images and IMU data 
+- [] Saving Screen recording and probe data to file
+- [] Update the configs documentation
 - [] Installer for the acquisition tool
 
 Processing scripts
