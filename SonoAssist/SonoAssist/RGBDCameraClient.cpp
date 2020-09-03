@@ -92,13 +92,11 @@ void RGBDCameraClient::stop_stream() {
 
 void RGBDCameraClient::set_output_file(std::string output_folder_path) {
 
+	// defining the output file path
 	try {
-		// defining the output file path
 		m_camera_output_file_str = output_folder_path + "/camera_data.bag";
 		m_output_file_loaded = true;
-
-	}
-	catch (...) {
+	} catch (...) {
 		qDebug() << "n\RGBDCameraClient - error occured while setting the output file";
 	}
 

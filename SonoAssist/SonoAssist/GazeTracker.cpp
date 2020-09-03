@@ -164,8 +164,7 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 		m_output_file.close();
 		m_output_file_loaded = true;
 
-	}
-	catch (...) {
+	} catch (...) {
 		qDebug() << "n\GazeTracker - error occured while setting the output file";
 	}
 

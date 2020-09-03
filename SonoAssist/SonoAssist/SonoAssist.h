@@ -113,14 +113,23 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
 
-		// graphic functions
+		// graphical functions
 		void build_sensor_panel(void);
 		void set_acquisition_label(bool active);
-		bool load_config_file(QString param_file_path);
 		void set_device_status(bool device_status, sensor_device_t device);
 		void display_warning_message(QString title, QString message);
 
-		// utilities
+		// graphics scene functions
+		void clean_preview_display(void);
+		void remove_preview_display(void);
+		void generate_preview_display(void);
+		void clean_normal_display(void);
+		void remove_normal_display(void);
+		void generate_normal_display(void);
+
+		// utility functions
 		void configure_device_clients(void);
 		bool check_device_connections(void);
+		bool load_config_file(QString param_file_path);
+
 };

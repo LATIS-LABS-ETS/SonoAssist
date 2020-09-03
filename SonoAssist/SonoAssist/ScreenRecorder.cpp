@@ -44,6 +44,7 @@ void ScreenRecorder::start_stream() {
 
 void ScreenRecorder::stop_stream() {
 
+    // making sure requirements are filled
 	if (m_device_streaming) {
 		
 		// stopping the data collection thread

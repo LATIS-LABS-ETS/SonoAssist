@@ -7,28 +7,13 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     build_sensor_panel();
     set_acquisition_label(false);
    
-    // setting the scene widget
+    // setting the graphics scene widget
     m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
     ui.graphicsView->setScene(m_main_scene_p.get());
+    
+    // generating the US image acquisition display
+    generate_normal_display();
 
-    // creating the placeholder image for the camera viewfinder
-    // positioning the placeholderon the scene
-    m_camera_bg_i_p = std::make_unique<QPixmap>(CAMERA_DISPLAY_WIDTH, CAMERA_DISPLAY_HEIGHT);
-    m_camera_bg_i_p->fill(QColor("#FFFFFF"));
-    m_camera_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_camera_bg_i_p.get()));
-    m_main_scene_p->addItem(m_camera_bg_p.get());
-    m_camera_bg_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
-    m_camera_bg_p->setZValue(1);
-
-    // creating the backgroud image for the eyetracker display
-    // positioning the image on the scene
-    m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT);
-    m_eye_tracker_bg_i_p->fill(QColor("#FFFFFF"));
-    m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_bg_i_p.get()));
-    m_main_scene_p->addItem(m_eye_tracker_bg_p.get());
-    m_eye_tracker_bg_p->setPos(PROBE_DISPLAY_X_OFFSET, PROBE_DISPLAY_Y_OFFSET);
-    m_eye_tracker_bg_p->setZValue(1);
- 
     // creating the sensor clients
     m_gaze_tracker_client_p = std::make_shared<GazeTracker>();
     m_camera_client_p = std::make_shared<RGBDCameraClient>();
@@ -135,19 +120,6 @@ void SonoAssist::on_sensor_connect_button_clicked(){
                 }
             }
 
-            // temp
-            // loading the eyetracking crosshair
-            QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_crosshairs_path"].c_str()));
-            crosshair_img = crosshair_img.scaled(EYETRACKER_CROSSHAIRS_WIDTH, EYETRACKER_CROSSHAIRS_HEIGHT, Qt::KeepAspectRatio);
-            m_eyetracker_crosshair_p = std::make_unique<QGraphicsPixmapItem>(crosshair_img);
-
-            // placing the crosshair in the middle of the display
-            int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-            int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
-            m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
-            m_eyetracker_crosshair_p->setZValue(3);
-            m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
-
         } else {
             QString title = "Error while loading configs";
             QString message = "The config file contains ill-formatted XML.";
@@ -167,12 +139,22 @@ void SonoAssist::on_acquisition_preview_box_clicked() {
     // acquisition preview mode requirements filled
     if (!m_stream_is_active && check_device_connections()) {
         
+        m_preview_is_active = ui.acquisition_preview_box->isChecked();
+
         // setting the preview state for the used devices
-        bool preview_state = ui.acquisition_preview_box->isChecked();
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
-                m_sensor_devices[i]->set_stream_preview_status(preview_state);
+                m_sensor_devices[i]->set_stream_preview_status(m_preview_is_active);
             }
+        }
+
+        // toggling between the 2 display types
+        if (m_preview_is_active) {
+            remove_normal_display();
+            generate_preview_display();
+        } else {
+            remove_preview_display();
+            generate_normal_display();
         }
   
     } else {
@@ -238,22 +220,12 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         m_stream_is_active = false;
         set_acquisition_label(false);
 
-        // removing the last camera image
-        if (m_camera_pixmap_p.get() != nullptr) {
-            m_main_scene_p->removeItem(m_camera_pixmap_p.get());
-            m_camera_pixmap_p.reset();
+        // cleaning the appropriate display
+        if (m_preview_is_active) {
+            clean_preview_display();
+        } else {
+            clean_normal_display();
         }
-
-        // removing the last US image
-        if (m_eyetracker_pixmap_p.get() != nullptr) {
-            m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
-            m_eyetracker_pixmap_p.reset();
-        }
-
-        // placing the gaze crosshair back to the center
-        int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-        int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
-        m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
 
     } else {
         QString title = "Stream can not be stoped";
@@ -340,7 +312,7 @@ void SonoAssist::on_us_probe_status_change(bool device_status) {
     set_device_status(device_status, US_PROBE);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility / graphic functions
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// graphical functions
 
 void SonoAssist::build_sensor_panel(void) {
 
@@ -414,6 +386,98 @@ void SonoAssist::set_acquisition_label(bool active) {
 
 }
 
+void SonoAssist::display_warning_message(QString title, QString message) {
+    QMessageBox::warning(this, title, message);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// Graphics scene functions
+
+void SonoAssist::generate_preview_display(void) {
+
+    // creating the placeholder image for the camera viewfinder
+    // positioning the placeholder on the scene
+    m_camera_bg_i_p = std::make_unique<QPixmap>(CAMERA_DISPLAY_WIDTH, CAMERA_DISPLAY_HEIGHT);
+    m_camera_bg_i_p->fill(QColor("#FFFFFF"));
+    m_camera_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_camera_bg_i_p.get()));
+    m_main_scene_p->addItem(m_camera_bg_p.get());
+    m_camera_bg_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
+    m_camera_bg_p->setZValue(1);
+
+    // creating the backgroud image for the (probe image / gaze point) display
+    // positioning the backgorund image on the scene
+    m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT);
+    m_eye_tracker_bg_i_p->fill(QColor("#FFFFFF"));
+    m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_bg_i_p.get()));
+    m_main_scene_p->addItem(m_eye_tracker_bg_p.get());
+    m_eye_tracker_bg_p->setPos(PROBE_DISPLAY_X_OFFSET, PROBE_DISPLAY_Y_OFFSET);
+    m_eye_tracker_bg_p->setZValue(1);
+
+    // loading the eyetracking crosshair
+    QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_crosshairs_path"].c_str()));
+    crosshair_img = crosshair_img.scaled(EYETRACKER_CROSSHAIRS_WIDTH, EYETRACKER_CROSSHAIRS_HEIGHT, Qt::KeepAspectRatio);
+    m_eyetracker_crosshair_p = std::make_unique<QGraphicsPixmapItem>(crosshair_img);
+
+    // placing the crosshair in the middle of the display
+    int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+    int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+    m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
+    m_eyetracker_crosshair_p->setZValue(3);
+    m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
+
+}
+
+void SonoAssist::remove_preview_display(void) {
+
+    // making sure the display is clean
+    clean_preview_display();
+
+    // removing the camera view finder 
+    if (m_camera_bg_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_camera_bg_p.get());
+        m_camera_bg_p.reset();
+    }
+    // removing the background image for the (probe image / gaze point) display
+    if (m_eye_tracker_bg_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_eye_tracker_bg_p.get());
+        m_eye_tracker_bg_p.reset();
+    }
+    // removing the gaze crosshairs
+    if (m_eyetracker_crosshair_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_eyetracker_crosshair_p.get());
+        m_eyetracker_crosshair_p.reset();
+    }
+
+}
+
+void SonoAssist::clean_preview_display() {
+
+    // removing the last camera image
+    if (m_camera_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_camera_pixmap_p.get());
+        m_camera_pixmap_p.reset();
+    }
+    // removing the last US image
+    if (m_eyetracker_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
+        m_eyetracker_pixmap_p.reset();
+    }
+    // recentering the gaze crosshairs
+    if (m_eyetracker_crosshair_p.get() != nullptr) {
+        int x_pos = PROBE_DISPLAY_X_OFFSET + (PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+        int y_pos = PROBE_DISPLAY_Y_OFFSET + (PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+        m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
+    }
+
+}
+
+void SonoAssist::generate_normal_display(void) {}
+
+void SonoAssist::remove_normal_display(void) {}
+
+void SonoAssist::clean_normal_display(void) {}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
+
 bool SonoAssist::load_config_file(QString param_file_path) {
 
     // loading the contents of the param file
@@ -444,10 +508,6 @@ bool SonoAssist::load_config_file(QString param_file_path) {
 
     return true;
 
-}
-
-void SonoAssist::display_warning_message(QString title, QString message){
-    QMessageBox::warning(this, title, message);
 }
 
 /*
