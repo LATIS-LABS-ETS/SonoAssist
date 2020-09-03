@@ -39,8 +39,9 @@ void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt
 * Class to enable communication with the MetaWear MetaMotionC gyroscope/magnometer/accelerometer (IMU) sensor.
 * 
 * Communication with the MetaWear C sensor is done via BLE.
-* This class can't utilise threads since it utilises the Bluetooth interface provided by Qt. The
-* call back functions provided by this interface can only run in the main thread.
+* This class can't utilise threads since it utilises the Bluetooth interface provided by Qt. 
+* The call back functions provided by this interface can only run in the main thread.
+* This class does not implement the acquisition preview functionality
 */
 class MetaWearBluetoothClient : public SensorDevice {
 

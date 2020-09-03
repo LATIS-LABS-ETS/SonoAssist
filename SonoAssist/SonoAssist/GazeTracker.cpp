@@ -31,16 +31,21 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		// getting the eye tracker manager
 		GazeTracker* manager = (GazeTracker*)user_data;
 
-		// generating the output string
-		std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
-			+ std::to_string(gaze_point->position_xy[1]) + "\n";
+		// preview mode just emits gaze points to the UI
+		if (manager->get_stream_preview_status()) {
+			emit manager->new_gaze_point(gaze_point->position_xy[0], gaze_point->position_xy[1]);
+		}
 
-		// writing to the output file and redis (if redis enabled)
-		manager->write_to_redis(output_str);
-		manager->m_output_file << output_str;
-	
-		// emitting gaze data towards UI
-		emit manager->new_gaze_point(gaze_point->position_xy[0], gaze_point->position_xy[1]);
+		// normal mode just writes to the output file
+		else {
+		
+			std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
+				+ std::to_string(gaze_point->position_xy[1]) + "\n";
+
+			manager->write_to_redis(output_str);
+			manager->m_output_file << output_str;
+
+		}
 
 	}
 
@@ -137,10 +142,8 @@ void GazeTracker::stop_stream() {
 
 		// closing the output file redis connection
 		m_output_file.close();
-		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
-			disconnect_from_redis();
-		}
-
+		disconnect_from_redis();
+	
 		m_device_streaming = false;
 
 	}

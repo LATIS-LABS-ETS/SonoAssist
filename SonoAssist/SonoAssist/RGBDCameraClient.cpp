@@ -42,20 +42,28 @@ void RGBDCameraClient::start_stream() {
 	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming) {
 	
-		// definiing recording configurations
+		// defining the base recording configurations
 		m_camera_cfg_p = std::make_unique<rs2::config>();
-		m_camera_cfg_p->enable_record_to_file(m_camera_output_file_str);
 		m_camera_cfg_p->enable_stream(RS2_STREAM_COLOR, RGB_WIDTH, RGB_HEIGHT, RS2_FORMAT_BGR8, RGB_FPS);
 		m_camera_cfg_p->enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGHT, RS2_FORMAT_Z16, DEPTH_FPS);
 
-		// starting pipeline and initializing video writters
+		// preview mode does not record the camera images
+		if (!m_stream_preview) {
+			m_camera_cfg_p->enable_record_to_file(m_camera_output_file_str);
+		}
+
+		// starting the acquisition pipeline
 		m_camera_pipe_p = std::make_unique<rs2::pipeline>();
 		m_camera_pipe_p->start(*m_camera_cfg_p);
 		
-		// launching the acquisition thread
-		m_collect_data = true;
-		m_collection_thread = std::thread(&RGBDCameraClient::collect_camera_data, this);
-		m_device_streaming = true;
+		// camera images are only sent to the UI in preview mode
+		// launching the image emitting thread only in preview mode
+		if (m_stream_preview) {
+			m_collect_data = true;
+			m_collection_thread = std::thread(&RGBDCameraClient::collect_camera_data, this);
+			m_device_streaming = true;
+		}
+		
 	}
 
 }
@@ -65,11 +73,13 @@ void RGBDCameraClient::stop_stream() {
 	// making sure requirements are filled
 	if (m_device_connected && m_device_streaming) {
 	
-		// stoping the data collection thread
-		m_collect_data = false;
-		m_collection_thread.join();
-
-		// stoping the pipeline
+		// stoping the data image emitting thread, in preview mode
+		if (m_stream_preview) {
+			m_collect_data = false;
+			m_collection_thread.join();
+		}
+		
+		// stoping the acquisition pipeline
 		m_camera_pipe_p->stop();
 		m_camera_pipe_p.reset();
 		m_camera_cfg_p.reset();
