@@ -31,7 +31,10 @@
 #include <QStandardPaths>
 #include <QtWidgets/QApplication>
 
-#define IMAGE_EVENT static_cast<QEvent::Type>(QEvent::User + 1)
+#define CLARIUS_NORMAL_IMG_WIDTH 640
+#define CLARIUS_NORMAL_IMG_HEIGHT 480
+#define CLARIUS_PREVIEW_IMG_WIDTH 640
+#define CLARIUS_PREVIEW_IMG_HEIGHT 360
 
 /*
 * Class to enable communication with a Clarius ultrasound probe

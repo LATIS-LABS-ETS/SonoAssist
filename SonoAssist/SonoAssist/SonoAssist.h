@@ -23,13 +23,17 @@
 #define RED_TEXT "#cc0000"
 #define GREEN_TEXT "#71ff3d"
 
-// US probe display
+// US probe display (normal)
 #define PROBE_DISPLAY_WIDTH 640
-#define PROBE_DISPLAY_HEIGHT 360
-#define PROBE_DISPLAY_X_OFFSET 650
-#define PROBE_DISPLAY_Y_OFFSET 0
+#define PROBE_DISPLAY_HEIGHT 480
 
-// RGB D camera display
+// US probe display (preview)
+#define PREVIEW_PROBE_DISPLAY_WIDTH 640
+#define PREVIEW_PROBE_DISPLAY_HEIGHT 360
+#define PREVIEW_PROBE_DISPLAY_X_OFFSET 650
+#define PREVIEW_PROBE_DISPLAY_Y_OFFSET 0
+
+// RGB D camera display (preview)
 #define CAMERA_DISPLAY_WIDTH 640
 #define CAMERA_DISPLAY_HEIGHT 360
 #define CAMERA_DISPLAY_X_OFFSET 0
@@ -83,12 +87,17 @@ class SonoAssist : public QMainWindow {
 		// main display vars 
 		std::unique_ptr<QGraphicsScene> m_main_scene_p;
 		
-		// RGB D camera display vars
+		// US normal display vars (normal)
+		std::unique_ptr<QPixmap> m_us_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_us_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_us_pixmap_p;
+
+		// RGB D camera display vars (preview)
 		std::unique_ptr<QPixmap> m_camera_bg_i_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_bg_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
 
-		// eye tracker display vars
+		// eye tracker display vars (preview)
 		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_pixmap_p;
@@ -113,14 +122,23 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
 
-		// graphic functions
+		// graphical functions
 		void build_sensor_panel(void);
 		void set_acquisition_label(bool active);
-		bool load_config_file(QString param_file_path);
 		void set_device_status(bool device_status, sensor_device_t device);
 		void display_warning_message(QString title, QString message);
 
-		// utilities
+		// graphics scene functions
+		void clean_preview_display(void);
+		void remove_preview_display(void);
+		void generate_preview_display(void);
+		void clean_normal_display(void);
+		void remove_normal_display(void);
+		void generate_normal_display(void);
+
+		// utility functions
 		void configure_device_clients(void);
 		bool check_device_connections(void);
+		bool load_config_file(QString param_file_path);
+
 };
