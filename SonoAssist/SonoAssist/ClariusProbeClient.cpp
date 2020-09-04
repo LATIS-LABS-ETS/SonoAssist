@@ -23,11 +23,9 @@ void ClariusProbeClient::connect_device() {
         // updating the global instance pointer (for the clarius callbacks)
         if (probe_client_p == nullptr) probe_client_p = this;
 
-        // defining the (processed image) event callback
         auto new_processed_image_callback = [](const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos) {
    
             // deep copy of the image data since we have to post the event
-            // ignore warning, dimension sizes will never cause overflow
             int data_size = nfo->width * nfo->height * (nfo->bitsPerPixel / 8);
             if (_image.size() < data_size) _image.resize(data_size);
             memcpy(_image.data(), img, data_size);
@@ -43,7 +41,7 @@ void ClariusProbeClient::connect_device() {
         if (!clariusInitListener(0, nullptr, 
                 QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
                 new_processed_image_callback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT))
+                CLARIUS_NORMAL_IMG_WIDTH, CLARIUS_NORMAL_IMG_HEIGHT))
         {
             m_device_connected = true;
         }
@@ -56,15 +54,10 @@ void ClariusProbeClient::connect_device() {
 
 void ClariusProbeClient::disconnect_device() {
     
-    // making sure requirements are filled
     if (m_device_connected) { 
-
-        // destroying the event mapping
         clariusDestroyListener();
-
         m_device_connected = false;
         emit device_status_change(false);
-
     }
 
 }
@@ -89,7 +82,6 @@ void ClariusProbeClient::start_stream() {
 
 void ClariusProbeClient::stop_stream() {
     
-    // making sure requirements are filled
     if (m_device_streaming) {
         clariusDisconnect(nullptr);
         m_device_streaming = false;
