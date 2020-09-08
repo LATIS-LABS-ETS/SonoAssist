@@ -24,14 +24,14 @@
 #define GREEN_TEXT "#71ff3d"
 
 // US probe display (normal)
-#define PROBE_DISPLAY_WIDTH 640
-#define PROBE_DISPLAY_HEIGHT 480
+#define US_DISPLAY_DEFAULT_WIDTH 640
+#define US_DISPLAY_DEFAULT_HEIGHT 480
 
 // US probe display (preview)
-#define PREVIEW_PROBE_DISPLAY_WIDTH 640
-#define PREVIEW_PROBE_DISPLAY_HEIGHT 360
-#define PREVIEW_PROBE_DISPLAY_X_OFFSET 650
-#define PREVIEW_PROBE_DISPLAY_Y_OFFSET 0
+#define PREVIEW_US_DISPLAY_WIDTH 640
+#define PREVIEW_US_DISPLAY_HEIGHT 360
+#define PREVIEW_US_DISPLAY_X_OFFSET 650
+#define PREVIEW_US_DISPLAY_Y_OFFSET 0
 
 // RGB D camera display (preview)
 #define CAMERA_DISPLAY_WIDTH 640
@@ -73,6 +73,7 @@ class SonoAssist : public QMainWindow {
 		void on_new_camera_image(QImage);
 		void on_new_gaze_point(float, float);
 		void on_new_us_screen_capture(QImage);
+		void on_new_clarius_image(QImage);
 
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
@@ -84,24 +85,25 @@ class SonoAssist : public QMainWindow {
 
 		Ui::MainWindow ui;
 
-		// main display vars 
+		// main display vars
 		std::unique_ptr<QGraphicsScene> m_main_scene_p;
+		int m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
+		int m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
 		
-		// US normal display vars (normal)
+		// US image display var (normal and preview)
+		std::unique_ptr<QGraphicsPixmapItem> m_us_pixmap_p;
+		// US normal placeholder display vars (normal)
 		std::unique_ptr<QPixmap> m_us_bg_i_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_us_bg_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_us_pixmap_p;
+		// eye tracker placeholder display vars (preview)
+		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// RGB D camera display vars (preview)
 		std::unique_ptr<QPixmap> m_camera_bg_i_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_bg_p;
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
-
-		// eye tracker display vars (preview)
-		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_pixmap_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// state check vars
 		bool m_stream_is_active = false;
@@ -129,6 +131,7 @@ class SonoAssist : public QMainWindow {
 		void display_warning_message(QString title, QString message);
 
 		// graphics scene functions
+		void configure_normal_display(void);
 		void clean_preview_display(void);
 		void remove_preview_display(void);
 		void generate_preview_display(void);

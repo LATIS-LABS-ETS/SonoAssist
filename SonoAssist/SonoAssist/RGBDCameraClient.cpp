@@ -92,14 +92,9 @@ void RGBDCameraClient::stop_stream() {
 
 void RGBDCameraClient::set_output_file(std::string output_folder_path) {
 
-	// defining the output file path
-	try {
-		m_camera_output_file_str = output_folder_path + "/camera_data.bag";
-		m_output_file_loaded = true;
-	} catch (...) {
-		qDebug() << "n\RGBDCameraClient - error occured while setting the output file";
-	}
-
+	m_camera_output_file_str = output_folder_path + "/RGBD_camera_data.bag";
+	m_output_file_loaded = true;
+	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// collection function
@@ -110,8 +105,9 @@ void RGBDCameraClient::set_output_file(std::string output_folder_path) {
 */
 void RGBDCameraClient::collect_camera_data(void) {
 
-	// defining QImage for writting
 	void* frame_data_p = nullptr;
+
+	// defining QImage for writting
 	int resized_w = RGB_WIDTH / CAMERA_DISPLAY_RESIZE_FACTOR;
 	int resized_h = RGB_HEIGHT / CAMERA_DISPLAY_RESIZE_FACTOR;
 	QImage q_image(resized_w, resized_h, QImage::Format_RGB888);

@@ -298,12 +298,12 @@ void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
 
 		// writing the orientation output file header
 		m_output_ori_file.open(m_output_ori_file_str);
-		m_output_ori_file << "Time (ms)" << "," << "Heading" << "," << "Pitch" << "," << "Roll" << "," << "Yaw" << std::endl;
+		m_output_ori_file << "Time (ms),Heading,Pitch,Roll,Yaw" << std::endl;
 		m_output_ori_file.close();
 
 		// writing the acceleration output file header
 		m_output_acc_file.open(m_output_acc_file_str);
-		m_output_acc_file << "Time (ms)" << "," << "ACC X" << "," << "ACC Y" << "," << "ACC Z" << std::endl;
+		m_output_acc_file << "Time (ms),ACC X,ACC Y,ACC Z" << std::endl;
 		m_output_acc_file.close();
 
 		m_output_file_loaded = true;
