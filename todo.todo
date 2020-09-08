@@ -1,13 +1,17 @@
 Acquisition tool
 - [x] Modular sensor streams
 - [x] Better sensor client var names, class names and config param names
-- [] Data preview mode (displays) only no saves
+- [x] Data preview mode (displays) only no saves
 - [x] Screen recorder functionality for probe images
 - [x] Acquisition of Clarius IMU data (real time)
 - [x] Acquisition of probe images (real time)
-- [] Full screen display for acquired probe images
-- [] Display of probe images and IMU data 
-- [] Saving Screen recording and probe data to file
+- [x] Display for US images (screen recorder and CLarius) preview mode
+- [x] Display for US images (screen recorder and Clarius ) main mode
+- [x] Saving US images to file (Screen recorder)
+- [x] Saving US images to file (Clarius)
+- [x] Saving Clarius imu data to file
+- [] Remove append mode for file writing
+- [] Performance measurement compilation mode
 - [] Update the configs documentation
 - [] Installer for the acquisition tool
 
@@ -18,5 +22,3 @@ Processing scripts
 
 Models
 - [] Build SonoEyeNet CNN with tensor flow
-
-

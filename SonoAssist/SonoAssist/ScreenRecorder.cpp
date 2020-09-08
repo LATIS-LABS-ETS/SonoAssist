@@ -1,14 +1,20 @@
 #include "ScreenRecorder.h"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
+
 void ScreenRecorder::connect_device() {
 
 	// making sure requirements are filled
-	if (m_config_loaded && m_sensor_used) {
+	if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
 
 		// getting the target window handle and bounding rectangle
         m_window_handle = GetDesktopWindow();
         if (m_window_handle != NULL) {
+            
             GetClientRect(m_window_handle, &m_window_rc);
+            m_resized_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
+            m_resized_img_height = m_window_rc.bottom / SR_PREVIEW_RESIZE_FACTOR;
+            
             m_device_connected = true;
         }  
 
@@ -30,34 +36,43 @@ void ScreenRecorder::disconnect_device() {
 
 void ScreenRecorder::start_stream() {
 
-	// making sure requirements are filled
-	if (m_device_connected && !m_device_streaming) {
-	
-		// launching the acquisition thread
+    if (m_device_connected && !m_device_streaming) {
+
+        // creating a writer for the captured frames
+        m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
+            SCREEN_CAPTURE_FPS, cv::Size(m_window_rc.right, m_window_rc.bottom));
+
+        // launching the acquisition thread
 		m_collect_data = true;
 		m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
 		m_device_streaming = true;
-
 	}
 
 }
 
 void ScreenRecorder::stop_stream() {
 
-    // making sure requirements are filled
+    // stopping the data collection thread
 	if (m_device_streaming) {
-		
-		// stopping the data collection thread
 		m_collect_data = false;
 		m_collection_thread.join();
-
 		m_device_streaming = false;
-
 	}
+
+    // destroying the video writter
+    m_video->release();
 
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// collection function
+void ScreenRecorder::set_output_file(std::string output_folder_path) {
+
+    m_output_video_file_str = output_folder_path + "/screen_recorder_images.avi";
+    m_output_file_loaded = true;
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// data collection function
 
 /*
 * Collects the most recent screen capture and makes it available to the main window.
@@ -65,11 +80,8 @@ void ScreenRecorder::stop_stream() {
 */
 void ScreenRecorder::collect_window_captures(void) {
   
-    // defining QImage for writting
-    void* frame_data_p = nullptr;
-    int img_height = m_window_rc.bottom / CAPTURE_DISPLAY_RESIZE_FACTOR;
-    int img_width = m_window_rc.right / CAPTURE_DISPLAY_RESIZE_FACTOR;
-    QImage q_image(img_width, img_height, QImage::Format_RGB888);
+    // defining the preview mode image container
+    QImage q_image(m_resized_img_width, m_resized_img_height, QImage::Format_RGB888);
 
 	while (m_collect_data) {
 	
@@ -77,15 +89,25 @@ void ScreenRecorder::collect_window_captures(void) {
         cv::Mat window_capture = hwnd2mat();
         cv::cvtColor(window_capture, window_capture, CV_BGRA2BGR);
 
-        // mapping an empty QImage's data with an empty cv:Map's data
-        // changing captured image format and writing data to the QImage
-        cv::Mat resized_image(img_height, img_width, CV_8UC3, q_image.bits(), q_image.bytesPerLine());
-        cv::resize(window_capture, resized_image, resized_image.size(), 0, 0, cv::INTER_AREA);
+        // in preview mode, resizing an sending the image to UI
+        if (m_stream_preview) {
+        
+            // mapping an empty QImage's data with an empty cv:Map's data
+            // changing captured image format and writing data to the QImage
+            cv::Mat resized_image(m_resized_img_height, m_resized_img_width, CV_8UC3, q_image.bits(), q_image.bytesPerLine());
+            cv::resize(window_capture, resized_image, resized_image.size(), 0, 0, cv::INTER_AREA);
+
+            // emitting the capture and waiting
+            emit new_window_capture(std::move(q_image.copy()));
+            std::this_thread::sleep_for(std::chrono::milliseconds(CAPTURE_DISPLAY_THREAD_DELAY_MS));
        
-		// emiting the capture and waiting
-        emit new_window_capture(std::move(q_image.copy()));
-		std::this_thread::sleep_for(std::chrono::milliseconds(CAPTURE_DISPLAY_THREAD_DELAY_MS));
-	
+        }
+        
+        // in normal mode, write to video file
+        else {
+            m_video->write(window_capture);
+        }
+		
 	}
 
 }

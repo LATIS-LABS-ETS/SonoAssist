@@ -29,8 +29,9 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
                      {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
                      {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
                      {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
+                     {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
                      {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""}, 
-                     {"screen_recorder_active", ""}, {"us_probe_active", ""} };
+                     {"screen_recorder_active", ""}, {"us_probe_active", ""}};
 
 }
 
@@ -58,24 +59,57 @@ SonoAssist::~SonoAssist(){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// slots
 
-void SonoAssist::on_new_us_screen_capture(QImage new_image) {
+void SonoAssist::on_new_clarius_image(QImage new_image){
 
     // removing the old image
-    if (m_eyetracker_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
-        m_eyetracker_pixmap_p.reset();
+    if (m_us_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_us_pixmap_p.get());
+        m_us_pixmap_p.reset();
     }
 
-    // defining the new image and adding it to the scene (under the gazepoint)
-    m_eyetracker_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
-    m_eyetracker_pixmap_p->setPos(PREVIEW_PROBE_DISPLAY_X_OFFSET, PREVIEW_PROBE_DISPLAY_Y_OFFSET);
-    m_eyetracker_pixmap_p->setZValue(2);
-    m_main_scene_p->addItem(m_eyetracker_pixmap_p.get());
+    // creating the image item
+    m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
+
+    // placing the US image for both modes (preview and normal)
+    if (m_preview_is_active) {
+        m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
+        m_us_pixmap_p->setZValue(2);
+        m_main_scene_p->addItem(m_us_pixmap_p.get());
+    } else {
+        QPointF bg_img_pos = m_us_bg_p->pos();
+        m_us_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
+        m_main_scene_p->addItem(m_us_pixmap_p.get());
+    }
 
     // when acquisition is stoped during execution
     if (!m_stream_is_active) {
-        m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
-        m_eyetracker_pixmap_p.reset();
+        m_main_scene_p->removeItem(m_us_pixmap_p.get());
+        m_us_pixmap_p.reset();
+    }
+
+}
+
+void SonoAssist::on_new_us_screen_capture(QImage new_image) {
+
+    // removing the old image
+    if (m_us_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_us_pixmap_p.get());
+        m_us_pixmap_p.reset();
+    }
+
+    // displaying the US image only in preview mode
+    // should not be called in other mode anyways
+    if (m_preview_is_active) {
+        m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
+        m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
+        m_us_pixmap_p->setZValue(2);
+        m_main_scene_p->addItem(m_us_pixmap_p.get());
+    } 
+
+    // when acquisition is stoped during execution
+    if (!m_stream_is_active) {
+        m_main_scene_p->removeItem(m_us_pixmap_p.get());
+        m_us_pixmap_p.reset();
     }
 
 }
@@ -112,8 +146,8 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
 
     // updating the eyetracker crosshair position
     if (m_eyetracker_crosshair_p != nullptr) {
-        int x_pos = PREVIEW_PROBE_DISPLAY_X_OFFSET + (PREVIEW_PROBE_DISPLAY_WIDTH * x) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-        int y_pos = PREVIEW_PROBE_DISPLAY_Y_OFFSET + (PREVIEW_PROBE_DISPLAY_HEIGHT * y) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+        int x_pos = PREVIEW_US_DISPLAY_X_OFFSET + (PREVIEW_US_DISPLAY_WIDTH * x) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+        int y_pos = PREVIEW_US_DISPLAY_Y_OFFSET + (PREVIEW_US_DISPLAY_HEIGHT * y) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
         m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
     }
     
@@ -127,6 +161,7 @@ void SonoAssist::on_sensor_connect_button_clicked(){
         // loading the latest version of the configs
         if (load_config_file(ui.param_file_input->text())) {
 
+            configure_normal_display();
             configure_device_clients();
 
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
@@ -235,8 +270,9 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
 
         // stoping the sensor streams
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if (m_sensor_devices[i]->get_sensor_used())
+            if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->stop_stream();
+            }
         }
 
         // cleaning the appropriate display
@@ -411,6 +447,28 @@ void SonoAssist::display_warning_message(QString title, QString message) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// Graphics scene functions
 
+/*
+Configures the normal US image display
+*/
+void SonoAssist::configure_normal_display(void) {
+
+    // loading the normal normal display dimensions
+    try {
+        m_main_us_img_width = std::stoi((*m_app_params)["us_image_main_display_width"]);
+        m_main_us_img_height = std::stoi((*m_app_params)["us_image_main_display_height"]);
+    } catch (...) {
+        m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
+        m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+    }
+
+    // rebuild the normal display
+    if (!m_preview_is_active) {
+        remove_normal_display();
+        generate_normal_display();
+    }
+
+}
+
 void SonoAssist::generate_preview_display(void) {
 
     // creating the placeholder image for the camera viewfinder
@@ -422,11 +480,11 @@ void SonoAssist::generate_preview_display(void) {
     m_camera_bg_p->setZValue(1);
 
     // creating the backgroud image for the (probe image / gaze point) display
-    m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PREVIEW_PROBE_DISPLAY_WIDTH, PREVIEW_PROBE_DISPLAY_HEIGHT);
+    m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PREVIEW_US_DISPLAY_WIDTH, PREVIEW_US_DISPLAY_HEIGHT);
     m_eye_tracker_bg_i_p->fill(QColor("#FFFFFF"));
     m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_bg_i_p.get()));
     m_main_scene_p->addItem(m_eye_tracker_bg_p.get());
-    m_eye_tracker_bg_p->setPos(PREVIEW_PROBE_DISPLAY_X_OFFSET, PREVIEW_PROBE_DISPLAY_Y_OFFSET);
+    m_eye_tracker_bg_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
     m_eye_tracker_bg_p->setZValue(1);
 
     // loading the eyetracking crosshair
@@ -435,8 +493,8 @@ void SonoAssist::generate_preview_display(void) {
     m_eyetracker_crosshair_p = std::make_unique<QGraphicsPixmapItem>(crosshair_img);
 
     // placing the crosshair in the middle of the display
-    int x_pos = PREVIEW_PROBE_DISPLAY_X_OFFSET + (PREVIEW_PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-    int y_pos = PREVIEW_PROBE_DISPLAY_Y_OFFSET + (PREVIEW_PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+    int x_pos = PREVIEW_US_DISPLAY_X_OFFSET + (PREVIEW_US_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+    int y_pos = PREVIEW_US_DISPLAY_Y_OFFSET + (PREVIEW_US_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
     m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
     m_eyetracker_crosshair_p->setZValue(3);
     m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
@@ -452,7 +510,7 @@ void SonoAssist::remove_preview_display(void) {
     
     // images
     m_camera_pixmap_p.release();
-    m_eyetracker_pixmap_p.release();
+    m_us_pixmap_p.release();
     
     m_main_scene_p->clear();
 }
@@ -465,14 +523,14 @@ void SonoAssist::clean_preview_display() {
         m_camera_pixmap_p.reset();
     }
     // removing the last US image
-    if (m_eyetracker_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_eyetracker_pixmap_p.get());
-        m_eyetracker_pixmap_p.reset();
+    if (m_us_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_us_pixmap_p.get());
+        m_us_pixmap_p.reset();
     }
     // recentering the gaze crosshairs
     if (m_eyetracker_crosshair_p.get() != nullptr) {
-        int x_pos = PREVIEW_PROBE_DISPLAY_X_OFFSET + (PREVIEW_PROBE_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-        int y_pos = PREVIEW_PROBE_DISPLAY_Y_OFFSET + (PREVIEW_PROBE_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+        int x_pos = PREVIEW_US_DISPLAY_X_OFFSET + (PREVIEW_US_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+        int y_pos = PREVIEW_US_DISPLAY_Y_OFFSET + (PREVIEW_US_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
         m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
     }
 
@@ -481,14 +539,14 @@ void SonoAssist::clean_preview_display() {
 void SonoAssist::generate_normal_display(void) {
 
     // creating the placeholder image US image
-    m_us_bg_i_p = std::make_unique<QPixmap>(PROBE_DISPLAY_WIDTH, PROBE_DISPLAY_HEIGHT);
+    m_us_bg_i_p = std::make_unique<QPixmap>(m_main_us_img_width, m_main_us_img_height);
     m_us_bg_i_p->fill(QColor("#FFFFFF"));
     m_us_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_us_bg_i_p.get()));
     m_main_scene_p->addItem(m_us_bg_p.get());
     
     // centering the placeholder
-    int x_pos = (m_main_scene_p->width() / 2) - (PROBE_DISPLAY_WIDTH / 2);
-    int y_pos = (m_main_scene_p->height() / 2) - (PROBE_DISPLAY_HEIGHT / 2);
+    int x_pos = (m_main_scene_p->width() / 2) - (m_main_us_img_width / 2);
+    int y_pos = (m_main_scene_p->height() / 2) - (m_main_us_img_height / 2);
     m_us_bg_p->setPos(x_pos, y_pos);
 
 }

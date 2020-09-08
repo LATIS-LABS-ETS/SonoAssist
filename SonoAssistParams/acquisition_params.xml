@@ -7,6 +7,9 @@
 	<eye_tracker_active>false</eye_tracker_active>
 	<screen_recorder_active>true</screen_recorder_active>
 	
+	<us_image_main_display_width>960</us_image_main_display_width>
+	<us_image_main_display_height>540</us_image_main_display_height>
+	
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
 	<eye_tracker_redis_entry>eye_tracker_data</eye_tracker_redis_entry>

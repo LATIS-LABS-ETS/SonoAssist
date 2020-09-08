@@ -20,6 +20,7 @@
 #define DEPTH_HEIGHT 720
 #define N_SKIP_FRAMES 30
 
+// resize factor to fit a target display of (360 x 640) px
 #define CAMERA_DISPLAY_RESIZE_FACTOR 3
 #define CAMERA_DISPLAY_THREAD_DELAY_MS 150
 
