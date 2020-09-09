@@ -84,6 +84,7 @@ void ClariusProbeClient::start_stream() {
         configure_img_acquisition();
 
         // preparing the writing of data
+        set_output_file(m_output_folder_path);
         m_output_imu_file.open(m_output_imu_file_str, std::fstream::app);
         m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
             CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height));
@@ -115,13 +116,15 @@ void ClariusProbeClient::stop_stream() {
 
 }
 
-void ClariusProbeClient::set_output_file(std::string output_folder) {
+void ClariusProbeClient::set_output_file(std::string output_folder_path) {
 
     try {
 
+        m_output_folder_path = output_folder_path;
+
         // defining the output file path
-        m_output_imu_file_str = output_folder + "/clarius_imu.csv";
-        m_output_video_file_str = output_folder + "/clarius_images.avi";
+        m_output_imu_file_str = output_folder_path + "/clarius_imu.csv";
+        m_output_video_file_str = output_folder_path + "/clarius_images.avi";
         if (m_output_imu_file.is_open()) m_output_imu_file.close();
 
         // writing the output file header

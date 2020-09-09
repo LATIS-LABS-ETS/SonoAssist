@@ -179,8 +179,6 @@ void MetaWearBluetoothClient::disconnect_device() {
 	// stopping the data stream
 	stop_stream();
 	m_device_connected = false;
-	if (m_output_ori_file.is_open()) m_output_ori_file.close();
-	if (m_output_acc_file.is_open()) m_output_acc_file.close();
 
 	// clearing the metawear related vars
 	mbl_mw_metawearboard_free(m_metawear_board_p);
@@ -208,6 +206,7 @@ void MetaWearBluetoothClient::start_stream() {
 	if (m_device_connected && !m_device_streaming) {
 
 		// opening the output files
+		set_output_file(m_output_folder_path);
 		m_output_ori_file.open(m_output_ori_file_str, std::fstream::app);
 		m_output_acc_file.open(m_output_acc_file_str, std::fstream::app);
 		
@@ -222,15 +221,20 @@ void MetaWearBluetoothClient::start_stream() {
 
 			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
 
-			// pulling and formatting 
-			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
-				+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
-				+ "\n";
+			// only writting data to file in normal mode
+			if (!context_p->get_stream_preview_status()) {
+			
+				// pulling and formatting 
+				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
+				std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(euler_angles->heading) + ','
+					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
+					+ "\n";
 
-			// writing to the output file and redis (if redis enabled)
-			context_p->write_to_redis(output_str);
-			context_p->m_output_ori_file << output_str;
+				// writing to the output file and redis (if redis enabled)
+				context_p->write_to_redis(output_str);
+				context_p->m_output_ori_file << output_str;
+			
+			}
 
 		};
 
@@ -238,13 +242,18 @@ void MetaWearBluetoothClient::start_stream() {
 
 			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
 
-			// pulling and formatting 
-			MblMwCartesianFloat* acceleration = (MblMwCartesianFloat*)data->value;
-			std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(acceleration->x) + ','
-				+ std::to_string(acceleration->y) + "," + std::to_string(acceleration->z) + "\n";
+			// only writtingdata to file in normal mode
+			if (!context_p->get_stream_preview_status()) {
+			
+				// pulling and formatting 
+				MblMwCartesianFloat* acceleration = (MblMwCartesianFloat*)data->value;
+				std::string output_str = context_p->get_millis_timestamp() + "," + std::to_string(acceleration->x) + ','
+					+ std::to_string(acceleration->y) + "," + std::to_string(acceleration->z) + "\n";
 
-			// writing to the output file and redis (if redis enabled)
-			context_p->m_output_acc_file << output_str;
+				// writing to the output file and redis (if redis enabled)
+				context_p->m_output_acc_file << output_str;
+			
+			}
 
 		};
 		
@@ -289,6 +298,8 @@ void MetaWearBluetoothClient::stop_stream(void){
 void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
 
 	try {
+
+		m_output_folder_path = output_folder_path;
 
 		// defining the output and sync output file paths
 		m_output_ori_file_str = output_folder_path + "/gyro_orientation.csv";

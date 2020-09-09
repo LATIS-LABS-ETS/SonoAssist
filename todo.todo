@@ -10,7 +10,7 @@ Acquisition tool
 - [x] Saving US images to file (Screen recorder)
 - [x] Saving US images to file (Clarius)
 - [x] Saving Clarius imu data to file
-- [] Remove append mode for file writing
+- [x] Remove append mode for file writing
 - [] Performance measurement compilation mode
 - [] Update the configs documentation
 - [] Installer for the acquisition tool

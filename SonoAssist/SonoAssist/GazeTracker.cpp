@@ -113,6 +113,7 @@ void GazeTracker::start_stream() {
 	if (m_device_connected && !m_device_streaming) {
 	
 		// opening the output file
+		set_output_file(m_output_folder_path);
 		m_output_file.open(m_output_file_str, std::fstream::app);
 
 		// connecting to redis (if redis enabled)
@@ -153,6 +154,8 @@ void GazeTracker::stop_stream() {
 void GazeTracker::set_output_file(std::string output_folder_path) {
 
 	try {
+
+		m_output_folder_path = output_folder_path;
 
 		// defining the output file path
 		m_output_file_str = output_folder_path + "/eye_tracker.csv";

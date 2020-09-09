@@ -57,7 +57,7 @@ class ClariusProbeClient : public SensorDevice {
         void start_stream(void);
         void connect_device(void);
         void disconnect_device(void);
-        void set_output_file(std::string output_folder);
+        void set_output_file(std::string output_folder_path);
 
 		// ouput image dimensions
 		int m_out_img_width = CLARIUS_NORMAL_DEFAULT_WIDTH;

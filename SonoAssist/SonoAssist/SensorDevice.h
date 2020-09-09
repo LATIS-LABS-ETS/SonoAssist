@@ -54,19 +54,23 @@ class SensorDevice : public QObject {
 
 	protected:
 
+		// sensor status vars
 		bool m_sensor_used = false;
 		bool m_stream_preview = false;
 		bool m_device_connected = false;
 		bool m_device_streaming = false;
 
+		// configs vars
 		bool m_config_loaded = false;
 		std::shared_ptr<config_map> m_config_ptr;
 
 		// redis output attributes
 		int m_redis_rate_div = 2;
 		int m_redis_data_count = 1;
-		std::string m_redis_entry = "";
+		std::string m_redis_entry;
 		cpp_redis::client m_redis_client;
+
+		std::string m_output_folder_path;
 
 };
 
