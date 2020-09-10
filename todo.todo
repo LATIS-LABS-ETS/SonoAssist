@@ -11,11 +11,10 @@ Acquisition tool
 - [x] Saving US images to file (Clarius)
 - [x] Saving Clarius imu data to file
 - [x] Remove append mode for file writing
-
 - [x] Fix probe image data writing to file
-- [] Fix probe IMU data writing to file
+- [x] Fix probe IMU data writing to file
 - [x] Handle failed acquisition entry
-- [] Add input field for clarius probe UDP port
+- [x] Add input field for clarius probe UDP port
 - [x] Make th UI a little cooler
 - [] Image display optimizations
 - [] Performance measurement compilation mode

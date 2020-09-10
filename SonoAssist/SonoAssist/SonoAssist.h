@@ -22,7 +22,7 @@
 
 #define RED_TEXT "#cc0000"
 #define GREEN_TEXT "#71ff3d"
-#define IMG_PLACE_HOLDER_COLOR "#29775A"
+#define IMG_PLACE_HOLDER_COLOR "#000000"
 
 // US probe display (normal)
 #define US_DISPLAY_DEFAULT_WIDTH 640
@@ -81,6 +81,9 @@ class SonoAssist : public QMainWindow {
 		void on_output_folder_browse_clicked(void);
 		void on_param_file_input_editingFinished();
 		void on_output_folder_input_editingFinished();
+
+		// other slots
+		void on_udp_port_input_editingFinished(void);
 
 	private:
 

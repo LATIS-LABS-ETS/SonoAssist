@@ -2,7 +2,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// getters and setters
 
-bool SensorDevice::get_sensor_used() const {
+bool SensorDevice::get_sensor_used(void) const {
 	return m_sensor_used;
 }
 
@@ -10,24 +10,24 @@ void SensorDevice::set_sensor_used(bool state) {
 	m_sensor_used = state;
 }
 
-bool SensorDevice::get_connection_status() const {
+bool SensorDevice::get_connection_status(void) const {
 	return m_device_connected;
-}
-
-bool SensorDevice::get_stream_status() const {
-	return m_device_streaming;
-}
-
-bool SensorDevice::get_stream_preview_status() const {
-	return m_stream_preview;
 }
 
 void SensorDevice::set_connection_status(bool state) {
 	m_device_streaming = state;
 }
 
+bool SensorDevice::get_stream_status(void) const {
+	return m_device_streaming;
+}
+
 void SensorDevice::set_stream_status(bool state) {
 	m_device_streaming = state;
+}
+
+bool SensorDevice::get_stream_preview_status(void) const {
+	return m_stream_preview;
 }
 
 void SensorDevice::set_stream_preview_status(bool state) {

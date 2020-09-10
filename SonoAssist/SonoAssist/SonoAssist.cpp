@@ -24,8 +24,8 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
                                                                     m_us_probe_client_p, m_metawear_client_p});
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
-    *m_app_params = {{"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""}, 
-                     {"us_probe_ip_address", ""}, {"us_probe_udp_port", ""},
+    *m_app_params = {{"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""},
+                     {"us_probe_ip_address", ""}, {"us_probe_udp_port", ""}, 
                      {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
                      {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
                      {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
@@ -163,6 +163,7 @@ void SonoAssist::on_sensor_connect_button_clicked(){
 
             configure_normal_display();
             configure_device_clients();
+            on_udp_port_input_editingFinished();
 
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
                 if (m_sensor_devices[i]->get_sensor_used()) {
@@ -357,6 +358,11 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
 
     on_output_folder_input_editingFinished();
 
+}
+
+// inserting the port in the config map
+void SonoAssist::on_udp_port_input_editingFinished(void) {
+    (*m_app_params)["us_probe_udp_port"] = std::string(ui.udp_port_input->text().toStdString());
 }
 
 void SonoAssist::on_ext_imu_status_change(bool device_status){
@@ -604,8 +610,6 @@ bool SonoAssist::load_config_file(QString param_file_path) {
         children = docElem.elementsByTagName(QString(parameter.first.c_str()));
         if (children.count() == 1) {
             parameter.second = children.at(0).firstChild().nodeValue().toStdString();
-        } else {
-            return false;
         }
     }
 
