@@ -11,9 +11,19 @@ void ScreenRecorder::connect_device() {
         m_window_handle = GetDesktopWindow();
         if (m_window_handle != NULL) {
             
+            // defining the capture rect
             GetClientRect(m_window_handle, &m_window_rc);
+         
+            // defining the display dimensions
             m_resized_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
             m_resized_img_height = m_window_rc.bottom / SR_PREVIEW_RESIZE_FACTOR;
+
+            // initializing image handling containers
+            m_capture_mat = cv::Mat(m_window_rc.bottom, m_window_rc.right, CV_8UC4);
+            m_capture_cvt_mat = cv::Mat(m_window_rc.bottom, m_window_rc.right, CV_8UC3);
+            m_output_img = QImage(m_resized_img_width, m_resized_img_height, QImage::Format_RGB888);
+            m_output_img_mat = cv::Mat(m_resized_img_height, m_resized_img_width, 
+                CV_8UC3, m_output_img.bits(), m_output_img.bytesPerLine());
             
             m_device_connected = true;
         }  
@@ -81,33 +91,21 @@ void ScreenRecorder::set_output_file(std::string output_folder_path) {
 */
 void ScreenRecorder::collect_window_captures(void) {
   
-    // defining the preview mode image container
-    QImage q_image(m_resized_img_width, m_resized_img_height, QImage::Format_RGB888);
-
 	while (m_collect_data) {
 	
         // capturing the target window
-        cv::Mat window_capture = hwnd2mat();
-        cv::cvtColor(window_capture, window_capture, CV_BGRA2BGR);
+       hwnd2mat();
+       cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
 
-        // in preview mode, resizing an sending the image to UI
+        // in preview mode, resizing an sending the image to UI (low resolution display)
         if (m_stream_preview) {
-        
-            // mapping an empty QImage's data with an empty cv:Map's data
-            // changing captured image format and writing data to the QImage
-            cv::Mat resized_image(m_resized_img_height, m_resized_img_width, CV_8UC3, q_image.bits(), q_image.bytesPerLine());
-            cv::resize(window_capture, resized_image, resized_image.size(), 0, 0, cv::INTER_AREA);
-
-            // emitting the capture and waiting
-            emit new_window_capture(std::move(q_image.copy()));
+            cv::resize(m_capture_cvt_mat, m_output_img_mat, m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
+            emit new_window_capture(m_output_img);
             std::this_thread::sleep_for(std::chrono::milliseconds(CAPTURE_DISPLAY_THREAD_DELAY_MS));
-       
         }
         
         // in normal mode, write to video file
-        else {
-            m_video->write(window_capture);
-        }
+        else m_video->write(m_capture_cvt_mat);
 		
 	}
 
@@ -119,7 +117,7 @@ void ScreenRecorder::collect_window_captures(void) {
 Converts the window's bitmap format to a cv::Mat
 Source : https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
 */
-cv::Mat ScreenRecorder::hwnd2mat() {
+void ScreenRecorder::hwnd2mat() {
 
     cv::Mat src;
     HBITMAP hbwindow;
@@ -138,9 +136,6 @@ cv::Mat ScreenRecorder::hwnd2mat() {
     srcwidth = m_window_rc.right;
     srcheight = m_window_rc.bottom;
    
-    // creating an empty cv::Mat with the proper dimensions and chanels
-    src.create(height, width, CV_8UC4);
-
     // create a bitmap
     hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
     bi.biSize = sizeof(BITMAPINFOHEADER);
@@ -160,12 +155,11 @@ cv::Mat ScreenRecorder::hwnd2mat() {
 
     // copy from the window device context to the bitmap device context
     StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY);
-    GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+    GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, m_capture_mat.data, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
 
     // avoid memory leak
     DeleteObject(hbwindow);
     DeleteDC(hwindowCompatibleDC);
     ReleaseDC(m_window_handle, hwindowDC);
 
-    return src;
 }

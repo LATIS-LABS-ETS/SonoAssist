@@ -16,7 +16,7 @@ Acquisition tool
 - [x] Handle failed acquisition entry
 - [x] Add input field for clarius probe UDP port
 - [x] Make th UI a little cooler
-- [] Image display optimizations
+- [x] Image display and saving optimizations
 - [] Performance measurement compilation mode
 - [] Update the configs documentation
 - [] Update infrastructure diagram

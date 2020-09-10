@@ -13,6 +13,7 @@
 
 // SR_PREVIEW_RESIZE_FACTOR : to fit a (360 x 640) px display
 #define SR_PREVIEW_RESIZE_FACTOR 3
+
 #define SCREEN_CAPTURE_FPS 10
 #define CAPTURE_DISPLAY_THREAD_DELAY_MS 150
 
@@ -28,12 +29,12 @@ class ScreenRecorder : public SensorDevice {
 		void connect_device(void);
 		void disconnect_device(void);
 		void set_output_file(std::string output_folder);
-
+		
 		// threaded collection function
 		void collect_window_captures(void);
 
 		// utility functions
-		cv::Mat hwnd2mat(void);
+		void hwnd2mat(void);
 
 	signals:
 		void new_window_capture(QImage image);
@@ -45,6 +46,11 @@ class ScreenRecorder : public SensorDevice {
 		HWND m_window_handle;
 		int m_resized_img_width;
 		int m_resized_img_height;
+		// image handling containers
+		QImage m_output_img;
+		cv::Mat m_capture_mat;
+		cv::Mat m_output_img_mat;
+		cv::Mat m_capture_cvt_mat;
 		
 		// thread vars
 		bool m_collect_data = false;
