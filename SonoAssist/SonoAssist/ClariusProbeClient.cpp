@@ -4,7 +4,7 @@
 // global pointers (for the Clarius callback(s))
 ClariusProbeClient* probe_client_p = nullptr;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// acquisition callbacks
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// acquisition callback
 
 /*
 Callback function for incoming processed images (as displayed on the tablet) from the Clarius probe
@@ -12,37 +12,30 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 */
  void new_processed_image_callback(const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos) {
 
-    // defining the output image
-    QImage output_img(probe_client_p->m_out_img_width, probe_client_p->m_out_img_height, QImage::Format_RGB888);
-    cv::Mat output_img_mat(probe_client_p->m_out_img_height, probe_client_p->m_out_img_width, CV_8UC3,
-        output_img.bits(), output_img.bytesPerLine());
+    // mapping the incoming image to a mat
+    probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
 
-    // defining the input image
-    QImage input_img(CLARIUS_DEFAULT_IMG_WIDTH, CLARIUS_DEFAULT_IMG_HEIGHT, QImage::Format_ARGB32);
-    cv::Mat input_img_mat(CLARIUS_DEFAULT_IMG_HEIGHT, CLARIUS_DEFAULT_IMG_WIDTH, CV_8UC4,
-        input_img.bits(), input_img.bytesPerLine());
+    // changing color representation and resizing
+    cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
+    cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat, 
+        probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
 
-    // placing incoming img data in a mat for resizing
-    memcpy(input_img.bits(), img, nfo->width * nfo->height * (nfo->bitsPerPixel / 8));
-    cv::cvtColor(input_img_mat, input_img_mat, CV_BGRA2BGR);
-    cv::resize(input_img_mat, output_img_mat, output_img_mat.size(), 0, 0, cv::INTER_AREA);
-
-    // writting data to output files, in main mode
+    // writting data to output files (csv and video), in main mode
     if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
 
-        if (npos > 0) {
+        if (npos) {
             std::string output_str = probe_client_p->get_millis_timestamp() + "," +
                 std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," +
                 std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
             probe_client_p->m_output_imu_file << output_str;
         }
 
-        probe_client_p->m_video->write(output_img_mat);
+        probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
 
     }
 
     // emitting the image to the UI
-    emit probe_client_p->new_us_image(std::move(output_img));
+    emit probe_client_p->new_us_image(probe_client_p->m_output_img);
 
 }
 
@@ -94,7 +87,9 @@ void ClariusProbeClient::start_stream() {
     // making sure requirements are filled
     if (m_device_connected && !m_device_streaming) {
         
+        // preparing for image handling
         configure_img_acquisition();
+        initialize_img_handling();
 
         // preparing the writing of data
         set_output_file(m_output_folder_path);
@@ -159,6 +154,21 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helper functions
+
+void ClariusProbeClient::initialize_img_handling() {
+
+    // initializing the input containers
+    m_input_img_mat = cv::Mat(CLARIUS_DEFAULT_IMG_HEIGHT, CLARIUS_DEFAULT_IMG_WIDTH, CV_8UC4);
+    
+    // initializing the color conversion containers
+    m_cvt_mat = cv::Mat(CLARIUS_DEFAULT_IMG_HEIGHT, CLARIUS_DEFAULT_IMG_WIDTH, CV_8UC1);
+
+    // initializing the output containers
+    m_output_img = QImage(m_out_img_width, m_out_img_height, QImage::Format_Grayscale8);
+    m_output_img_mat = cv::Mat(m_out_img_height, m_out_img_width, CV_8UC1,
+        m_output_img.bits(), m_output_img.bytesPerLine());
+
+}
 
 /*
 Loads the configurations for the generation of output images
