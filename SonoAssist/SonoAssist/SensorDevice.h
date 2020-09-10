@@ -24,10 +24,12 @@ class SensorDevice : public QObject {
 	public : 
 
 		// status getters and setters
+		
 		bool get_sensor_used(void) const;
 		bool get_stream_status(void) const;
 		bool get_connection_status(void) const;
 		bool get_stream_preview_status(void) const;
+		
 		void set_sensor_used(bool state);
 		void set_stream_status(bool state);
 		void set_connection_status(bool state);
@@ -43,6 +45,7 @@ class SensorDevice : public QObject {
 		std::string get_millis_timestamp(void) const;
 		
 		// interface functions (virtual)
+		// all interface functions must be non-bloking
 		virtual void stop_stream(void) = 0;
 		virtual void start_stream(void) = 0;
 		virtual void connect_device(void) = 0;

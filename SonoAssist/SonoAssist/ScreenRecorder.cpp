@@ -51,16 +51,17 @@ void ScreenRecorder::start_stream() {
 }
 
 void ScreenRecorder::stop_stream() {
-
-    // stopping the data collection thread
+    
 	if (m_device_streaming) {
+
+        // stopping the data collection thread
 		m_collect_data = false;
 		m_collection_thread.join();
 		m_device_streaming = false;
-	}
-
-    // destroying the video writter
-    m_video->release();
+	
+        // destroying the video writter
+        m_video->release();
+    }
 
 }
 

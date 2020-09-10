@@ -14,20 +14,20 @@ bool SensorDevice::get_connection_status() const {
 	return m_device_connected;
 }
 
-void SensorDevice::set_connection_status(bool state) {
-	m_device_connected = state;
-}
-
 bool SensorDevice::get_stream_status() const {
 	return m_device_streaming;
 }
 
-void SensorDevice::set_stream_status(bool state) {
+bool SensorDevice::get_stream_preview_status() const {
+	return m_stream_preview;
+}
+
+void SensorDevice::set_connection_status(bool state) {
 	m_device_streaming = state;
 }
 
-bool SensorDevice::get_stream_preview_status() const {
-	return m_stream_preview;
+void SensorDevice::set_stream_status(bool state) {
+	m_device_streaming = state;
 }
 
 void SensorDevice::set_stream_preview_status(bool state) {

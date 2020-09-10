@@ -236,8 +236,20 @@ void SonoAssist::on_start_acquisition_button_clicked() {
 
             // starting the sensor streams
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_sensor_used()) 
+                if (m_sensor_devices[i]->get_sensor_used())
                     m_sensor_devices[i]->start_stream();
+            }
+           
+            // making sure devices are acquiring
+            if (!check_devices_streaming()) {
+
+                // stopping the acquisition
+                on_stop_acquisition_button_clicked();
+                
+                QString title = "Streaming failed";
+                QString message = "Ensure that all sensors are correclty configured.";
+                display_warning_message(title, message);
+
             }
 
         } else {
@@ -473,7 +485,7 @@ void SonoAssist::generate_preview_display(void) {
 
     // creating the placeholder image for the camera viewfinder
     m_camera_bg_i_p = std::make_unique<QPixmap>(CAMERA_DISPLAY_WIDTH, CAMERA_DISPLAY_HEIGHT);
-    m_camera_bg_i_p->fill(QColor("#FFFFFF"));
+    m_camera_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
     m_camera_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_camera_bg_i_p.get()));
     m_main_scene_p->addItem(m_camera_bg_p.get());
     m_camera_bg_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
@@ -481,7 +493,7 @@ void SonoAssist::generate_preview_display(void) {
 
     // creating the backgroud image for the (probe image / gaze point) display
     m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PREVIEW_US_DISPLAY_WIDTH, PREVIEW_US_DISPLAY_HEIGHT);
-    m_eye_tracker_bg_i_p->fill(QColor("#FFFFFF"));
+    m_eye_tracker_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
     m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_bg_i_p.get()));
     m_main_scene_p->addItem(m_eye_tracker_bg_p.get());
     m_eye_tracker_bg_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
@@ -540,7 +552,7 @@ void SonoAssist::generate_normal_display(void) {
 
     // creating the placeholder image US image
     m_us_bg_i_p = std::make_unique<QPixmap>(m_main_us_img_width, m_main_us_img_height);
-    m_us_bg_i_p->fill(QColor("#FFFFFF"));
+    m_us_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
     m_us_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_us_bg_i_p.get()));
     m_main_scene_p->addItem(m_us_bg_p.get());
     
@@ -602,7 +614,7 @@ bool SonoAssist::load_config_file(QString param_file_path) {
 }
 
 /*
-* Checks if all used devices are ready for acquisition (synchronisation)
+* Checks if all used devices are ready for acquisition
 */
 bool SonoAssist::check_device_connections() {
     
@@ -618,6 +630,26 @@ bool SonoAssist::check_device_connections() {
     }
 
     return used_devices_connected && (n_used_devices > 0);
+}
+
+/*
+* Checks if all used devices are streaming
+*/
+bool SonoAssist::check_devices_streaming() {
+
+    int n_used_devices = 0;
+    bool used_devices_streaming = true;
+
+    for (auto i = 0; i < m_sensor_devices.size(); i++) {
+        if (m_sensor_devices[i]->get_sensor_used()) {
+            used_devices_streaming = m_sensor_devices[i]->get_stream_status();
+            if (!used_devices_streaming) break;
+            n_used_devices++;
+        }
+    }
+
+    return used_devices_streaming && (n_used_devices > 0);
+
 }
 
 /*
@@ -671,8 +703,10 @@ void SonoAssist::configure_device_clients() {
         // configuring the US probe client
         if (QString((*m_app_params)["us_probe_active"].c_str()) == "true") {
             m_us_probe_client_p->set_sensor_used(true);
-            connect(m_us_probe_client_p.get(), &ScreenRecorder::device_status_change,
+            connect(m_us_probe_client_p.get(), &ClariusProbeClient::device_status_change,
                 this, &SonoAssist::on_us_probe_status_change);
+            connect(m_us_probe_client_p.get(), &ClariusProbeClient::new_us_image,
+                this, &SonoAssist::on_new_clarius_image);
         }
 
         // there can only be one US image source

@@ -216,7 +216,7 @@ void MetaWearBluetoothClient::start_stream() {
 			m_redis_rate_div = std::atoi((*m_config_ptr)["ext_imu_redis_rate_div"].c_str());
 			connect_to_redis();
 		}
-			
+		
 		MblMwFnData euler_angles_callback = [](void* context, const MblMwData* data) {
 
 			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);

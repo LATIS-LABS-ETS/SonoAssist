@@ -22,6 +22,7 @@
 
 #define RED_TEXT "#cc0000"
 #define GREEN_TEXT "#71ff3d"
+#define IMG_PLACE_HOLDER_COLOR "#29775A"
 
 // US probe display (normal)
 #define US_DISPLAY_DEFAULT_WIDTH 640
@@ -140,8 +141,9 @@ class SonoAssist : public QMainWindow {
 		void generate_normal_display(void);
 
 		// utility functions
-		void configure_device_clients(void);
+		bool check_devices_streaming(void);
 		bool check_device_connections(void);
+		void configure_device_clients(void);
 		bool load_config_file(QString param_file_path);
 
 };
