@@ -1,5 +1,6 @@
 #pragma once
 
+#include "main.h"
 #include "SensorDevice.h"
 
 #include <string>

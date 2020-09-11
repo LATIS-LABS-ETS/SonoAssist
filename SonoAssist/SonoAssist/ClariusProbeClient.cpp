@@ -1,5 +1,13 @@
-#include "SonoAssist.h"
 #include "ClariusProbeClient.h"
+
+#ifdef _MEASURE_US_IMG_RATES_
+ 
+// declaring performance measurement vars
+extern int n_clarius_frames;
+extern long long clarius_start, clarius_stop;
+extern std::vector<long long> input_img_stamps;
+
+#endif /*_MEASURE_US_IMG_RATES_*/
 
 // global pointers (for the Clarius callback(s))
 ClariusProbeClient* probe_client_p = nullptr;
@@ -11,6 +19,26 @@ Callback function for incoming processed images (as displayed on the tablet) fro
 Writes acquired data (IMU and images) to outputfiles and displays the images on the UI 
 */
  void new_processed_image_callback(const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos) {
+
+#ifdef _MEASURE_US_IMG_RATES_
+
+     // measuring img handling for the (N_US_FRAMES) first frames
+     if (n_clarius_frames < N_US_FRAMES) {
+     
+         // start point for avg FPS calculation
+         if (n_clarius_frames == 0) {
+             clarius_start = std::chrono::duration_cast<std::chrono::milliseconds>(
+                 std::chrono::system_clock::now().time_since_epoch()).count();
+         }
+
+         // memorising up to (N_US_FRAMES) points
+         input_img_stamps[n_clarius_frames] = std::chrono::duration_cast<std::chrono::milliseconds>(
+             std::chrono::system_clock::now().time_since_epoch()).count();
+         
+         n_clarius_frames ++;
+     } 
+
+#endif /*_MEASURE_US_IMG_RATES_*/
 
     // mapping the incoming image to a mat
     probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
@@ -36,6 +64,17 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 
     // emitting the image to the UI
     emit probe_client_p->new_us_image(probe_client_p->m_output_img);
+
+#ifdef _MEASURE_US_IMG_RATES_
+
+    // stop point for avg FPS calculation
+    if (n_clarius_frames == N_US_FRAMES) {
+        clarius_stop = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        n_clarius_frames ++;
+    }
+
+#endif /*_MEASURE_US_IMG_RATES_*/
 
 }
 
@@ -95,7 +134,7 @@ void ClariusProbeClient::start_stream() {
         set_output_file(m_output_folder_path);
         m_output_imu_file.open(m_output_imu_file_str, std::fstream::app);
         m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
-            CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height));
+            CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), false);
 
         // connecting to the probe events
         try {

@@ -113,6 +113,7 @@
     <QtRcc Include="SonoAssist.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="main.h" />
     <ClInclude Include="MetaWearBluetoothClient.h" />
     <QtMoc Include="ClariusProbeClient.h" />
     <QtMoc Include="ScreenRecorder.h" />

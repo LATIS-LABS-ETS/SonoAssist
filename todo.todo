@@ -17,7 +17,9 @@ Acquisition tool
 - [x] Add input field for clarius probe UDP port
 - [x] Make th UI a little cooler
 - [x] Image display and saving optimizations
-- [] Performance measurement compilation mode
+- [x] Image display FPS measurement compilation mode (SC and Clarius)
+- [] index incoming data from the Clarius probe
+- [] export the image display coordinates for processing
 - [] Update the configs documentation
 - [] Update infrastructure diagram
 - [] Installer for the acquisition tool

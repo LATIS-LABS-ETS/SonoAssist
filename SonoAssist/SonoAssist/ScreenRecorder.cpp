@@ -1,5 +1,14 @@
 #include "ScreenRecorder.h"
 
+#ifdef _MEASURE_US_IMG_RATES_
+
+// declaring performance measurement vars
+extern int n_sc_frames;
+extern long long sc_start, sc_stop;
+extern std::vector<long long> input_img_stamps;
+
+#endif /*_MEASURE_US_IMG_RATES_*/
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
 void ScreenRecorder::connect_device() {
@@ -93,6 +102,26 @@ void ScreenRecorder::collect_window_captures(void) {
   
 	while (m_collect_data) {
 	
+#ifdef _MEASURE_US_IMG_RATES_
+
+        // measuring img handling for the (N_US_FRAMES) first frames
+        if (n_sc_frames < N_US_FRAMES) {
+
+            // start point for avg FPS calculation
+            if (n_sc_frames == 0) {
+                sc_start = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            }
+
+            // memorising up to (N_US_FRAMES) points
+            input_img_stamps[n_sc_frames] = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+            n_sc_frames++;
+        }
+
+#endif /*_MEASURE_US_IMG_RATES_*/
+
         // capturing the target window
        hwnd2mat();
        cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
@@ -106,7 +135,18 @@ void ScreenRecorder::collect_window_captures(void) {
         
         // in normal mode, write to video file
         else m_video->write(m_capture_cvt_mat);
-		
+
+#ifdef _MEASURE_US_IMG_RATES_
+
+        // stop point for avg FPS calculation
+        if (n_sc_frames == N_US_FRAMES) {
+            sc_stop = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            n_sc_frames++;
+        }
+
+#endif /*_MEASURE_US_IMG_RATES_*/
+
 	}
 
 }

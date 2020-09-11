@@ -19,6 +19,7 @@
 	#pragma warning(pop)
 #endif
 
+#include "main.h"
 #include "SensorDevice.h"
 
 #include <listen/listen.h>
@@ -41,7 +42,7 @@
 #define CLARIUS_NORMAL_DEFAULT_WIDTH 640
 #define CLARIUS_NORMAL_DEFAULT_HEIGHT 480
 
-#define CLARIUS_VIDEO_FPS 10
+#define CLARIUS_VIDEO_FPS 20
 
 /*
 * Class to enable communication with a Clarius ultrasound probe
