@@ -42,6 +42,9 @@
 #define CAMERA_DISPLAY_Y_OFFSET 0
 
 // Eyetracker crosshairs dimensions
+#define EYETRACKER_N_ACC_TARGETS 4
+#define EYETRACKER_ACC_TARGET_WIDTH 20
+#define EYETRACKER_ACC_TARGET_HEIGHT 20
 #define EYETRACKER_CROSSHAIRS_WIDTH 50
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
@@ -143,6 +146,7 @@ class SonoAssist : public QMainWindow {
 		void clean_normal_display(void);
 		void remove_normal_display(void);
 		void generate_normal_display(void);
+		void generate_eye_tracker_targets(void);
 
 		// utility functions
 		bool check_devices_streaming(void);

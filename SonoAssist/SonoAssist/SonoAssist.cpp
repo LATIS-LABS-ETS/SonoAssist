@@ -24,14 +24,17 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
                                                                     m_us_probe_client_p, m_metawear_client_p});
 	// predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
-    *m_app_params = {{"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""},
-                     {"us_probe_ip_address", ""}, {"us_probe_udp_port", ""}, 
-                     {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
-                     {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
-                     {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
-                     {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
-                     {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""}, 
-                     {"screen_recorder_active", ""}, {"us_probe_active", ""}};
+    *m_app_params = {
+        {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""},
+        {"us_probe_ip_address", ""}, {"us_probe_udp_port", ""}, 
+        {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
+        {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
+        {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
+        {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
+        {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""}, 
+        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"measure_eye_tracker_accuracy", ""},
+        {"eye_tracker_target_path", ""}
+    };
 
 }
 
@@ -564,16 +567,18 @@ void SonoAssist::generate_normal_display(void) {
     m_us_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
     m_us_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_us_bg_i_p.get()));
     m_main_scene_p->addItem(m_us_bg_p.get());
-    
+
     // centering the placeholder
     int x_pos = (m_main_scene_p->width() / 2) - (m_main_us_img_width / 2);
     int y_pos = (m_main_scene_p->height() / 2) - (m_main_us_img_height / 2);
     m_us_bg_p->setPos(x_pos, y_pos);
-    
+
+    // generating eyetracker targets
+    generate_eye_tracker_targets();
+
     // getting the placeholder position (screen coordinates)
     QPoint view_point = ui.graphicsView->mapFromScene(m_us_bg_p->pos());
     QPoint screen_point = ui.graphicsView->viewport()->mapToGlobal(view_point);
-    
     // writing the placeholder position to the output params
     m_output_params["display_x"] = screen_point.x();
     m_output_params["display_y"] = screen_point.y();
@@ -596,6 +601,63 @@ void SonoAssist::clean_normal_display(void) {
         m_us_pixmap_p.reset();
     }
  
+}
+
+void SonoAssist::generate_eye_tracker_targets() {
+    
+    // making sure required are filled
+    if (m_config_is_loaded && !m_preview_is_active) {
+
+        // placing eye tracker targets (accuracy measurement mode)
+        if ((*m_app_params)["measure_eye_tracker_accuracy"] == "true") {
+
+            // getting main display coordinates
+            QPointF display_pos = m_us_bg_p->pos();
+            int display_x_pos = display_pos.x();
+            int display_y_pos = display_pos.y();
+
+            for (int i(0); i < EYETRACKER_N_ACC_TARGETS; i++) {
+
+                // loading the eyetracker target
+                QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_target_path"].c_str()));
+                crosshair_img = crosshair_img.scaled(EYETRACKER_ACC_TARGET_WIDTH, EYETRACKER_ACC_TARGET_HEIGHT, Qt::KeepAspectRatio);
+                QGraphicsPixmapItem* curr_target_p = new QGraphicsPixmapItem(crosshair_img);
+
+                // defining the current target position (on display)
+                int target_x_pos = 0, target_y_pos = 0;
+                switch (i) {
+                    // top lefts
+                case 0:
+                    target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    break;
+                    // bottom left
+                case 1:
+                    target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    break;
+                    // top rigth
+                case 2:
+                    target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    break;
+                case 3:
+                    target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    break;
+                }
+
+                // placing the crosshair in the middle of the display
+                curr_target_p->setPos(target_x_pos, target_y_pos);
+                curr_target_p->setZValue(3);
+                m_main_scene_p->addItem(curr_target_p);
+
+            }
+
+        }
+
+    }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// input / output params
@@ -706,14 +768,14 @@ void SonoAssist::configure_device_clients() {
         }
 
         // configuring the ext IMU client
-        if (QString((*m_app_params)["ext_imu_active"].c_str()) == "true") {
+        if ((*m_app_params)["ext_imu_active"] == "true") {
             m_metawear_client_p->set_sensor_used(true);
             connect(m_metawear_client_p.get(), &MetaWearBluetoothClient::device_status_change,
                 this, &SonoAssist::on_ext_imu_status_change);
         }
 
         // configuring the eye tracker client
-        if (QString((*m_app_params)["eye_tracker_active"].c_str()) == "true") {
+        if ((*m_app_params)["eye_tracker_active"] == "true") {
             m_gaze_tracker_client_p->set_sensor_used(true);
             connect(m_gaze_tracker_client_p.get(), &GazeTracker::device_status_change,
                 this, &SonoAssist::on_eye_tracker_status_change);
@@ -722,7 +784,7 @@ void SonoAssist::configure_device_clients() {
         }
 
         // configuring the RGB D camera client
-        if (QString((*m_app_params)["rgb_camera_active"].c_str()) == "true") {
+        if ((*m_app_params)["rgb_camera_active"] == "true") {
             m_camera_client_p->set_sensor_used(true);
             connect(m_camera_client_p.get(), &RGBDCameraClient::device_status_change,
                 this, &SonoAssist::on_rgbd_camera_status_change);
@@ -731,7 +793,7 @@ void SonoAssist::configure_device_clients() {
         }
 
         // configuring the screen recorder client
-        if (QString((*m_app_params)["screen_recorder_active"].c_str()) == "true") {
+        if ((*m_app_params)["screen_recorder_active"] == "true") {
             m_screen_recorder_client_p->set_sensor_used(true);
             connect(m_screen_recorder_client_p.get(), &ScreenRecorder::device_status_change,
                 this, &SonoAssist::on_screen_recorder_status_change);
@@ -740,7 +802,7 @@ void SonoAssist::configure_device_clients() {
         }
 
         // configuring the US probe client
-        if (QString((*m_app_params)["us_probe_active"].c_str()) == "true") {
+        if ((*m_app_params)["us_probe_active"] == "true") {
             m_us_probe_client_p->set_sensor_used(true);
             connect(m_us_probe_client_p.get(), &ClariusProbeClient::device_status_change,
                 this, &SonoAssist::on_us_probe_status_change);

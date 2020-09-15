@@ -23,8 +23,8 @@ Acquisition tool
 - [x] index (timestamp) all incoming data from the screen recorder
 - [x] export the image display coordinates for processing
 
-- [] display mode for eyetracker accuracy measurements
-- [] export eyetracker target positions
+- [x] config param for eyetracker accuracy measurements
+- [x] export eyetracker target positions
 
 - [] eye tracker accuracy measurement script
 - [] eye tracker frequency measurement script
