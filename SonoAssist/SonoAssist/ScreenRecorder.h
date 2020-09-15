@@ -6,6 +6,7 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <fstream>
 
 #include <QDebug>
 #include <QImage>
@@ -59,6 +60,8 @@ class ScreenRecorder : public SensorDevice {
 
 		// output file vars
 		bool m_output_file_loaded = false;
+		std::ofstream m_output_index_file;
+		std::string m_output_index_file_str;
 		std::string m_output_video_file_str;
 
 		// video output vars

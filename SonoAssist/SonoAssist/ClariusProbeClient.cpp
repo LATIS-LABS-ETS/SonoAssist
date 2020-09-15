@@ -51,13 +51,16 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
     // writting data to output files (csv and video), in main mode
     if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
 
+        std::string output_str = probe_client_p->get_millis_timestamp();
+
         if (npos) {
-            std::string output_str = probe_client_p->get_millis_timestamp() + "," +
-                std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," +
+            output_str += "," + std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," + 
                 std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
-            probe_client_p->m_output_imu_file << output_str;
+        } else {
+            output_str += ", , , , , , \n";
         }
 
+        probe_client_p->m_output_imu_file << output_str;
         probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
 
     }
@@ -184,6 +187,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
         m_output_imu_file.open(m_output_imu_file_str);
         m_output_imu_file << "Time (ms),gx,gy,gz,ax,ay,az" << std::endl;
         m_output_imu_file.close();
+
         m_output_file_loaded = true;
 
     } catch (...) {

@@ -9,6 +9,7 @@
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QJsonObject>
 #include <QtXML/QDomDocument>
 #include <QGraphicsPixmapItem>
 #include <QtWidgets/QMainWindow>
@@ -112,11 +113,11 @@ class SonoAssist : public QMainWindow {
 		// state check vars
 		bool m_stream_is_active = false;
 		bool m_preview_is_active = false;
-		
 		bool m_config_is_loaded = false;
 		bool m_output_is_loaded = false;
 
-		// config vars
+		// config and output vars
+		QJsonObject m_output_params;
 		std::string m_output_folder_path = "";
 		std::shared_ptr<config_map> m_app_params;
 		
@@ -147,6 +148,9 @@ class SonoAssist : public QMainWindow {
 		bool check_devices_streaming(void);
 		bool check_device_connections(void);
 		void configure_device_clients(void);
+
+		// param write/load functions
+		void write_output_params(void);
 		bool load_config_file(QString param_file_path);
 
 };

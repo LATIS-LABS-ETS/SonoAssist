@@ -165,6 +165,7 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 		m_output_file.open(m_output_file_str);
 		m_output_file << "Time (ms),X coordinate,Y coordinate" << std::endl;
 		m_output_file.close();
+
 		m_output_file_loaded = true;
 
 	} catch (...) {

@@ -46,6 +46,9 @@
 
 /*
 * Class to enable communication with a Clarius ultrasound probe
+* 
+* The output IMU file also serves as a index (timestamp) for US images since IMU data
+* is received with the probe images.
 */
 class ClariusProbeClient : public SensorDevice {
 

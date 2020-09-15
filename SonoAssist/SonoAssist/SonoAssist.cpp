@@ -288,6 +288,9 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
             }
         }
 
+        // writing output params
+        if (!m_preview_is_active) write_output_params();
+
         // cleaning the appropriate display
         if (m_preview_is_active) {
             clean_preview_display();
@@ -566,6 +569,16 @@ void SonoAssist::generate_normal_display(void) {
     int x_pos = (m_main_scene_p->width() / 2) - (m_main_us_img_width / 2);
     int y_pos = (m_main_scene_p->height() / 2) - (m_main_us_img_height / 2);
     m_us_bg_p->setPos(x_pos, y_pos);
+    
+    // getting the placeholder position (screen coordinates)
+    QPoint view_point = ui.graphicsView->mapFromScene(m_us_bg_p->pos());
+    QPoint screen_point = ui.graphicsView->viewport()->mapToGlobal(view_point);
+    
+    // writing the placeholder position to the output params
+    m_output_params["display_x"] = screen_point.x();
+    m_output_params["display_y"] = screen_point.y();
+    m_output_params["display_width"] = m_main_us_img_width;
+    m_output_params["display_height"] = m_main_us_img_height;
 
 }
 
@@ -585,7 +598,7 @@ void SonoAssist::clean_normal_display(void) {
  
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// input / output params
 
 bool SonoAssist::load_config_file(QString param_file_path) {
 
@@ -605,7 +618,7 @@ bool SonoAssist::load_config_file(QString param_file_path) {
     QDomElement docElem = doc.documentElement();
     QDomNodeList children;
 
-    // filling the parameter hash with xml content
+    // filling the parameter map with xml content
     for (auto& parameter : *m_app_params) {
         children = docElem.elementsByTagName(QString(parameter.first.c_str()));
         if (children.count() == 1) {
@@ -616,6 +629,28 @@ bool SonoAssist::load_config_file(QString param_file_path) {
     return true;
 
 }
+
+
+void SonoAssist::write_output_params(void) {
+
+    // making sure there is data to save
+    if (!m_output_params.isEmpty()) {
+    
+        // opening the output file
+        QString output_file_path = QString(m_output_folder_path.c_str()) + "/sono_assist_output_params.json";
+        QFile output_file(output_file_path);
+
+        // writing the output params
+        if (output_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate))
+            output_file.write(QJsonDocument(m_output_params).toJson());
+
+        output_file.close();
+
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
 
 /*
 * Checks if all used devices are ready for acquisition

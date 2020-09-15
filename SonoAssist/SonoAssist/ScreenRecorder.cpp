@@ -57,7 +57,8 @@ void ScreenRecorder::start_stream() {
 
     if (m_device_connected && !m_device_streaming) {
 
-        // creating a writer for the captured frames
+        // opening output files
+        m_output_index_file.open(m_output_index_file_str, std::fstream::app);
         m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
             SCREEN_CAPTURE_FPS, cv::Size(m_window_rc.right, m_window_rc.bottom));
 
@@ -78,16 +79,37 @@ void ScreenRecorder::stop_stream() {
 		m_collection_thread.join();
 		m_device_streaming = false;
 	
-        // destroying the video writter
+        // closing output files
         m_video->release();
+        m_output_index_file.close();
     }
 
 }
 
 void ScreenRecorder::set_output_file(std::string output_folder_path) {
 
-    m_output_video_file_str = output_folder_path + "/screen_recorder_images.avi";
-    m_output_file_loaded = true;
+    try {
+
+        m_output_folder_path = output_folder_path;
+
+        // defining the output video path
+        m_output_video_file_str = output_folder_path + "/screen_recorder_images.avi";
+
+        // defining the output index file
+        m_output_index_file_str = output_folder_path + "/screen_recorder_index.csv";
+        if (m_output_index_file.is_open()) m_output_index_file.close();
+
+        // writing the output index file header
+        m_output_index_file.open(m_output_index_file_str);
+        m_output_index_file << "Time (ms)" << std::endl;
+        m_output_index_file.close();
+
+        m_output_file_loaded = true;
+
+    }
+    catch (...) {
+        qDebug() << "\ClariusProbeClient - error occured while setting the output file";
+    }
 
 }
 
@@ -133,8 +155,11 @@ void ScreenRecorder::collect_window_captures(void) {
             std::this_thread::sleep_for(std::chrono::milliseconds(CAPTURE_DISPLAY_THREAD_DELAY_MS));
         }
         
-        // in normal mode, write to video file
-        else m_video->write(m_capture_cvt_mat);
+        // in normal mode, write to video and index file
+        else {
+            m_video->write(m_capture_cvt_mat);
+            m_output_index_file << get_millis_timestamp() << "\n";
+        }
 
 #ifdef _MEASURE_US_IMG_RATES_
 
