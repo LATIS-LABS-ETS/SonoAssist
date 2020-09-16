@@ -21,6 +21,7 @@ Acquisition tool
 
 - [x] index (timestamp) all incoming data from the Clarius probe
 - [x] index (timestamp) all incoming data from the screen recorder
+- [] index (timestamp) all incoming data from the real sens camera
 - [x] export the image display coordinates for processing
 
 - [x] config param for eyetracker accuracy measurements
@@ -30,14 +31,16 @@ Acquisition tool
 - [] eye tracker frequency measurement script
 - [] clarius data frequency measurement script
 - [] screen recorder frequency measurement script
+- [] display script output in jupyter notebook
+
+- [] load default config path (installation location)
+- [] Build acquisition tool in release mode
+- [] Installer for the acquisition tool
 
 - [] Update the configs documentation
 - [] Update infrastructure diagram
-- [] Installer for the acquisition tool
 
 Processing scripts
-- [x] fix current tracking tool
-- [] UI tool for probe tracking
 - [] generate visual saliency maps
 
 Models

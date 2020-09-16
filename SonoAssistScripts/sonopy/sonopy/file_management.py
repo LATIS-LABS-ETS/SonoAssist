@@ -8,12 +8,18 @@ class SonoFolderManager:
 
     ''' Allows acces to the different data/files in a SonoAssit recording folder '''
 
-    # expected data file names in the output folder
-    acc_file_name = "gyro_acceleration.csv"
-    eyetracker_file_name = "eye_tracker.csv"
-    rgbd_video_file_name = "camera_data.bag"
-    orientation_file_name = "gyro_orientation.csv"
-
+    # defining the expected data file names in the output folder
+    folder_file_paths = {
+        "clarius_data" : "clarius_data.csv",
+        "clarius_video" : "clarius_images.avi",
+        "ext_imu_ori" : "ext_imu_orientation.csv",
+        "ext_imu_acc" : "ext_imu_acceleration.csv",
+        "eyetracker_data" : "eye_tracker.csv",
+        "rgbd_video" : "camera_data.bag",
+        "screen_rec_data" : "screen_recorder_data.csv",
+        "screen_rec_video" : "screen_recorder_images.avi"
+    }
+    
     def __init__(self, config_path):
 
         '''
@@ -23,25 +29,50 @@ class SonoFolderManager:
         '''
 
         # loading configurations
-        self.config_path = config_path
         self.config_manager = ConfigurationManager(config_path)
 
-        # defining data file paths
-        sono_output_folder = self.config_manager.config_data["recording_folder"]
-        self.acc_file_path = os.path.join(sono_output_folder, self.acc_file_name)
-        self.eyetracker_file_path = os.path.join(sono_output_folder, self.eyetracker_file_name)
-        self.rgbd_video_file_path = os.path.join(sono_output_folder, self.rgbd_video_file_name)
-        self.orientation_file_path = os.path.join(sono_output_folder, self.orientation_file_name)
+        # defining the folder file paths
+        sono_output_folder = self.config_manager.config_data["input_folder"]
+        for key in self.folder_file_paths.keys():
+            self.folder_file_paths[key] = os.path.join(sono_output_folder, self.folder_file_paths[key])
 
 
-    def get_video_file_path(self):
-        return self.rgbd_video_file_path
+    # defining the loading functions for the csv files
 
     def load_gaze_data(self):
-        return pd.read_csv(self.eyetracker_file_path)
-  
-    def load_acc_data(self):
-        return pd.read_csv(self.acc_file_path)
+        
+        gaze_data = None
+        try:
+            gaze_data = pd.read_csv(self.folder_file_paths["eyetracker_data"])
+        except : pass
 
-    def load_orientation_data(self):
-        return pd.read_csv(self.orientation_file_path)
+        return gaze_data
+
+    def load_ext_imu_data(self):
+
+        acc_data = None 
+        ori_data = None
+        try :
+            ori_data = pd.read_csv(self.folder_file_paths["ext_imu_ori"]) 
+            acc_data = pd.read_csv(self.folder_file_paths["ext_imu_acc"])
+        except : pass
+
+        return (ori_data, acc_data)
+
+    def load_clarius_data(self):
+
+        probe_data = None
+        try :
+            probe_data = pd.read_csv(self.folder_file_paths["clarius_data"]) 
+        except : pass
+
+        return probe_data
+
+    def load_screen_rec_data(self):
+
+        sc_data = None
+        try :
+            sc_data =  pd.read_csv(self.folder_file_paths["screen_rec_data"])
+        except : pass
+
+        return sc_data

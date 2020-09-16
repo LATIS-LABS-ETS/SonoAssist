@@ -179,7 +179,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
         m_output_folder_path = output_folder_path;
 
         // defining the output file path
-        m_output_imu_file_str = output_folder_path + "/clarius_imu.csv";
+        m_output_imu_file_str = output_folder_path + "/clarius_data.csv";
         m_output_video_file_str = output_folder_path + "/clarius_images.avi";
         if (m_output_imu_file.is_open()) m_output_imu_file.close();
 

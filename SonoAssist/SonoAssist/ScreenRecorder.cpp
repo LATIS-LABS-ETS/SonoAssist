@@ -96,7 +96,7 @@ void ScreenRecorder::set_output_file(std::string output_folder_path) {
         m_output_video_file_str = output_folder_path + "/screen_recorder_images.avi";
 
         // defining the output index file
-        m_output_index_file_str = output_folder_path + "/screen_recorder_index.csv";
+        m_output_index_file_str = output_folder_path + "/screen_recorder_data.csv";
         if (m_output_index_file.is_open()) m_output_index_file.close();
 
         // writing the output index file header

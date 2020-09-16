@@ -47,7 +47,6 @@ void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGatt
 
 }
 
-
 /*
 * Writes the specified data to the target BLE characteristic.
 * The function does nothing if no device is not connected or if the provided characteristic is invalid.
@@ -302,8 +301,8 @@ void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
 		m_output_folder_path = output_folder_path;
 
 		// defining the output and sync output file paths
-		m_output_ori_file_str = output_folder_path + "/gyro_orientation.csv";
-		m_output_acc_file_str = output_folder_path + "/gyro_acceleration.csv";
+		m_output_ori_file_str = output_folder_path + "/ext_imu_orientation.csv";
+		m_output_acc_file_str = output_folder_path + "/ext_imu_acceleration.csv";
 		if (m_output_ori_file.is_open()) m_output_ori_file.close();
 		if (m_output_acc_file.is_open()) m_output_acc_file.close();
 
