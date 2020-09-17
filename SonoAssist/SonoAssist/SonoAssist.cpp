@@ -44,7 +44,7 @@ SonoAssist::~SonoAssist(){
 
         // making sur the streams are shut off
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if (m_sensor_devices[i]->get_stream_status()) {
+            if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->stop_stream();
                 m_sensor_devices[i]->disconnect_device();
             }
@@ -259,11 +259,11 @@ void SonoAssist::on_start_acquisition_button_clicked() {
         } else {
             QString title = "Stream can not be started";
             QString message = "The following devices are not ready for acquisition : [ ";
-            if (!m_us_probe_client_p->get_connection_status()) message += "US Probe (Clarius),";
-            if (!m_screen_recorder_client_p->get_connection_status()) message += "Screen recorder,";
-            if (!m_gaze_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker), ";
-            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (external IMU), ";
-            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD camera) ";
+            if (!m_us_probe_client_p->get_connection_status() && m_us_probe_client_p->get_sensor_used()) message += "US Probe (Clarius),";
+            if (!m_screen_recorder_client_p->get_connection_status() && m_screen_recorder_client_p->get_sensor_used()) message += "Screen recorder,";
+            if (!m_gaze_tracker_client_p->get_connection_status() && m_gaze_tracker_client_p->get_sensor_used()) message += "Tobii 4C (eye tracker), ";
+            if (!m_metawear_client_p->get_connection_status() && m_metawear_client_p->get_sensor_used()) message += "MetaMotionC (external IMU), ";
+            if (!m_camera_client_p->get_connection_status() && m_camera_client_p->get_sensor_used()) message += "Intel Realsens camera (RGBD camera) ";
             message += "].";
             display_warning_message(title, message);
         }

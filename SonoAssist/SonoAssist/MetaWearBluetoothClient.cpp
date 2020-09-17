@@ -164,7 +164,7 @@ void MetaWearBluetoothClient::connect_device() {
 	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
 		
 		// disconnect the device if already connected
-		if (m_device_connected) disconnect_device();
+		disconnect_device();
 		
 		// launching device discovery
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
@@ -175,27 +175,32 @@ void MetaWearBluetoothClient::connect_device() {
 
 void MetaWearBluetoothClient::disconnect_device() {
 
-	// stopping the data stream
-	stop_stream();
-	m_device_connected = false;
+	// making sure the device is connected
+	if (m_device_connected) {
 
-	// clearing the metawear related vars
-	mbl_mw_metawearboard_free(m_metawear_board_p);
-	m_metawear_ble_interface = { 0 };
+		// stopping the data stream
+		stop_stream();
+		m_device_connected = false;
 
-	// clearing qt communication vars
-	m_metawear_services_p.clear();
-	m_metawear_device_controller_p.reset();
+		// clearing the metawear related vars
+		mbl_mw_metawearboard_free(m_metawear_board_p);
+		m_metawear_ble_interface = { 0 };
 
-	// clearing callback structures / vars
-	m_char_update_callback_map.clear();
-	bytes_callback_queue empty_queue;
-	std::swap(m_char_read_callback_queue, empty_queue);
-	m_disconnect_event_caller = nullptr;
-	m_disconnect_handler = nullptr;
+		// clearing qt communication vars
+		m_metawear_services_p.clear();
+		m_metawear_device_controller_p.reset();
 
-	// changing the device state
-	emit device_status_change(false);
+		// clearing callback structures / vars
+		m_char_update_callback_map.clear();
+		bytes_callback_queue empty_queue;
+		std::swap(m_char_read_callback_queue, empty_queue);
+		m_disconnect_event_caller = nullptr;
+		m_disconnect_handler = nullptr;
+
+		// changing the device state
+		emit device_status_change(false);	
+	
+	}
 
 }
 

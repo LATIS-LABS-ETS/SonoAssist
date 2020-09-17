@@ -15,7 +15,7 @@ bool SensorDevice::get_connection_status(void) const {
 }
 
 void SensorDevice::set_connection_status(bool state) {
-	m_device_streaming = state;
+	m_device_connected = state;
 }
 
 bool SensorDevice::get_stream_status(void) const {

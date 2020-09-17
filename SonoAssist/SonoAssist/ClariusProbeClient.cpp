@@ -117,7 +117,13 @@ void ClariusProbeClient::connect_device() {
 void ClariusProbeClient::disconnect_device() {
     
     if (m_device_connected) { 
-        clariusDestroyListener();
+
+        if (clariusDestroyListener() == 0) {
+            qDebug() << "\nClariusProbeClient - destroyed the listener\n";
+        } else {
+            qDebug() << "\nClariusProbeClient - failed to destroy the listener\n";
+        }
+                
         m_device_connected = false;
         emit device_status_change(false);
     }
@@ -160,14 +166,18 @@ void ClariusProbeClient::stop_stream() {
     if (m_device_streaming) {
 
         // stopping the acquisition
-        clariusDisconnect(nullptr);
+        if (clariusDisconnect(nullptr) == 0) {
+            qDebug() << "\nClariusProbeClient - disconnected\n";
+        }else {
+            qDebug() << "\nClariusProbeClient - failed to disconnect\n";
+        }
+
         m_device_streaming = false;
 
         // closing the outputs
         m_video->release();
         m_output_imu_file.close();
 
-        qDebug() << "\nClariusProbeClient - stoped the acquisition\n";
     }
 
 }

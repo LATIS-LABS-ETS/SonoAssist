@@ -61,8 +61,9 @@ void RGBDCameraClient::start_stream() {
 		if (m_stream_preview) {
 			m_collect_data = true;
 			m_collection_thread = std::thread(&RGBDCameraClient::collect_camera_data, this);
-			m_device_streaming = true;
 		}
+
+		m_device_streaming = true;
 		
 	}
 
