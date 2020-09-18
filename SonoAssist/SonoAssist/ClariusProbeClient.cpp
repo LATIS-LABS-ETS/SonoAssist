@@ -40,33 +40,37 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 
 #endif /*_MEASURE_US_IMG_RATES_*/
 
-    // mapping the incoming image to a mat
-    probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
+    // dropping frames until the last image gets displayed
+    if (probe_client_p->m_display_available) {
+    
+        // mapping the incoming image to a mat
+        probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
 
-    // changing color representation and resizing
-    cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
-    cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat, 
-        probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
+        // changing color representation and resizing
+        cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
+        cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
+            probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
 
-    // writting data to output files (csv and video), in main mode
-    if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
+        // writting data to output files (csv and video), in main mode
+        if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
 
-        std::string output_str = probe_client_p->get_millis_timestamp();
+            std::string output_str = probe_client_p->get_micro_timestamp();
+            if (npos) {
+                output_str += "," + std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," +
+                    std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
+            } else {
+                output_str += ", , , , , , \n";
+            }
 
-        if (npos) {
-            output_str += "," + std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," + 
-                std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
-        } else {
-            output_str += ", , , , , , \n";
+            probe_client_p->m_output_imu_file << output_str;
+            probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
+
         }
 
-        probe_client_p->m_output_imu_file << output_str;
-        probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
-
+        // image is passed by reference
+        emit probe_client_p->new_us_image(probe_client_p->m_output_img);
+    
     }
-
-    // emitting the image to the UI
-    emit probe_client_p->new_us_image(probe_client_p->m_output_img);
 
 #ifdef _MEASURE_US_IMG_RATES_
 
@@ -117,7 +121,13 @@ void ClariusProbeClient::connect_device() {
 void ClariusProbeClient::disconnect_device() {
     
     if (m_device_connected) { 
-        clariusDestroyListener();
+
+        if (clariusDestroyListener() == 0) {
+            qDebug() << "\nClariusProbeClient - destroyed the listener\n";
+        } else {
+            qDebug() << "\nClariusProbeClient - failed to destroy the listener\n";
+        }
+                
         m_device_connected = false;
         emit device_status_change(false);
     }
@@ -160,14 +170,18 @@ void ClariusProbeClient::stop_stream() {
     if (m_device_streaming) {
 
         // stopping the acquisition
-        clariusDisconnect(nullptr);
+        if (clariusDisconnect(nullptr) == 0) {
+            qDebug() << "\nClariusProbeClient - disconnected\n";
+        }else {
+            qDebug() << "\nClariusProbeClient - failed to disconnect\n";
+        }
+
         m_device_streaming = false;
 
         // closing the outputs
         m_video->release();
         m_output_imu_file.close();
 
-        qDebug() << "\nClariusProbeClient - stoped the acquisition\n";
     }
 
 }
@@ -185,7 +199,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
 
         // writing the output file header
         m_output_imu_file.open(m_output_imu_file_str);
-        m_output_imu_file << "Time (ms),gx,gy,gz,ax,ay,az" << std::endl;
+        m_output_imu_file << "Time (us),gx,gy,gz,ax,ay,az" << std::endl;
         m_output_imu_file.close();
 
         m_output_file_loaded = true;

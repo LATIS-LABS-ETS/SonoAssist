@@ -101,7 +101,7 @@ void ScreenRecorder::set_output_file(std::string output_folder_path) {
 
         // writing the output index file header
         m_output_index_file.open(m_output_index_file_str);
-        m_output_index_file << "Time (ms)" << std::endl;
+        m_output_index_file << "Time (us)" << std::endl;
         m_output_index_file.close();
 
         m_output_file_loaded = true;
@@ -158,7 +158,7 @@ void ScreenRecorder::collect_window_captures(void) {
         // in normal mode, write to video and index file
         else {
             m_video->write(m_capture_cvt_mat);
-            m_output_index_file << get_millis_timestamp() << "\n";
+            m_output_index_file << get_micro_timestamp() << "\n";
         }
 
 #ifdef _MEASURE_US_IMG_RATES_

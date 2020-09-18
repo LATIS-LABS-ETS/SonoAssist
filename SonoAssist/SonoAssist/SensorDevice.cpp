@@ -15,7 +15,7 @@ bool SensorDevice::get_connection_status(void) const {
 }
 
 void SensorDevice::set_connection_status(bool state) {
-	m_device_streaming = state;
+	m_device_connected = state;
 }
 
 bool SensorDevice::get_stream_status(void) const {
@@ -84,14 +84,14 @@ void SensorDevice::write_to_redis(std::string data_str){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helpers
 
 /**
-* Generates a milliseconds precision timestamp
+* Generates a micro second precision timestamp
 * 
-* @returns string of millisecond count since epoch
+* @returns string of micro second count since epoch
 */
-std::string SensorDevice::get_millis_timestamp(void) const {
+std::string SensorDevice::get_micro_timestamp(void) const {
 
-	auto time_stamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch()).count();
+	auto time_stamp = std::chrono::duration_cast<std::chrono::microseconds>(
+		std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
 	return std::to_string(time_stamp);
 

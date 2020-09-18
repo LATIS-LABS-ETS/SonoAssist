@@ -63,17 +63,18 @@ class ClariusProbeClient : public SensorDevice {
         void disconnect_device(void);
         void set_output_file(std::string output_folder_path);
 
-		// ouput image dimensions
+		// ouput image dimensions (accessed from callback)
 		int m_out_img_width = CLARIUS_NORMAL_DEFAULT_WIDTH;
 		int m_out_img_height = CLARIUS_NORMAL_DEFAULT_HEIGHT;
 
-		// image handling vars
+		// image handling vars (accessed from callback)
 		QImage m_output_img;
 		cv::Mat m_cvt_mat;
 		cv::Mat m_input_img_mat;
 		cv::Mat m_output_img_mat;
 
 		// output vars (accessed from callback)
+		bool m_display_available = true;
 		std::ofstream m_output_imu_file;
 		std::unique_ptr<cv::VideoWriter> m_video;
 

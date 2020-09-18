@@ -28,10 +28,9 @@ Acquisition tool
 - [x] export eyetracker target positions
 
 - [] eye tracker accuracy measurement script
-- [] eye tracker frequency measurement script
-- [] clarius data frequency measurement script
-- [] screen recorder frequency measurement script
-- [] display script output in jupyter notebook
+- [x] eye tracker frequency measurement script
+- [x] clarius data frequency measurement script
+- [x] screen recorder frequency measurement script
 
 - [] load default config path (installation location)
 - [] Build acquisition tool in release mode

@@ -42,7 +42,7 @@ class SensorDevice : public QObject {
 		void write_to_redis(std::string data_str);
 
 		// helper functions
-		std::string get_millis_timestamp(void) const;
+		std::string get_micro_timestamp(void) const;
 		
 		// interface functions (virtual)
 		// all interface functions must be non-bloking

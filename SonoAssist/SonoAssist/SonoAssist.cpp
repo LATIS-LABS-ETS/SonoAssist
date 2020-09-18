@@ -10,8 +10,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // setting the graphics scene widget
     m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
     ui.graphicsView->setScene(m_main_scene_p.get());
-    
-    // generating the US image acquisition display
+   
     generate_normal_display();
 
     // creating the sensor clients
@@ -44,13 +43,12 @@ SonoAssist::~SonoAssist(){
 
         // making sur the streams are shut off
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if (m_sensor_devices[i]->get_stream_status()) {
+            if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->stop_stream();
                 m_sensor_devices[i]->disconnect_device();
             }
         }
 
-        // cleaning and removing the displays
         remove_normal_display();
         remove_preview_display();
 
@@ -63,6 +61,8 @@ SonoAssist::~SonoAssist(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// slots
 
 void SonoAssist::on_new_clarius_image(QImage new_image){
+
+    m_us_probe_client_p->m_display_available = false;
 
     // removing the old image
     if (m_us_pixmap_p.get() != nullptr) {
@@ -89,6 +89,8 @@ void SonoAssist::on_new_clarius_image(QImage new_image){
         m_main_scene_p->removeItem(m_us_pixmap_p.get());
         m_us_pixmap_p.reset();
     }
+
+    m_us_probe_client_p->m_display_available = true;
 
 }
 
@@ -259,11 +261,11 @@ void SonoAssist::on_start_acquisition_button_clicked() {
         } else {
             QString title = "Stream can not be started";
             QString message = "The following devices are not ready for acquisition : [ ";
-            if (!m_us_probe_client_p->get_connection_status()) message += "US Probe (Clarius),";
-            if (!m_screen_recorder_client_p->get_connection_status()) message += "Screen recorder,";
-            if (!m_gaze_tracker_client_p->get_connection_status()) message += "Tobii 4C (eye tracker), ";
-            if (!m_metawear_client_p->get_connection_status()) message += "MetaMotionC (external IMU), ";
-            if (!m_camera_client_p->get_connection_status()) message += "Intel Realsens camera (RGBD camera) ";
+            if (!m_us_probe_client_p->get_connection_status() && m_us_probe_client_p->get_sensor_used()) message += "US Probe (Clarius),";
+            if (!m_screen_recorder_client_p->get_connection_status() && m_screen_recorder_client_p->get_sensor_used()) message += "Screen recorder,";
+            if (!m_gaze_tracker_client_p->get_connection_status() && m_gaze_tracker_client_p->get_sensor_used()) message += "Tobii 4C (eye tracker), ";
+            if (!m_metawear_client_p->get_connection_status() && m_metawear_client_p->get_sensor_used()) message += "MetaMotionC (external IMU), ";
+            if (!m_camera_client_p->get_connection_status() && m_camera_client_p->get_sensor_used()) message += "Intel Realsens camera (RGBD camera) ";
             message += "].";
             display_warning_message(title, message);
         }
@@ -626,24 +628,25 @@ void SonoAssist::generate_eye_tracker_targets() {
                 // defining the current target position (on display)
                 int target_x_pos = 0, target_y_pos = 0;
                 switch (i) {
-                    // top lefts
-                case 0:
-                    target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
-                    target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    // top left
+                    case 0:
+                        target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
+                        target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
                     break;
                     // bottom left
-                case 1:
-                    target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
-                    target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    case 1:
+                        target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
+                        target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
                     break;
                     // top rigth
-                case 2:
-                    target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
-                    target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    case 2:
+                        target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
+                        target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
                     break;
-                case 3:
-                    target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
-                    target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                    // bottom right
+                    case 3:
+                        target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
+                        target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
                     break;
                 }
 

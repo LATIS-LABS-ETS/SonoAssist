@@ -39,7 +39,7 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 		// normal mode just writes to the output file
 		else {
 		
-			std::string output_str = manager->get_millis_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
+			std::string output_str = manager->get_micro_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
 				+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
 			manager->write_to_redis(output_str);
@@ -163,7 +163,7 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 
 		// writing the output file header
 		m_output_file.open(m_output_file_str);
-		m_output_file << "Time (ms),X coordinate,Y coordinate" << std::endl;
+		m_output_file << "Time (us),X coordinate,Y coordinate" << std::endl;
 		m_output_file.close();
 
 		m_output_file_loaded = true;
