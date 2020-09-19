@@ -16,19 +16,17 @@ void url_receiver(char const* url, void* user_data){
 }
 
 /*
-* Callback function for the collection of gaze point data
+* Callback function for the collection of gaze point data ( relative (x, y) coordinates on the screen)
 * This function is called by the collection thread every time a new gaze point is available
 *
-* @param [in] gaze_point structure containing the gaze point data ( relative x, y coordinates)
+* @param [in] gaze_point structure containing the gaze point data
 * @param [in] user_data voided context variable which was passed to the API upon callback registration. 
 			  Pointer to the GazeTracker object interfacing with the eyetracker.
 */
-void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
+void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 	
-	// making sure data is valid
 	if (gaze_point->validity == TOBII_VALIDITY_VALID) {
 
-		// getting the eye tracker manager
 		GazeTracker* manager = (GazeTracker*)user_data;
 
 		// preview mode just emits gaze points to the UI
@@ -36,15 +34,40 @@ void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 			emit manager->new_gaze_point(gaze_point->position_xy[0], gaze_point->position_xy[1]);
 		}
 
-		// normal mode just writes to the output file
+		// main display mode just writes to the output file
 		else {
 		
 			std::string output_str = manager->get_micro_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
 				+ std::to_string(gaze_point->position_xy[1]) + "\n";
 
 			manager->write_to_redis(output_str);
-			manager->m_output_file << output_str;
+			manager->m_output_gaze_file << output_str;
 
+		}
+
+	}
+
+}
+
+/*
+* Callback function for the collection of head position data (x, y, z coordinates (mm) from the center of the screen)
+* This function is called by the collection thread every time a new measure is available
+*
+* @param [in] gaze_point structure containing the head pose data
+* @param [in] user_data voided context variable which was passed to the API upon callback registration.
+			  Pointer to the GazeTracker object interfacing with the eyetracker.
+*/
+void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
+
+	if (head_pose->position_validity == TOBII_VALIDITY_VALID) {
+	
+		GazeTracker* manager = (GazeTracker*)user_data;
+
+		// only writting out data in main display mode
+		if (!manager->get_stream_preview_status()) {
+			std::string output_str = manager->get_micro_timestamp() + "," + std::to_string(head_pose->position_xyz[0]) + ","
+				+ std::to_string(head_pose->position_xyz[1]) + "," + std::to_string(head_pose->position_xyz[2]) + "\n";
+			manager->m_output_head_file << output_str;
 		}
 
 	}
@@ -82,7 +105,11 @@ void GazeTracker::connect_device(void) {
 		if (error != TOBII_ERROR_NO_ERROR) return;
 
 		// subscribing the gaze data callback
-		error = tobii_gaze_point_subscribe(m_tobii_device, gaze_data_callback, (void*) this);
+		error = tobii_gaze_point_subscribe(m_tobii_device, gaze_point_callback, (void*) this);
+		if (error != TOBII_ERROR_NO_ERROR) return;
+
+		// subscribing the head pose data callback
+		error = tobii_head_pose_subscribe(m_tobii_device, head_pose_callback, (void*) this);
 		if (error != TOBII_ERROR_NO_ERROR) return;
 
 		m_device_connected = true;
@@ -97,6 +124,7 @@ void GazeTracker::disconnect_device(void) {
 	if (m_device_connected) {
 		
 		// unsubscribing the callback and destroying device
+		tobii_head_pose_unsubscribe(m_tobii_device);
 		tobii_gaze_point_unsubscribe(m_tobii_device);
 		tobii_device_destroy(m_tobii_device);
 		
@@ -112,9 +140,10 @@ void GazeTracker::start_stream() {
 	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming) {
 	
-		// opening the output file
+		// opening the output files
 		set_output_file(m_output_folder_path);
-		m_output_file.open(m_output_file_str, std::fstream::app);
+		m_output_head_file.open(m_output_head_str, std::fstream::app);
+		m_output_gaze_file.open(m_output_gaze_str, std::fstream::app);
 
 		// connecting to redis (if redis enabled)
 		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
@@ -125,7 +154,7 @@ void GazeTracker::start_stream() {
 
 		// launching the collection thread
 		m_collect_data = true;
-		m_collection_thread = std::thread(&GazeTracker::collect_gaze_data, this);
+		m_collection_thread = std::thread(&GazeTracker::collect_data, this);
 		m_device_streaming = true;
 	
 	}
@@ -137,12 +166,13 @@ void GazeTracker::stop_stream() {
 	// making sure requirements are filled
 	if (m_device_connected && m_device_streaming) {
 	
-		// stop the streaimg thread
+		// stop the streaming thread
 		m_collect_data = false;
 		m_collection_thread.join();
 
 		// closing the output file redis connection
-		m_output_file.close();
+		m_output_gaze_file.close();
+		m_output_head_file.close();
 		disconnect_from_redis();
 	
 		m_device_streaming = false;
@@ -157,14 +187,21 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 
 		m_output_folder_path = output_folder_path;
 
-		// defining the output file path
-		m_output_file_str = output_folder_path + "/eye_tracker.csv";
-		if (m_output_file.is_open()) m_output_file.close();
+		// defining the output files
+		m_output_head_str = output_folder_path + "/eye_tracker_head.csv";
+		m_output_gaze_str = output_folder_path + "/eye_tracker_gaze.csv";
+		if (m_output_head_file.is_open()) m_output_head_file.close();
+		if (m_output_gaze_file.is_open()) m_output_gaze_file.close();
 
-		// writing the output file header
-		m_output_file.open(m_output_file_str);
-		m_output_file << "Time (us),X coordinate,Y coordinate" << std::endl;
-		m_output_file.close();
+		// writting the head pose file header
+		m_output_head_file.open(m_output_head_str);
+		m_output_head_file << "Time (us),X,Y,Z" << std::endl;
+		m_output_head_file.close();
+
+		// writting the gaze file header
+		m_output_gaze_file.open(m_output_gaze_str);
+		m_output_gaze_file << "Time (us),X,Y" << std::endl;
+		m_output_gaze_file.close();
 
 		m_output_file_loaded = true;
 
@@ -175,11 +212,11 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 }
 
 /*
-* Gaze data collection function
-* This function is meant to be ran in a seperate thread. It waits for gaze data to be available then
-* triggers a call to the "gaze_data_callback" callback via the "tobii_device_process_callbacks" function.
+* Eye tracker data collection function
+* This function is meant to be ran in a seperate thread. It waits for data to be available to the callbacks then
+* triggers a call to the appropriate one via the "tobii_device_process_callbacks" function.
 */
-void GazeTracker::collect_gaze_data(void) {
+void GazeTracker::collect_data(void) {
 
 	// continuously wait for data and call callbacks
 	while (m_collect_data) {

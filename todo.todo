@@ -1,36 +1,16 @@
 Acquisition tool
-- [x] Modular sensor streams
-- [x] Better sensor client var names, class names and config param names
-- [x] Data preview mode (displays) only no saves
-- [x] Screen recorder functionality for probe images
-- [x] Acquisition of Clarius IMU data (real time)
-- [x] Acquisition of probe images (real time)
-- [x] Display for US images (screen recorder and CLarius) preview mode
-- [x] Display for US images (screen recorder and Clarius ) main mode
-- [x] Saving US images to file (Screen recorder)
-- [x] Saving US images to file (Clarius)
-- [x] Saving Clarius imu data to file
-- [x] Remove append mode for file writing
-- [x] Fix probe image data writing to file
-- [x] Fix probe IMU data writing to file
-- [x] Handle failed acquisition entry
-- [x] Add input field for clarius probe UDP port
-- [x] Make th UI a little cooler
-- [x] Image display and saving optimizations
-- [x] Image display FPS measurement compilation mode (SC and Clarius)
+----------------
+
+- [x] eye tracker - collection of head position data
 
 - [x] index (timestamp) all incoming data from the Clarius probe
 - [x] index (timestamp) all incoming data from the screen recorder
 - [] index (timestamp) all incoming data from the real sens camera
-- [x] export the image display coordinates for processing
 
 - [x] config param for eyetracker accuracy measurements
-- [x] export eyetracker target positions
-
-- [] eye tracker accuracy measurement script
-- [x] eye tracker frequency measurement script
-- [x] clarius data frequency measurement script
-- [x] screen recorder frequency measurement script
+- [x] export the image display coordinates to output
+- [x] export eyetracker target positions to output
+- [x] export screen dimensions to output
 
 - [] load default config path (installation location)
 - [] Build acquisition tool in release mode
@@ -39,8 +19,20 @@ Acquisition tool
 - [] Update the configs documentation
 - [] Update infrastructure diagram
 
+
 Processing scripts
+------------------
+- [x] eye tracker frequency measurement script
+- [x] clarius data frequency measurement script
+- [x] screen recorder frequency measurement script
+
+- [] mean head-monitor distance measurement script
+- [] eye tracker accuracy measurement script
+
 - [] generate visual saliency maps
 
+
 Models
+------
+
 - [] Build SonoEyeNet CNN with tensor flow

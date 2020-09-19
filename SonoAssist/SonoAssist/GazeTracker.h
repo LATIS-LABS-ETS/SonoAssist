@@ -32,10 +32,11 @@ class GazeTracker : public SensorDevice {
 		void set_output_file(std::string output_folder);
 
 		// threaded collection method and callback
-		void collect_gaze_data(void);
+		void collect_data(void);
 
 		// output file attributes
-		std::ofstream m_output_file;
+		std::ofstream m_output_gaze_file;
+		std::ofstream m_output_head_file;
 
 	signals:
 		void new_gaze_point(float x , float y);
@@ -49,7 +50,8 @@ class GazeTracker : public SensorDevice {
 
 		// output file vars
 		bool m_output_file_loaded = false;
-		std::string m_output_file_str = "";
+		std::string m_output_gaze_str = "";
+		std::string m_output_head_str = "";
 
 		// streaming vars
 		bool m_collect_data = false;
@@ -59,4 +61,5 @@ class GazeTracker : public SensorDevice {
 
 // helper and call back function prototypes
 void url_receiver(char const* url, void* user_data);
-void gaze_data_callback(tobii_gaze_point_t const* gaze_point, void* user_data);
+void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data);
+void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data);

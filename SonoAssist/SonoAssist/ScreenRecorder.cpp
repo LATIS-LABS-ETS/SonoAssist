@@ -11,32 +11,30 @@ extern std::vector<long long> input_img_stamps;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
+ScreenRecorder::ScreenRecorder() {
+
+    // getting the target window handle and bounding rectangle
+    m_window_handle = GetDesktopWindow();
+    GetClientRect(m_window_handle, &m_window_rc);
+
+}
+
 void ScreenRecorder::connect_device() {
 
-	// making sure requirements are filled
 	if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
+        
+        // defining the display dimensions
+        m_resized_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
+        m_resized_img_height = m_window_rc.bottom / SR_PREVIEW_RESIZE_FACTOR;
 
-		// getting the target window handle and bounding rectangle
-        m_window_handle = GetDesktopWindow();
-        if (m_window_handle != NULL) {
-            
-            // defining the capture rect
-            GetClientRect(m_window_handle, &m_window_rc);
-         
-            // defining the display dimensions
-            m_resized_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
-            m_resized_img_height = m_window_rc.bottom / SR_PREVIEW_RESIZE_FACTOR;
-
-            // initializing image handling containers
-            m_capture_mat = cv::Mat(m_window_rc.bottom, m_window_rc.right, CV_8UC4);
-            m_capture_cvt_mat = cv::Mat(m_window_rc.bottom, m_window_rc.right, CV_8UC3);
-            m_output_img = QImage(m_resized_img_width, m_resized_img_height, QImage::Format_RGB888);
-            m_output_img_mat = cv::Mat(m_resized_img_height, m_resized_img_width, 
-                CV_8UC3, m_output_img.bits(), m_output_img.bytesPerLine());
-            
-            m_device_connected = true;
-        }  
-
+        // initializing image handling containers
+        m_capture_mat = cv::Mat(m_window_rc.bottom, m_window_rc.right, CV_8UC4);
+        m_capture_cvt_mat = cv::Mat(m_window_rc.bottom, m_window_rc.right, CV_8UC3);
+        m_output_img = QImage(m_resized_img_width, m_resized_img_height, QImage::Format_RGB888);
+        m_output_img_mat = cv::Mat(m_resized_img_height, m_resized_img_width,
+            CV_8UC3, m_output_img.bits(), m_output_img.bytesPerLine());
+        
+        m_device_connected = true;
 	}
 
 	emit device_status_change(m_device_connected);
@@ -113,7 +111,6 @@ void ScreenRecorder::set_output_file(std::string output_folder_path) {
 
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// data collection function
 
 /*
@@ -177,6 +174,11 @@ void ScreenRecorder::collect_window_captures(void) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
+
+void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height) const {
+    screen_width = m_window_rc.right;
+    screen_height = m_window_rc.bottom;
+}
 
 /*
 Converts the window's bitmap format to a cv::Mat

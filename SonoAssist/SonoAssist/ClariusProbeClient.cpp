@@ -39,15 +39,15 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
      } 
 
 #endif /*_MEASURE_US_IMG_RATES_*/
-
-    // dropping frames until the last image gets displayed
-    if (probe_client_p->m_display_available) {
     
-        // mapping the incoming image to a mat
-        probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
+    // initial img processing steps
+    // mapping the incoming image to a cv::Mat + gray scale conversion
+    probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
+    cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
 
-        // changing color representation and resizing
-        cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
+    // dropping the frame if the display is still buisy
+    if (probe_client_p->m_display_available) {
+
         cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
             probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
 

@@ -14,7 +14,8 @@ class SonoFolderManager:
         "clarius_video" : "clarius_images.avi",
         "ext_imu_ori" : "ext_imu_orientation.csv",
         "ext_imu_acc" : "ext_imu_acceleration.csv",
-        "eyetracker_data" : "eye_tracker.csv",
+        "eyetracker_gaze_data" : "eye_tracker_gaze.csv",
+        "eyetracker_head_data" : "eye_tracker_head.csv",
         "rgbd_video" : "camera_data.bag",
         "screen_rec_data" : "screen_recorder_data.csv",
         "screen_rec_video" : "screen_recorder_images.avi"
@@ -43,10 +44,19 @@ class SonoFolderManager:
         
         gaze_data = None
         try:
-            gaze_data = pd.read_csv(self.folder_file_paths["eyetracker_data"])
+            gaze_data = pd.read_csv(self.folder_file_paths["eyetracker_gaze_data"])
         except : pass
 
         return gaze_data
+
+    def load_head_position_data(self):
+
+        head_pos_data = None
+        try:
+            head_pos_data = pd.read_csv(self.folder_file_paths["eyetracker_head_data"])
+        except : pass
+
+        return head_pos_data
 
     def load_ext_imu_data(self):
 

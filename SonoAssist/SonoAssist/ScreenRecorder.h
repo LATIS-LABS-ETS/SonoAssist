@@ -25,6 +25,8 @@ class ScreenRecorder : public SensorDevice {
 
 	public:
 		
+		ScreenRecorder();
+
 		// SensorDevice interface functions
 		void stop_stream(void);
 		void start_stream(void);
@@ -37,6 +39,7 @@ class ScreenRecorder : public SensorDevice {
 
 		// utility functions
 		void hwnd2mat(void);
+		void get_screen_dimensions(int&, int&) const;
 
 	signals:
 		void new_window_capture(QImage image);
@@ -46,8 +49,8 @@ class ScreenRecorder : public SensorDevice {
 		// window capture vars
 		RECT m_window_rc;
 		HWND m_window_handle;
-		int m_resized_img_width;
-		int m_resized_img_height;
+		int m_resized_img_width = 0;
+		int m_resized_img_height = 0;
 		// image handling containers
 		QImage m_output_img;
 		cv::Mat m_capture_mat;

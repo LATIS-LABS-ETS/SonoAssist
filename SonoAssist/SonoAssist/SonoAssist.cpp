@@ -7,10 +7,9 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     build_sensor_panel();
     set_acquisition_label(false);
    
-    // setting the graphics scene widget
+    // setting up the UI
     m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
     ui.graphicsView->setScene(m_main_scene_p.get());
-   
     generate_normal_display();
 
     // creating the sensor clients
@@ -21,7 +20,14 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
     m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>({ m_gaze_tracker_client_p, m_camera_client_p , m_screen_recorder_client_p, 
                                                                     m_us_probe_client_p, m_metawear_client_p});
-	// predefining the parameters in the config file
+	
+    // writting screen dimensions to the output params
+    int screen_width = 0, screen_height = 0;
+    m_screen_recorder_client_p->get_screen_dimensions(screen_width, screen_height);
+    m_output_params["screen_width"] = screen_width;
+    m_output_params["screen_height"] = screen_height;
+    
+    // predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
         {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""},

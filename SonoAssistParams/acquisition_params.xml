@@ -3,12 +3,12 @@
 
 	<ext_imu_active>false</ext_imu_active>
 	<us_probe_active>true</us_probe_active>
-	<rgb_camera_active>true</rgb_camera_active>
-	<eye_tracker_active>true</eye_tracker_active>
+	<rgb_camera_active>false</rgb_camera_active>
+	<eye_tracker_active>false</eye_tracker_active>
 	<screen_recorder_active>false</screen_recorder_active>
 	
-	<us_image_main_display_width>1280</us_image_main_display_width>
-	<us_image_main_display_height>720</us_image_main_display_height>
+	<us_image_main_display_width>960</us_image_main_display_width>
+	<us_image_main_display_height>540</us_image_main_display_height>
 	
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
