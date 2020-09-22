@@ -56,6 +56,7 @@ class SonoAssist : public QMainWindow {
 	Q_OBJECT
 
 	public:
+
 		SonoAssist(QWidget *parent = Q_NULLPTR);
 		~SonoAssist();
 
@@ -76,9 +77,9 @@ class SonoAssist : public QMainWindow {
 
 		// ui update slots
 		void on_new_camera_image(QImage);
+		void on_new_clarius_image(QImage);
 		void on_new_gaze_point(float, float);
 		void on_new_us_screen_capture(QImage);
-		void on_new_clarius_image(QImage);
 
 		// loading file slots 
 		void on_param_file_browse_clicked(void);

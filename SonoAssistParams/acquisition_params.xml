@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <params>
 
-	<ext_imu_active>false</ext_imu_active>
-	<us_probe_active>true</us_probe_active>
-	<rgb_camera_active>false</rgb_camera_active>
+	<ext_imu_active>true</ext_imu_active>
+	<us_probe_active>false</us_probe_active>
+	<rgb_camera_active>true</rgb_camera_active>
 	<eye_tracker_active>false</eye_tracker_active>
-	<screen_recorder_active>false</screen_recorder_active>
+	<screen_recorder_active>true</screen_recorder_active>
 	
 	<us_image_main_display_width>960</us_image_main_display_width>
 	<us_image_main_display_height>540</us_image_main_display_height>

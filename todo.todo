@@ -5,7 +5,7 @@ Acquisition tool
 
 - [x] index (timestamp) all incoming data from the Clarius probe
 - [x] index (timestamp) all incoming data from the screen recorder
-- [] index (timestamp) all incoming data from the real sens camera
+- [x] index (timestamp) all incoming data from the real sens camera
 
 - [x] config param for eyetracker accuracy measurements
 - [x] export the image display coordinates to output

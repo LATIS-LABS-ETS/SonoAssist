@@ -68,35 +68,40 @@ SonoAssist::~SonoAssist(){
 
 void SonoAssist::on_new_clarius_image(QImage new_image){
 
-    m_us_probe_client_p->m_display_available = false;
+    if (!m_us_probe_client_p->m_display_locked) {
+    
+        m_us_probe_client_p->m_display_locked = true;
 
-    // removing the old image
-    if (m_us_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_us_pixmap_p.get());
-        m_us_pixmap_p.reset();
+        // removing the old image
+        if (m_us_pixmap_p.get() != nullptr) {
+            m_main_scene_p->removeItem(m_us_pixmap_p.get());
+            m_us_pixmap_p.reset();
+        }
+
+        // creating the image item
+        m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
+
+        // placing the US image for both modes (preview and normal)
+        if (m_preview_is_active) {
+            m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
+            m_us_pixmap_p->setZValue(2);
+            m_main_scene_p->addItem(m_us_pixmap_p.get());
+        }
+        else {
+            QPointF bg_img_pos = m_us_bg_p->pos();
+            m_us_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
+            m_main_scene_p->addItem(m_us_pixmap_p.get());
+        }
+
+        // when acquisition is stoped during execution
+        if (!m_stream_is_active) {
+            m_main_scene_p->removeItem(m_us_pixmap_p.get());
+            m_us_pixmap_p.reset();
+        }
+
+        m_us_probe_client_p->m_handler_locked = false;
+        
     }
-
-    // creating the image item
-    m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
-
-    // placing the US image for both modes (preview and normal)
-    if (m_preview_is_active) {
-        m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
-        m_us_pixmap_p->setZValue(2);
-        m_main_scene_p->addItem(m_us_pixmap_p.get());
-    } else {
-        QPointF bg_img_pos = m_us_bg_p->pos();
-        m_us_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
-        m_main_scene_p->addItem(m_us_pixmap_p.get());
-    }
-
-    // when acquisition is stoped during execution
-    if (!m_stream_is_active) {
-        m_main_scene_p->removeItem(m_us_pixmap_p.get());
-        m_us_pixmap_p.reset();
-    }
-
-    m_us_probe_client_p->m_display_available = true;
 
 }
 
@@ -352,7 +357,9 @@ void SonoAssist::on_output_folder_input_editingFinished() {
 void SonoAssist::on_param_file_browse_clicked(){
 
     // if user does not make a selection, dont override
-    QString new_path = QFileDialog::getOpenFileName(this, "Select parameter file", QString(), ".XML files (*.xml)");
+    QString new_path = QFileDialog::getOpenFileName(this, "Select parameter file", QString(), 
+        ".XML files (*.xml)", 0, QFileDialog::DontUseNativeDialog);
+
     if (!new_path.isEmpty()) {
         ui.param_file_input->setText("");
         ui.param_file_input->setText(new_path);
@@ -365,7 +372,9 @@ void SonoAssist::on_param_file_browse_clicked(){
 void SonoAssist::on_output_folder_browse_clicked(void) {
    
     // if user does not make a selection, dont override
-    QString new_path = QFileDialog::getSaveFileName(this, "Select output file path", QString());
+    QString new_path = QFileDialog::getSaveFileName(this, "Select output file path", QString(), QString(), 
+        0, QFileDialog::DontUseNativeDialog);
+
     if (!new_path.isEmpty()) {
         ui.output_folder_input->setText(new_path);
     }

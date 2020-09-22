@@ -39,38 +39,43 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
      } 
 
 #endif /*_MEASURE_US_IMG_RATES_*/
-    
-    // initial img processing steps
-    // mapping the incoming image to a cv::Mat + gray scale conversion
-    probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
-    cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
+       
+    // dropping the current frame if display is buisy
+     if (!probe_client_p->m_handler_locked) {
+     
+         probe_client_p->m_handler_locked = true;
 
-    // dropping the frame if the display is still buisy
-    if (probe_client_p->m_display_available) {
+         // mapping the incoming image to a cv::Mat + gray scale conversion
+         probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
+         cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
 
-        cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
-            probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
+         cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
+             probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
 
-        // writting data to output files (csv and video), in main mode
-        if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
+         // writting data to output files (csv and video), in main mode
+         if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
 
-            std::string output_str = probe_client_p->get_micro_timestamp();
-            if (npos) {
-                output_str += "," + std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," +
-                    std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
-            } else {
-                output_str += ", , , , , , \n";
-            }
+             std::string output_str = probe_client_p->get_micro_timestamp();
+             if (npos) {
+                 output_str += "," + std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," +
+                     std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
+             }
+             else {
+                 output_str += ", , , , , , \n";
+             }
 
-            probe_client_p->m_output_imu_file << output_str;
-            probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
+             probe_client_p->m_writing_ouput = true;
+             probe_client_p->m_output_imu_file << output_str;
+             probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
+             probe_client_p->m_writing_ouput = false;
 
-        }
+         }
 
-        // image is passed by reference
-        emit probe_client_p->new_us_image(probe_client_p->m_output_img);
-    
-    }
+         // image is passed by reference
+         probe_client_p->m_display_locked = false;
+         emit probe_client_p->new_us_image(probe_client_p->m_output_img);
+
+     }
 
 #ifdef _MEASURE_US_IMG_RATES_
 
@@ -169,6 +174,8 @@ void ClariusProbeClient::stop_stream() {
     
     if (m_device_streaming) {
 
+        m_device_streaming = false;
+
         // stopping the acquisition
         if (clariusDisconnect(nullptr) == 0) {
             qDebug() << "\nClariusProbeClient - disconnected\n";
@@ -176,9 +183,8 @@ void ClariusProbeClient::stop_stream() {
             qDebug() << "\nClariusProbeClient - failed to disconnect\n";
         }
 
-        m_device_streaming = false;
-
         // closing the outputs
+        while (m_writing_ouput);
         m_video->release();
         m_output_imu_file.close();
 

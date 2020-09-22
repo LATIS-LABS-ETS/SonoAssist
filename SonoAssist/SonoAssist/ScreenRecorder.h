@@ -16,7 +16,7 @@
 // SR_PREVIEW_RESIZE_FACTOR : to fit a (360 x 640) px display
 #define SR_PREVIEW_RESIZE_FACTOR 3
 
-#define SCREEN_CAPTURE_FPS 10
+#define SCREEN_CAPTURE_FPS 20
 #define CAPTURE_DISPLAY_THREAD_DELAY_MS 150
 
 class ScreenRecorder : public SensorDevice {

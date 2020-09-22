@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <fstream>
 
 #include <opencv2/opencv.hpp>
 #include <librealsense2/rs.hpp>
@@ -60,6 +61,8 @@ class RGBDCameraClient : public SensorDevice {
 
 		// output file vars
 		bool m_output_file_loaded = false;
-		std::string m_camera_output_file_str = "";
+		std::ofstream m_output_index_file;
+		std::string m_output_file_str = "";
+		std::string m_output_index_file_str = "";
 
 };

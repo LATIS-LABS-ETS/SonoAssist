@@ -44,6 +44,9 @@
 
 #define CLARIUS_VIDEO_FPS 20
 
+// required by the ClariusProbeClient
+class SonoAssist;
+
 /*
 * Class to enable communication with a Clarius ultrasound probe
 * 
@@ -74,9 +77,11 @@ class ClariusProbeClient : public SensorDevice {
 		cv::Mat m_output_img_mat;
 
 		// output vars (accessed from callback)
-		bool m_display_available = true;
+		bool m_writing_ouput = false;
 		std::ofstream m_output_imu_file;
 		std::unique_ptr<cv::VideoWriter> m_video;
+		std::atomic<bool> m_display_locked = true;
+		std::atomic<bool> m_handler_locked = false;
 
 	signals:
 		void new_us_image(QImage image);
