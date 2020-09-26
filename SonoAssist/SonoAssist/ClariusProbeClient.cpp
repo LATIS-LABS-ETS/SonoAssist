@@ -52,26 +52,22 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
          cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
              probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
 
-         // writting data to output files (csv and video), in main mode
+         // defining the output data destined for the csv file
          if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
 
-             std::string output_str = probe_client_p->get_micro_timestamp();
-             if (npos) {
-                 output_str += "," + std::to_string(pos->gx) + "," + std::to_string(pos->gy) + "," + std::to_string(pos->gz) + "," +
-                     std::to_string(pos->ax) + "," + std::to_string(pos->ay) + "," + std::to_string(pos->az) + "\n";
-             }
-             else {
-                 output_str += ", , , , , , \n";
-             }
+             probe_client_p->m_onboard_time = std::to_string(nfo->tm);
+             probe_client_p->m_reception_time = probe_client_p->get_micro_timestamp();
 
-             probe_client_p->m_writing_ouput = true;
-             probe_client_p->m_output_imu_file << output_str;
-             probe_client_p->m_video->write(probe_client_p->m_output_img_mat);
-             probe_client_p->m_writing_ouput = false;
+             std::string imu_entry;
+             for (int i = 0; i < npos; i++) {
+                 imu_entry = std::to_string(pos[i].gx) + "," + std::to_string(pos[i].gy) + "," + std::to_string(pos[i].gz) + "," +
+                     std::to_string(pos[i].ax) + "," + std::to_string(pos[i].ay) + "," + std::to_string(pos[i].az);
+                 probe_client_p->m_imu_data.push_back(imu_entry);
+             }
 
          }
 
-         // image is passed by reference
+         // image is passed by reference to the display
          probe_client_p->m_display_locked = false;
          emit probe_client_p->new_us_image(probe_client_p->m_output_img);
 
@@ -205,7 +201,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
 
         // writing the output file header
         m_output_imu_file.open(m_output_imu_file_str);
-        m_output_imu_file << "Time (us),gx,gy,gz,ax,ay,az" << std::endl;
+        m_output_imu_file << "Reception OS time,Display OS time,Onboard time,gx,gy,gz,ax,ay,az" << std::endl;
         m_output_imu_file.close();
 
         m_output_file_loaded = true;
@@ -213,6 +209,31 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
     } catch (...) {
         qDebug() << "\ClariusProbeClient - error occured while setting the output file";
     }
+
+}
+
+void ClariusProbeClient::write_output_data() {
+
+    // including the 3 different timestamps
+    std::string output_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
+
+    // including the imu data
+    if (m_imu_data.size() == 0) {
+        output_str += " , , , , , \n";
+    } else {
+        output_str += m_imu_data[0] + "\n";
+        for (int i = 1; i < m_imu_data.size(); i++) {
+            output_str += " , , ," + m_imu_data[i] + "\n";
+        }
+    }
+
+    // writing the output data
+    m_writing_ouput = true;
+    if (m_video->isOpened()) m_video->write(m_output_img_mat);
+    if (m_output_imu_file.is_open()) m_output_imu_file << output_str;
+    m_writing_ouput = false;
+
+    m_imu_data.clear();
 
 }
 

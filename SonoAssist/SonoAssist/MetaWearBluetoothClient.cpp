@@ -223,20 +223,23 @@ void MetaWearBluetoothClient::start_stream() {
 		
 		MblMwFnData euler_angles_callback = [](void* context, const MblMwData* data) {
 
-			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
+			MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
+			MetaWearBluetoothClient* client_p = static_cast<MetaWearBluetoothClient*>(context);
 
 			// only writting data to file in normal mode
-			if (!context_p->get_stream_preview_status()) {
+			if (!client_p->get_stream_preview_status()) {
 			
-				// pulling and formatting 
-				MblMwEulerAngles* euler_angles = (MblMwEulerAngles*)data->value;
-				std::string output_str = context_p->get_micro_timestamp() + "," + std::to_string(euler_angles->heading) + ','
+				// getting timestamps strings
+				std::string reception_time_os = client_p->get_micro_timestamp();
+				std::string data_time = std::to_string(data->epoch);
+
+				// defining the output string
+				std::string output_str = reception_time_os + "," + data_time + "," + std::to_string(euler_angles->heading) + ","
 					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 					+ "\n";
 
-				// writing to the output file and redis (if redis enabled)
-				context_p->write_to_redis(output_str);
-				context_p->m_output_ori_file << output_str;
+				client_p->write_to_redis(output_str);
+				client_p->m_output_ori_file << output_str;
 			
 			}
 
@@ -244,18 +247,21 @@ void MetaWearBluetoothClient::start_stream() {
 
 		MblMwFnData acceleration_callback = [](void* context, const MblMwData* data) {
 
-			MetaWearBluetoothClient* context_p = static_cast<MetaWearBluetoothClient*>(context);
+			MblMwCartesianFloat* acceleration = (MblMwCartesianFloat*)data->value;
+			MetaWearBluetoothClient* client_p = static_cast<MetaWearBluetoothClient*>(context);
 
 			// only writtingdata to file in normal mode
-			if (!context_p->get_stream_preview_status()) {
+			if (!client_p->get_stream_preview_status()) {
 			
-				// pulling and formatting 
-				MblMwCartesianFloat* acceleration = (MblMwCartesianFloat*)data->value;
-				std::string output_str = context_p->get_micro_timestamp() + "," + std::to_string(acceleration->x) + ','
+				// getting timestamps strings
+				std::string reception_time_os = client_p->get_micro_timestamp();
+				std::string data_time = std::to_string(data->epoch);
+
+				// defining the output string
+				std::string output_str = reception_time_os + "," + data_time + "," + std::to_string(acceleration->x) + ','
 					+ std::to_string(acceleration->y) + "," + std::to_string(acceleration->z) + "\n";
 
-				// writing to the output file and redis (if redis enabled)
-				context_p->m_output_acc_file << output_str;
+				client_p->m_output_acc_file << output_str;
 			
 			}
 
@@ -313,12 +319,12 @@ void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
 
 		// writing the orientation output file header
 		m_output_ori_file.open(m_output_ori_file_str);
-		m_output_ori_file << "Time (us),Heading,Pitch,Roll,Yaw" << std::endl;
+		m_output_ori_file << "Reception OS time,Onboard time,Heading,Pitch,Roll,Yaw" << std::endl;
 		m_output_ori_file.close();
 
 		// writing the acceleration output file header
 		m_output_acc_file.open(m_output_acc_file_str);
-		m_output_acc_file << "Time (us),ACC X,ACC Y,ACC Z" << std::endl;
+		m_output_acc_file << "Reception OS time,Onboard time,ACC X,ACC Y,ACC Z" << std::endl;
 		m_output_acc_file.close();
 
 		m_output_file_loaded = true;

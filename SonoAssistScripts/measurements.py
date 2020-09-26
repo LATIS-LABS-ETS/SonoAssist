@@ -1,31 +1,49 @@
+'''
+Characterisation of the measurements acquired by the acquisition tool
+
+    - Config 1 : External IMU, Eye tracker, RGBD camera and Clarius probe (540 x 960)
+    - Config 2 : External IMU, Eye tracker, RGBD camera and Clarius probe (720 x 1280)
+    - Config 3 : External IMU, Eye tracker, RGBD camera, Screen recorder (1080 x 1920)
+
+Usage : 
+
+    python3 measurements.py (path to parent folder of the acquisition folders)
+'''
+
 import os
+import math
 import argparse
 import numpy as np
 
 from sonopy.file_management import SonoFolderManager
 
-# parsing script arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("config_path", help="path to the .json config file")
-args = parser.parse_args()
 
-def measure_acquisition_rate(display_title, data_frame):
+def measure_acquisition_rate_stats(data_frame, time_col_name="Time (us)"):
 
     '''
-    Prints out (avg, min, max)
+    Calculates the following metrics related to the acquisition rate : 
+        
+        - avg acquisition rate
+        - avg time difference between acquisitions
+        - plot of time differences in time
+        - simple list of all time diffs
 
     Parameters
     ----------
-    display_title (str) : header for the measurements print out
     data_frame (pandas.DataFrame) : acquisition data
+    time_col_name (str) : name of the dataframe column containing the time stamps foreach entry
+
+    Returns
+    -------
+    (avg rate, avg time diff, time diff plot, time diff list)
     '''
 
     # constants
-    n_min_max = 5
     n_us_in_s = 1000000
+    plot_percentage_divide = 2
 
     # getting timming data
-    timestamps = data_frame["Time (us)"]
+    timestamps = data_frame[time_col_name]
     n_timestamps = len(data_frame.index)
 
     # getting time diffs between received data
@@ -34,51 +52,143 @@ def measure_acquisition_rate(display_title, data_frame):
         measurement = 1 / ((timestamps[i+1] - timestamps[i]) / n_us_in_s)
         rate_measurements.append(measurement)
 
+    # defining a plot of time diff values (5% X divisions)
+    plot = {"X" : [], "Y" : []}
+    
+    # filling the x axis
+    plot["X"] = list(range(plot_percentage_divide, 100, plot_percentage_divide))
+    plot["X"].append(100)
+    
+    # filling the y axis
+    start_index = 0
+    n_iterations = len(plot["X"])
+    n_measurements = len(rate_measurements)
+    measure_range = math.floor(n_measurements * (plot_percentage_divide / 100))
+    
+    for i in range(n_iterations):
+
+        # defining the end index for the current rnge of values
+        end_index = 0
+        if i == n_iterations-1 :
+            end_index = n_measurements - 1
+        else : 
+            end_index = start_index + measure_range
+
+        # getting avg value for the current range
+        diff_sum = 0
+        for i in range(start_index, end_index):
+            diff_sum += rate_measurements[i]
+        diff_sum /= (end_index - start_index)
+        plot["Y"].append(diff_sum)
+
+        # pushing the start index for the next iteration
+        start_index += measure_range
+
     # getting avg rate via n acquisitions in total time
     # getting variation via measurement time diffs
     avg_rate = n_timestamps / ((timestamps[n_timestamps-1] - timestamps[0]) / n_us_in_s)
     avg_variation = sum(rate_measurements) / len(rate_measurements)
 
-    # getting max rates
-    max_rates = []
-    for i in range(n_min_max):
-        max_rates.append(max(rate_measurements))
-        del rate_measurements[rate_measurements.index(max_rates[-1])]
+    return (avg_rate, avg_variation, plot, rate_measurements)
 
-    # getting min rates
-    min_rates = []
-    for i in range(n_min_max):
-        min_rates.append(min(rate_measurements))
-        del rate_measurements[rate_measurements.index(min_rates[-1])]  
-    
-    print(f"\n\n{display_title} : \n")
-    print(f"Average rate : {avg_rate} (Hz)")
-    print(f"Average variation : {avg_variation} (Hz)")
-    print(f"Top {n_min_max} max rates (Hz) : {max_rates}")
-    print(f"Top {n_min_max} min rates (Hz) : {min_rates}")
-    print("\n")
-    
+
+def load_all_stats(parent_folder_path):
+
+    '''
+    Loads the acquisition rate statistics for all acquisition folders in the provided parent folder
+
+    Parameters
+    ----------
+    parent_folder_path (string) : path to the parent folder holding the acquisition folders
+
+    Returns
+    -------
+    (config1_stats, config2_stats, config3_stats)
+
+    '''
+
+    # defining a container for each config type
+    config1_stats = {}
+    config2_stats = {}
+    config3_stats = {}
+
+    # going through the acquisition folders
+    for element in os.listdir(parent_folder_path):
+        acquisition_folder = os.path.join(parent_folder_path, element)
+        if os.path.isdir(acquisition_folder):
+
+            # getting a reference to the proper stat container
+            stat_container = None
+            if "config1" in element: stat_container = config1_stats
+            elif "config2" in element: stat_container = config2_stats
+            else: stat_container = config3_stats
+
+            # getting access to the acquisition output files
+            folder_manager = SonoFolderManager(acquisition_folder)
+
+            # loading data from the different files
+            rgbd_data = folder_manager.load_rgbd_data()
+            sc_data = folder_manager.load_screen_rec_data()
+            clarius_data = folder_manager.load_clarius_data()
+            (gaze_data, head_data) = folder_manager.load_eye_tracker_data()
+            (ext_ori_data, ext_acc_data) = folder_manager.load_ext_imu_data()
+
+            # clarius average rates
+            stat_key = "clarius"
+            if not stat_key in stat_container: stat_container[stat_key] = []
+            if clarius_data is not None :
+                stat_container[stat_key].append(measure_acquisition_rate_stats(clarius_data, "Display OS time"))
+            
+           # screen recorder average rates
+            stat_key = "sc"
+            if not stat_key in stat_container: stat_container[stat_key] = []
+            if sc_data is not None :
+                stat_container[stat_key].append(measure_acquisition_rate_stats(sc_data))
+                
+            # gaze data
+            stat_key = "gaze"
+            if not stat_key in stat_container: stat_container[stat_key] = []
+            if gaze_data is not None :
+                stat_container[stat_key].append(measure_acquisition_rate_stats(gaze_data, "Reception OS time"))
+
+            # ext ori data
+            stat_key = "ext_imu"
+            if not stat_key in stat_container: stat_container[stat_key] = []
+            if ext_ori_data is not None :
+                stat_container[stat_key].append(measure_acquisition_rate_stats(ext_ori_data, "Reception OS time"))
+
+    return (config1_stats, config2_stats, config3_stats)
+
 
 if __name__ == "__main__":
 
-    # getting access to the acquisition output files
-    folder_manager = SonoFolderManager(args.config_path)
+    # parsing script arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("target_dir", help="Directory containing the acquisition folders")
+    args = parser.parse_args()
 
-    # measuring fos rates for the different sources
+    # loading acquisition stats
+    (config1_stats, config2_stats, config3_stats) = load_all_stats(args.target_dir)
+
+    # getting mean rate values example
     
-    clarius_data = folder_manager.load_clarius_data()  
-    if clarius_data is not None :
-        measure_acquisition_rate("Clarius probe rates", clarius_data)
-       
-    sc_data = folder_manager.load_screen_rec_data()  
-    if sc_data is not None :
-        measure_acquisition_rate("Screen recorder rates", sc_data)
+    config1_clarius_rates = [element[0] for element in config1_stats["clarius"]]
+    print(f"Clarius (540 x 920) rates : {config1_clarius_rates}")
+    
+    config2_clarius_rates = [element[0] for element in config2_stats["clarius"]]
+    print(f"Clarius (720 x 1280) rates : {config2_clarius_rates}")
+    
+    config3_sc_rates = [element[0] for element in config3_stats["sc"]]
+    print(f"Screen recorder rates rates : {config3_sc_rates}")
 
-    gaze_data = folder_manager.load_gaze_data()  
-    if gaze_data is not None :
-        measure_acquisition_rate("Eye tracker rates", gaze_data)
+    # getting plots examples
+    
+    config1_clarius_plots = [element[2] for element in config1_stats["clarius"]]
+    print("Clarius (540 x 920) plots : \n")
+    for plot in config1_clarius_plots:
+        print("\n", plot, "\n")
 
-    (ext_ori_data, ext_acc_data) = folder_manager.load_ext_imu_data()  
-    if (ext_ori_data is not None) and (ext_acc_data is not None):
-        measure_acquisition_rate("External IMU orientation rates", ext_ori_data)
-        measure_acquisition_rate("External IMU acceleration rates", ext_acc_data)
+    config1_eyetracker_plots = [element[2] for element in config1_stats["gaze"]]
+    print("Config1 eyetracker plots : \n")
+    for plot in config1_eyetracker_plots:
+        print("\n", plot, "\n")

@@ -34,6 +34,11 @@ class GazeTracker : public SensorDevice {
 		// threaded collection method and callback
 		void collect_data(void);
 
+		// tobii communication vars (accessed from callbacks)
+		bool m_tobii_api_valid = false;
+		tobii_api_t* m_tobii_api = nullptr;
+		tobii_device_t* m_tobii_device = nullptr;
+
 		// output file attributes
 		std::ofstream m_output_gaze_file;
 		std::ofstream m_output_head_file;
@@ -42,11 +47,6 @@ class GazeTracker : public SensorDevice {
 		void new_gaze_point(float x , float y);
 
 	private:
-
-		// tobii communication vars
-		bool m_tobii_api_valid = false;
-		tobii_api_t* m_tobii_api = nullptr;
-		tobii_device_t* m_tobii_device = nullptr;
 
 		// output file vars
 		bool m_output_file_loaded = false;

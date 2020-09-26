@@ -68,32 +68,44 @@ SonoAssist::~SonoAssist(){
 
 void SonoAssist::on_new_clarius_image(QImage new_image){
 
+    // dropping incoming image if display is locked
     if (!m_us_probe_client_p->m_display_locked) {
     
         m_us_probe_client_p->m_display_locked = true;
 
-        // removing the old image
+        // creating a pix map from the incoming image
+        QPixmap new_pixmap = QPixmap::fromImage(new_image);
+
+        // updating the QGraphicsPixmapItem item
         if (m_us_pixmap_p.get() != nullptr) {
-            m_main_scene_p->removeItem(m_us_pixmap_p.get());
-            m_us_pixmap_p.reset();
+            m_us_pixmap_p->setPixmap(new_pixmap);
+            m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
         }
 
-        // creating the image item
-        m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
-
-        // placing the US image for both modes (preview and normal)
-        if (m_preview_is_active) {
-            m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
-            m_us_pixmap_p->setZValue(2);
-            m_main_scene_p->addItem(m_us_pixmap_p.get());
-        }
+        // creating the QGraphicsPixmapItem from scratch (fisrt time)
         else {
-            QPointF bg_img_pos = m_us_bg_p->pos();
-            m_us_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
-            m_main_scene_p->addItem(m_us_pixmap_p.get());
-        }
+        
+            m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
 
-        // when acquisition is stoped during execution
+            // defining the position for the appropriate mode (preview or normal)
+            if (m_preview_is_active) {
+                m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
+                m_us_pixmap_p->setZValue(2);
+            } else {
+                QPointF bg_img_pos = m_us_bg_p->pos();
+                m_us_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
+            }
+
+            // displaying the image
+            m_main_scene_p->addItem(m_us_pixmap_p.get());
+            m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
+            
+        }
+        
+        // writing the output data
+        m_us_probe_client_p->write_output_data();
+
+        // when acquisition is stoped during display
         if (!m_stream_is_active) {
             m_main_scene_p->removeItem(m_us_pixmap_p.get());
             m_us_pixmap_p.reset();
@@ -107,44 +119,51 @@ void SonoAssist::on_new_clarius_image(QImage new_image){
 
 void SonoAssist::on_new_us_screen_capture(QImage new_image) {
 
-    // removing the old image
-    if (m_us_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_us_pixmap_p.get());
-        m_us_pixmap_p.reset();
-    }
-
     // displaying the US image only in preview mode
     // should not be called in other mode anyways
     if (m_preview_is_active) {
-        m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
-        m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
-        m_us_pixmap_p->setZValue(2);
-        m_main_scene_p->addItem(m_us_pixmap_p.get());
-    } 
 
-    // when acquisition is stoped during execution
-    if (!m_stream_is_active) {
-        m_main_scene_p->removeItem(m_us_pixmap_p.get());
-        m_us_pixmap_p.reset();
+        // creating a pix map from the incoming image
+        QPixmap new_pixmap = QPixmap::fromImage(new_image);
+
+        // updating the QGraphicsPixmapItem item
+        if (m_us_pixmap_p.get() != nullptr) m_us_pixmap_p->setPixmap(new_pixmap);
+
+        // creating the QGraphicsPixmapItem from scratch (fisrt time)
+        else {
+            m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+            m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
+            m_us_pixmap_p->setZValue(2);
+            m_main_scene_p->addItem(m_us_pixmap_p.get());
+        }
+
+        // when acquisition is stoped during display
+        if (!m_stream_is_active) {
+            m_main_scene_p->removeItem(m_us_pixmap_p.get());
+            m_us_pixmap_p.reset();
+        }
+
     }
 
 }
 
 void SonoAssist::on_new_camera_image(QImage new_image) {
    
+    // creating a pix map from the incoming image
+    QPixmap new_pixmap = QPixmap::fromImage(new_image);
+
     // removing the old image
-    if (m_camera_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_camera_pixmap_p.get());
-        m_camera_pixmap_p.reset();
+    if (m_camera_pixmap_p.get() != nullptr) m_camera_pixmap_p->setPixmap(new_pixmap);
+
+    // creating the QGraphicsPixmapItem from scratch (fisrt time)
+    else {
+        m_camera_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+        m_camera_pixmap_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
+        m_camera_pixmap_p->setZValue(2);
+        m_main_scene_p->addItem(m_camera_pixmap_p.get());
     }
 
-    // defining the new image and adding it to the scene
-    m_camera_pixmap_p = std::make_unique<QGraphicsPixmapItem>(QPixmap::fromImage(new_image));
-    m_camera_pixmap_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
-    m_camera_pixmap_p->setZValue(2);
-    m_main_scene_p->addItem(m_camera_pixmap_p.get());
-
-    // when acquisition is stoped during execution
+    // when acquisition is stoped during display
     if (!m_stream_is_active) {
         m_main_scene_p->removeItem(m_camera_pixmap_p.get());
         m_camera_pixmap_p.reset();

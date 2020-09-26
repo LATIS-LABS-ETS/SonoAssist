@@ -25,7 +25,7 @@
 #include <listen/listen.h>
 
 #include <string>
-#include <Vector>
+#include <vector>
 #include <fstream>
 
 #include <opencv2/opencv.hpp>
@@ -66,6 +66,8 @@ class ClariusProbeClient : public SensorDevice {
         void disconnect_device(void);
         void set_output_file(std::string output_folder_path);
 
+		void write_output_data(void);
+
 		// ouput image dimensions (accessed from callback)
 		int m_out_img_width = CLARIUS_NORMAL_DEFAULT_WIDTH;
 		int m_out_img_height = CLARIUS_NORMAL_DEFAULT_HEIGHT;
@@ -77,9 +79,12 @@ class ClariusProbeClient : public SensorDevice {
 		cv::Mat m_output_img_mat;
 
 		// output vars (accessed from callback)
-		bool m_writing_ouput = false;
-		std::ofstream m_output_imu_file;
-		std::unique_ptr<cv::VideoWriter> m_video;
+		std::string m_onboard_time;
+		std::string m_display_time;
+		std::string m_reception_time;
+		std::vector<std::string> m_imu_data;
+		
+		// display resource handling vars (accessed from callback)
 		std::atomic<bool> m_display_locked = true;
 		std::atomic<bool> m_handler_locked = false;
 
@@ -96,5 +101,10 @@ class ClariusProbeClient : public SensorDevice {
 		bool m_output_file_loaded = false;
 		std::string m_output_imu_file_str;
 		std::string m_output_video_file_str;
+
+		// output writing vars (accessed from callback)
+		bool m_writing_ouput = false;
+		std::ofstream m_output_imu_file;
+		std::unique_ptr<cv::VideoWriter> m_video;
 		
 };

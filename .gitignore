@@ -5,8 +5,8 @@
 *.tlog
 
 # folders
-SonoAssistScripts/media/
-SonoAssistScripts/benchmarking/
+SonoAssistScripts/data/
+SonoAssistScripts/notebooks/
 
 ##################################################################################################################### C++ related files
 

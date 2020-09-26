@@ -25,20 +25,28 @@ void url_receiver(char const* url, void* user_data){
 */
 void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 	
-	if (gaze_point->validity == TOBII_VALIDITY_VALID) {
+	int64_t tobii_time;
+	GazeTracker* manager = (GazeTracker*)user_data;
 
-		GazeTracker* manager = (GazeTracker*)user_data;
+	if (gaze_point->validity == TOBII_VALIDITY_VALID) {
 
 		// preview mode just emits gaze points to the UI
 		if (manager->get_stream_preview_status()) {
 			emit manager->new_gaze_point(gaze_point->position_xy[0], gaze_point->position_xy[1]);
 		}
 
-		// main display mode just writes to the output file
+		// only writting out data in main display mode
 		else {
 		
-			std::string output_str = manager->get_micro_timestamp() + "," + std::to_string(gaze_point->position_xy[0]) + ","
-				+ std::to_string(gaze_point->position_xy[1]) + "\n";
+			// getting timestamp strings
+			tobii_system_clock(manager->m_tobii_api, &tobii_time);
+			std::string reception_time_os = manager->get_micro_timestamp();
+			std::string reception_time_tobii = std::to_string(tobii_time);
+			std::string data_time_tobii = std::to_string(gaze_point->timestamp_us);
+
+			// defining the output string
+			std::string output_str = reception_time_os + "," + reception_time_tobii + "," + data_time_tobii + "," +
+				std::to_string(gaze_point->position_xy[0]) + "," + std::to_string(gaze_point->position_xy[1]) + "\n";
 
 			manager->write_to_redis(output_str);
 			manager->m_output_gaze_file << output_str;
@@ -59,15 +67,27 @@ void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) 
 */
 void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 
+	int64_t tobii_time;
+	GazeTracker* manager = (GazeTracker*)user_data;
+
 	if (head_pose->position_validity == TOBII_VALIDITY_VALID) {
 	
-		GazeTracker* manager = (GazeTracker*)user_data;
-
 		// only writting out data in main display mode
 		if (!manager->get_stream_preview_status()) {
-			std::string output_str = manager->get_micro_timestamp() + "," + std::to_string(head_pose->position_xyz[0]) + ","
-				+ std::to_string(head_pose->position_xyz[1]) + "," + std::to_string(head_pose->position_xyz[2]) + "\n";
+		
+			// getting timestamp strings
+			tobii_system_clock(manager->m_tobii_api, &tobii_time);
+			std::string reception_time_os = manager->get_micro_timestamp();
+			std::string reception_time_tobii = std::to_string(tobii_time);
+			std::string data_time_tobii = std::to_string(head_pose->timestamp_us);
+			
+			// defining the output string
+			std::string output_str = reception_time_os + "," + reception_time_tobii + "," + data_time_tobii + "," +
+				std::to_string(head_pose->position_xyz[0]) + "," + std::to_string(head_pose->position_xyz[1]) + "," + 
+				std::to_string(head_pose->position_xyz[2]) + "\n";
+
 			manager->m_output_head_file << output_str;
+
 		}
 
 	}
@@ -195,12 +215,12 @@ void GazeTracker::set_output_file(std::string output_folder_path) {
 
 		// writting the head pose file header
 		m_output_head_file.open(m_output_head_str);
-		m_output_head_file << "Time (us),X,Y,Z" << std::endl;
+		m_output_head_file << "Reception OS time,Reception tobii time,Onboard time,X,Y,Z" << std::endl;
 		m_output_head_file.close();
 
 		// writting the gaze file header
 		m_output_gaze_file.open(m_output_gaze_str);
-		m_output_gaze_file << "Time (us),X,Y" << std::endl;
+		m_output_gaze_file << "Reception OS time,Reception tobii time,Onboard time,X,Y" << std::endl;
 		m_output_gaze_file.close();
 
 		m_output_file_loaded = true;

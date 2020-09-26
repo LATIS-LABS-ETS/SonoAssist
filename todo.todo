@@ -1,16 +1,8 @@
 Acquisition tool
 ----------------
 
-- [x] eye tracker - collection of head position data
-
-- [x] index (timestamp) all incoming data from the Clarius probe
-- [x] index (timestamp) all incoming data from the screen recorder
-- [x] index (timestamp) all incoming data from the real sens camera
-
-- [x] config param for eyetracker accuracy measurements
-- [x] export the image display coordinates to output
-- [x] export eyetracker target positions to output
-- [x] export screen dimensions to output
+- [] Add "Apply" button for Clarius port selection
+- [] Changing file paths automatically updates the sensors
 
 - [] load default config path (installation location)
 - [] Build acquisition tool in release mode
@@ -22,9 +14,9 @@ Acquisition tool
 
 Processing scripts
 ------------------
-- [x] eye tracker frequency measurement script
-- [x] clarius data frequency measurement script
-- [x] screen recorder frequency measurement script
+
+- [x] acquisition rate characterisation script
+- [] add video frame indexing functionality
 
 - [] mean head-monitor distance measurement script
 - [] eye tracker accuracy measurement script
