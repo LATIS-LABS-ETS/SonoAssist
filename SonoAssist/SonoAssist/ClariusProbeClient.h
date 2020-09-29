@@ -66,6 +66,9 @@ class ClariusProbeClient : public SensorDevice {
         void disconnect_device(void);
         void set_output_file(std::string output_folder_path);
 
+		// setters and getters
+		void set_udp_port(int port);
+
 		void write_output_data(void);
 
 		// ouput image dimensions (accessed from callback)
@@ -106,5 +109,7 @@ class ClariusProbeClient : public SensorDevice {
 		bool m_writing_ouput = false;
 		std::ofstream m_output_imu_file;
 		std::unique_ptr<cv::VideoWriter> m_video;
+
+		int m_udp_port = 0;
 		
 };

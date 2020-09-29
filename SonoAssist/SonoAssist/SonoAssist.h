@@ -48,6 +48,11 @@
 #define EYETRACKER_CROSSHAIRS_WIDTH 50
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
+// defining default config file path
+#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
+//#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\params.xml"
+
+
 enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;
 
@@ -84,11 +89,11 @@ class SonoAssist : public QMainWindow {
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
 		void on_output_folder_browse_clicked(void);
-		void on_param_file_input_editingFinished();
-		void on_output_folder_input_editingFinished();
+		void on_param_file_apply_clicked();
+		void on_output_folder_apply_clicked();
 
 		// other slots
-		void on_udp_port_input_editingFinished(void);
+		void on_udp_port_button_clicked(void);
 
 	private:
 

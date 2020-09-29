@@ -152,9 +152,7 @@ void ClariusProbeClient::start_stream() {
 
         // connecting to the probe events
         try {
-            if (!(clariusConnect((*m_config_ptr)["us_probe_ip_address"].c_str(), 
-                    std::stoi((*m_config_ptr)["us_probe_udp_port"]), nullptr) < 0)) 
-            {    
+            if (!(clariusConnect((*m_config_ptr)["us_probe_ip_address"].c_str(), m_udp_port, nullptr) < 0)){    
                 m_device_streaming = true;
             }  
         } catch (...) {}
@@ -211,6 +209,11 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
     }
 
 }
+
+void ClariusProbeClient::set_udp_port(int port) {
+    m_udp_port = port;
+}
+
 
 void ClariusProbeClient::write_output_data() {
 

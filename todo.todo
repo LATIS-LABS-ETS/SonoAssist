@@ -1,10 +1,9 @@
 Acquisition tool
 ----------------
 
-- [] Add "Apply" button for Clarius port selection
-- [] Changing file paths automatically updates the sensors
+- [x] Add "Apply" button for Clarius port selection
 
-- [] load default config path (installation location)
+- [x] load default config path
 - [] Build acquisition tool in release mode
 - [] Installer for the acquisition tool
 

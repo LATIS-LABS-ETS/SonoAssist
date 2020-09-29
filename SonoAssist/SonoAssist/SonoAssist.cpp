@@ -31,15 +31,18 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
         {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""},
-        {"us_probe_ip_address", ""}, {"us_probe_udp_port", ""}, 
-        {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""}, 
+        {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
+        {"us_probe_ip_address", ""}, {"eye_tracker_target_path", ""},
         {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
         {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
         {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
         {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""}, 
-        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"measure_eye_tracker_accuracy", ""},
-        {"eye_tracker_target_path", ""}
+        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"measure_eye_tracker_accuracy", ""}
     };
+
+    // filling in the default config path
+    ui.param_file_input->setText(QString(DEFAULT_CONFIG_PATH));
+    on_param_file_apply_clicked();
 
 }
 
@@ -193,27 +196,12 @@ void SonoAssist::on_sensor_connect_button_clicked(){
     // make sure requirements are filled
     if (!m_stream_is_active && m_config_is_loaded && m_output_is_loaded) {
      
-        // loading the latest version of the configs
-        if (load_config_file(ui.param_file_input->text())) {
-
-            configure_normal_display();
-            configure_device_clients();
-            on_udp_port_input_editingFinished();
-
-            for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_sensor_used()) {
-                    m_sensor_devices[i]->set_configuration(m_app_params);
-                    m_sensor_devices[i]->set_output_file(m_output_folder_path);
-                    m_sensor_devices[i]->connect_device();
-                }
+        for (auto i = 0; i < m_sensor_devices.size(); i++) {
+            if (m_sensor_devices[i]->get_sensor_used()) {
+                m_sensor_devices[i]->connect_device();
             }
-
-        } else {
-            QString title = "Error while loading configs";
-            QString message = "The config file contains ill-formatted XML.";
-            display_warning_message(title, message);
         }
-            
+
     } else {
         QString title = "Devices can not be connected";
         QString message = "Make sure that the acquisition is off and that paths to the config and output files are defined";
@@ -229,7 +217,6 @@ void SonoAssist::on_acquisition_preview_box_clicked() {
         
         m_preview_is_active = ui.acquisition_preview_box->isChecked();
 
-        // setting the preview state for the used devices
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->set_stream_preview_status(m_preview_is_active);
@@ -266,11 +253,9 @@ void SonoAssist::on_start_acquisition_button_clicked() {
         // if all used devices are ready, start the acquisition
         if (check_device_connections()) {
 
-            // updating the app state
             m_stream_is_active = true;
             set_acquisition_label(true);
 
-            // starting the sensor streams
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
                 if (m_sensor_devices[i]->get_sensor_used())
                     m_sensor_devices[i]->start_stream();
@@ -341,33 +326,68 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     
 }
 
-void SonoAssist::on_param_file_input_editingFinished(){
+void SonoAssist::on_param_file_apply_clicked(){
    
-    m_config_is_loaded = load_config_file(ui.param_file_input->text());
+    // making sure devices arent streaming
+    if (!m_stream_is_active) {
+    
+        m_config_is_loaded = load_config_file(ui.param_file_input->text());
+
+        // a successful load updates the clients
+        if (m_config_is_loaded) {
         
-    if (!m_config_is_loaded) {
-        QString title = "Parameters were not loaded";
-        QString message = "An invalid file path was specified or the config file is ill-formatted.";
+            configure_device_clients();
+            configure_normal_display();
+
+            for (auto i = 0; i < m_sensor_devices.size(); i++) {
+                if (m_sensor_devices[i]->get_sensor_used()) {
+                    m_sensor_devices[i]->set_configuration(m_app_params);
+                }
+            }
+
+        } else {
+            QString title = "Parameters were not loaded";
+            QString message = "An invalid file path was specified or the config file is ill-formatted.";
+            display_warning_message(title, message);
+        }
+    
+    } else {
+        QString title = "Parameters can not be loaded";
+        QString message = "The stream has to be shut off.";
         display_warning_message(title, message);
     }
 
 }
 
-void SonoAssist::on_output_folder_input_editingFinished() {
+void SonoAssist::on_output_folder_apply_clicked() {
 
-    std::string output_folder_path = ui.output_folder_input->text().toStdString();
+    // making sure devices arent streaming
+    if (!m_stream_is_active) {
+    
+        std::string output_folder_path = ui.output_folder_input->text().toStdString();
 
-    // creating the output folder (for data files)
-    if (CreateDirectory(output_folder_path.c_str(), NULL) ||
-        ERROR_ALREADY_EXISTS == GetLastError()){
+        // creating the output folder and updating the clients
+        if (CreateDirectory(output_folder_path.c_str(), NULL) ||
+            ERROR_ALREADY_EXISTS == GetLastError()) {
 
-        m_output_is_loaded = true;
-        m_output_folder_path = output_folder_path;
+            m_output_is_loaded = true;
+            m_output_folder_path = output_folder_path;
 
+            for (auto i = 0; i < m_sensor_devices.size(); i++) {
+                m_sensor_devices[i]->set_output_file(output_folder_path);
+            }
+
+        } else {
+            m_output_is_loaded = false;
+            QString title = "Unable to create output folder";
+            QString message = "The application failed to create the output folder for data files.";
+            display_warning_message(title, message);
+        }
+    
     } else {
         m_output_is_loaded = false;
-        QString title = "Unable to create output folder";
-        QString message = "The application failed to create the output folder for data files.";
+        QString title = "Output file can not be defined";
+        QString message = "The stream has to be shut off.";
         display_warning_message(title, message);
     }
     
@@ -384,8 +404,6 @@ void SonoAssist::on_param_file_browse_clicked(){
         ui.param_file_input->setText(new_path);
     }
 
-    on_param_file_input_editingFinished();
-
 }
 
 void SonoAssist::on_output_folder_browse_clicked(void) {
@@ -398,13 +416,24 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
         ui.output_folder_input->setText(new_path);
     }
 
-    on_output_folder_input_editingFinished();
-
 }
 
 // inserting the port in the config map
-void SonoAssist::on_udp_port_input_editingFinished(void) {
-    (*m_app_params)["us_probe_udp_port"] = std::string(ui.udp_port_input->text().toStdString());
+void SonoAssist::on_udp_port_button_clicked(void) {
+
+    // making sure devices arent streaning
+    if (!m_stream_is_active) {
+
+        try {
+            m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());
+        } catch (...) {}
+        
+    } else {
+        QString title = "Clarius UDP port can not be defined";
+        QString message = "The stream has to be shut off.";
+        display_warning_message(title, message);
+    }
+
 }
 
 void SonoAssist::on_ext_imu_status_change(bool device_status){
@@ -714,8 +743,8 @@ bool SonoAssist::load_config_file(QString param_file_path) {
     file.close();
 
     // getting the root element of the xml document
-    QDomElement docElem = doc.documentElement();
     QDomNodeList children;
+    QDomElement docElem = doc.documentElement();
 
     // filling the parameter map with xml content
     for (auto& parameter : *m_app_params) {

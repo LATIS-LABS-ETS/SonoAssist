@@ -129,39 +129,47 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QGridLayout" name="input_fields_layout">
-      <item row="0" column="2">
-       <widget class="QPushButton" name="param_file_browse">
-        <property name="text">
-         <string>browse</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="param_file_label">
-        <property name="text">
-         <string>Param file</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="param_file_input"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="output_folder_label">
-        <property name="text">
-         <string>Output folder</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="output_folder_browse">
-        <property name="text">
-         <string>browse</string>
+       <widget class="QLineEdit" name="param_file_input">
+        <property name="placeholderText">
+         <string>Parameter file path</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QLineEdit" name="output_folder_input"/>
+       <widget class="QPushButton" name="output_folder_browse">
+        <property name="text">
+         <string>Browse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="param_file_browse">
+        <property name="text">
+         <string>Browse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLineEdit" name="output_folder_input">
+        <property name="placeholderText">
+         <string>Output folder path</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="param_file_apply">
+        <property name="text">
+         <string>Apply</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="output_folder_apply">
+        <property name="text">
+         <string>Apply</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -380,19 +388,6 @@
         <item>
          <layout class="QHBoxLayout" name="udp_port_layout">
           <item>
-           <widget class="QLabel" name="udp_port_label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Clarius UDP port : </string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QLineEdit" name="udp_port_input">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -405,6 +400,16 @@
               <width>185</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="placeholderText">
+             <string>Clarius UDP port</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="udp_port_button">
+            <property name="text">
+             <string>Apply</string>
             </property>
            </widget>
           </item>
@@ -436,7 +441,7 @@
      <x>0</x>
      <y>0</y>
      <width>1038</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>
