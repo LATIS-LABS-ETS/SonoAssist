@@ -25,6 +25,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -45,8 +46,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
-    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\src;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\includes;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\tacopie\includes;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Users\david\Documents\MedicalUltrasound\Dependencies\clarius_listener\src\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\david\Documents\MedicalUltrasound\Dependencies\opencv-3.4.10\opencv-3.4.10\build\install\x64\vc16\lib;C:\Users\david\Documents\MedicalUltrasound\Dependencies\stream_engine_windows_x64_4.1.0.3\lib\tobii;C:\Users\david\Documents\MedicalUltrasound\Dependencies\MetaWear-SDK-Cpp-0.18.4\dist\Release\lib\x64;C:\Users\david\Documents\MedicalUltrasound\Dependencies\cpp_redis\msvc15\x64\Release;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\Users\david\Documents\MedicalUltrasound\Dependencies\clarius_listener\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
@@ -59,6 +60,7 @@
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtInstall>msvc2017_64</QtInstall>
     <QtModules>core;gui;widgets</QtModules>
+    <QMakeCodeLines>QT += bluetooth;QT += xml;QT += core;QT += gui;$(QMakeCodeLines)</QMakeCodeLines>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
     <Import Project="$(QtMsBuild)\qt.props" />
@@ -90,7 +92,7 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>tobii_stream_engine.lib;opencv_calib3d3410.lib;opencv_core3410.lib;opencv_dnn3410.lib;opencv_features2d3410.lib;opencv_flann3410.lib;opencv_highgui3410.lib;opencv_imgcodecs3410.lib;opencv_imgproc3410.lib;opencv_ml3410.lib;opencv_objdetect3410.lib;opencv_photo3410.lib;opencv_shape3410.lib;opencv_stitching3410.lib;opencv_superres3410.lib;opencv_video3410.lib;opencv_videoio3410.lib;opencv_videostab3410.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MetaWear.Win32.lib;tobii_stream_engine.lib;opencv_calib3d3410.lib;opencv_core3410.lib;opencv_dnn3410.lib;opencv_features2d3410.lib;opencv_flann3410.lib;opencv_highgui3410.lib;opencv_imgcodecs3410.lib;opencv_imgproc3410.lib;opencv_ml3410.lib;opencv_objdetect3410.lib;opencv_photo3410.lib;opencv_shape3410.lib;opencv_stitching3410.lib;opencv_superres3410.lib;opencv_video3410.lib;opencv_videoio3410.lib;opencv_videostab3410.lib;cpp_redis.lib;tacopie.lib;realsense2.lib;listen.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -115,6 +117,7 @@
   <ItemGroup>
     <ClInclude Include="main.h" />
     <ClInclude Include="MetaWearBluetoothClient.h" />
+    <ClInclude Include="resource.h" />
     <QtMoc Include="ClariusProbeClient.h" />
     <QtMoc Include="ScreenRecorder.h" />
   </ItemGroup>
@@ -122,6 +125,12 @@
     <QtMoc Include="GazeTracker.h" />
     <QtMoc Include="RGBDCameraClient.h" />
     <QtMoc Include="SensorDevice.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SonoAssist.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

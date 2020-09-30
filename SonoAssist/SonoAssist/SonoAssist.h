@@ -49,9 +49,8 @@
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 // defining default config file path
-#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
-//#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\params.xml"
-
+//#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
+#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\\resources\\params.xml"
 
 enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;

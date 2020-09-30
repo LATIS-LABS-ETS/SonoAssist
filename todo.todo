@@ -4,8 +4,8 @@ Acquisition tool
 - [x] Add "Apply" button for Clarius port selection
 
 - [x] load default config path
-- [] Build acquisition tool in release mode
-- [] Installer for the acquisition tool
+- [x] Build acquisition tool in release mode
+- [x] Installer for the acquisition tool
 
 - [] Update the configs documentation
 - [] Update infrastructure diagram

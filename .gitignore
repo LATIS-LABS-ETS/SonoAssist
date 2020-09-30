@@ -5,6 +5,7 @@
 *.tlog
 
 # folders
+/deploy/
 SonoAssistScripts/data/
 SonoAssistScripts/notebooks/
 
