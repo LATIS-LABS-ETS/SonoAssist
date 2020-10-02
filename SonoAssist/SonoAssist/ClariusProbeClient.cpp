@@ -45,6 +45,9 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
      
          probe_client_p->m_handler_locked = true;
 
+         // taking note of the reception time
+         probe_client_p->m_reception_time = probe_client_p->get_micro_timestamp();
+
          // mapping the incoming image to a cv::Mat + gray scale conversion
          probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
          cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
@@ -56,8 +59,7 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
          if (probe_client_p->get_stream_status() && !probe_client_p->get_stream_preview_status()) {
 
              probe_client_p->m_onboard_time = std::to_string(nfo->tm);
-             probe_client_p->m_reception_time = probe_client_p->get_micro_timestamp();
-
+             
              std::string imu_entry;
              for (int i = 0; i < npos; i++) {
                  imu_entry = std::to_string(pos[i].gx) + "," + std::to_string(pos[i].gy) + "," + std::to_string(pos[i].gz) + "," +

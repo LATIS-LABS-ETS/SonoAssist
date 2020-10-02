@@ -7,6 +7,8 @@ Acquisition tool
 - [x] Build acquisition tool in release mode
 - [x] Installer for the acquisition tool
 
+- [x] sensor status display in readonly
+
 - [] Update the configs documentation
 - [] Update infrastructure diagram
 

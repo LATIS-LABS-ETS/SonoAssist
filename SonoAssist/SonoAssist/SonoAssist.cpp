@@ -470,7 +470,9 @@ void SonoAssist::build_sensor_panel(void) {
 
     // adding the widgets to the table
     for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
-        ui.sensor_status_table->setItem(index, 0, new QTableWidgetItem());
+        QTableWidgetItem* table_field = new QTableWidgetItem();
+        table_field->setFlags(table_field->flags() ^ Qt::ItemIsEditable);
+        ui.sensor_status_table->setItem(index, 0, table_field);
     }
 
     // streatching the headers
