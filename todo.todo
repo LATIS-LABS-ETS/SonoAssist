@@ -17,7 +17,11 @@ Processing scripts
 ------------------
 
 - [x] acquisition rate characterisation script
-- [] add video frame indexing functionality
+
+- [x] video frame indexing functionality
+- [x] iterator for real sens frames
+
+- [] temporal calibration script (jerk test)
 
 - [] mean head-monitor distance measurement script
 - [] eye tracker accuracy measurement script
