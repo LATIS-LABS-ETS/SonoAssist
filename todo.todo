@@ -1,22 +1,15 @@
 Acquisition tool
 ----------------
 
-- [x] Add "Apply" button for Clarius port selection
-
-- [x] load default config path
-- [x] Build acquisition tool in release mode
-- [x] Installer for the acquisition tool
-
-- [x] sensor status display in readonly
+- [] Add timestamp for each imu acquisition (clarius)
 
 - [] Update the configs documentation
 - [] Update infrastructure diagram
 
-
 Processing scripts
 ------------------
 
-- [x] acquisition rate characterisation script
+- [x] acquisition rate characterization script
 
 - [x] video frame indexing functionality
 - [x] iterator for real sens frames

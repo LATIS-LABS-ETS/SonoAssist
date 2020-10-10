@@ -42,9 +42,13 @@ def measure_acquisition_rate_stats(data_frame, time_col_name="Time (us)"):
     n_us_in_s = 1000000
     plot_percentage_divide = 2
 
+    # removing rows with no timestamp entries
+    data_frame.drop(data_frame.index[data_frame[time_col_name] == " "], inplace=True)
+    data_frame.reset_index(drop=True, inplace=True)
+
     # getting timming data
-    timestamps = data_frame[time_col_name]
-    n_timestamps = len(data_frame.index)
+    timestamps = data_frame[time_col_name].astype(int)
+    n_timestamps = len(timestamps)
 
     # getting time diffs between received data
     rate_measurements = []
@@ -65,11 +69,11 @@ def measure_acquisition_rate_stats(data_frame, time_col_name="Time (us)"):
     n_measurements = len(rate_measurements)
     measure_range = math.floor(n_measurements * (plot_percentage_divide / 100))
     
-    for i in range(n_iterations):
+    for iter_i in range(n_iterations):
 
         # defining the end index for the current rnge of values
         end_index = 0
-        if i == n_iterations-1 :
+        if iter_i == n_iterations-1 :
             end_index = n_measurements - 1
         else : 
             end_index = start_index + measure_range
@@ -138,7 +142,7 @@ def load_all_stats(parent_folder_path):
             if not stat_key in stat_container: stat_container[stat_key] = []
             if clarius_data is not None :
                 stat_container[stat_key].append(measure_acquisition_rate_stats(clarius_data, "Display OS time"))
-            
+
            # screen recorder average rates
             stat_key = "sc"
             if not stat_key in stat_container: stat_container[stat_key] = []

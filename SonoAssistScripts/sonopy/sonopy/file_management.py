@@ -40,6 +40,19 @@ class SonoFolderManager:
             self.folder_file_paths[key] = os.path.join(acq_folder_path, self.folder_file_paths[key])
 
 
+    def check_loaded_data(self, data):
+
+        ''' Makes sure loaded data is properly formatted '''
+
+        checked_data = None
+
+        try:
+            if isinstance(data, pd.DataFrame) and len(data.index) > 0 :
+                checked_data = data
+        except: pass
+
+        return checked_data 
+
     # defining the loading functions for the csv files
 
     def load_eye_tracker_data(self):
@@ -48,8 +61,8 @@ class SonoFolderManager:
         head_data = None
 
         try:
-            gaze_data = pd.read_csv(self.folder_file_paths["eyetracker_gaze"])
-            head_data = pd.read_csv(self.folder_file_paths["eyetracker_head"])
+            gaze_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["eyetracker_gaze"]))
+            head_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["eyetracker_head"]))
         except : pass
 
         return (gaze_data, head_data)
@@ -58,7 +71,7 @@ class SonoFolderManager:
 
         head_pos_data = None
         try:
-            head_pos_data = pd.read_csv(self.folder_file_paths["eyetracker_head_data"])
+            head_pos_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["eyetracker_head_data"]))
         except : pass
 
         return head_pos_data
@@ -68,8 +81,8 @@ class SonoFolderManager:
         acc_data = None 
         ori_data = None
         try :
-            ori_data = pd.read_csv(self.folder_file_paths["ext_imu_ori"]) 
-            acc_data = pd.read_csv(self.folder_file_paths["ext_imu_acc"])
+            ori_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["ext_imu_ori"]))
+            acc_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["ext_imu_acc"]))
         except : pass
 
         return (ori_data, acc_data)
@@ -78,7 +91,7 @@ class SonoFolderManager:
 
         probe_data = None
         try :
-            probe_data = pd.read_csv(self.folder_file_paths["clarius_data"]) 
+            probe_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["clarius_data"]))
         except : pass
 
         return probe_data
@@ -87,7 +100,7 @@ class SonoFolderManager:
 
         camera_data = None
         try:
-            camera_data = pd.read_csv(self.folder_file_paths["rgbd_index"])
+            camera_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["rgbd_index"]))
         except: pass
 
         return camera_data
@@ -96,7 +109,7 @@ class SonoFolderManager:
 
         sc_data = None
         try :
-            sc_data =  pd.read_csv(self.folder_file_paths["screen_rec_data"])
+            sc_data =  self.check_loaded_data(pd.read_csv(self.folder_file_paths["screen_rec_data"]))
         except : pass
 
         return sc_data
