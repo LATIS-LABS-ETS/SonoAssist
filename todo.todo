@@ -3,8 +3,8 @@ Acquisition tool
 
 - [] Add timestamp for each imu acquisition (clarius)
 
-- [] Update the configs documentation
-- [] Update infrastructure diagram
+- [x] Update the configs documentation (move to readme)
+- [x] Update infrastructure / data flow diagram
 
 Processing scripts
 ------------------
