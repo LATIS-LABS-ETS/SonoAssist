@@ -80,17 +80,19 @@ def acc_diff(acq1, acq2):
 
     Returns
     -------
-    (float) : difference between norms
+    (float) : difference between norms (0 - 1)
     '''
 
     norm1  = np.sqrt(acq1["ax"]**2 + acq1["ay"]**2 + acq1["az"]**2)
     norm2  = np.sqrt(acq2["ax"]**2 + acq2["ay"]**2 + acq2["az"]**2)
-    return 100 * (np.abs(norm2-norm1) / norm1)
+    return np.abs(norm2-norm1) / norm1
 
 
 if __name__ == "__main__":
 
-    # time before the jerk motion (us)
+    # timestamp source to be used for calculations
+    target_time_stamp = "Onboard time"
+    # time before the jerk motion (ns)
     time_before_motion = 10000000000
     # image diff value percentage threshold (0 - 1)
     img_diff_tresh_per = 0.1
@@ -124,18 +126,31 @@ if __name__ == "__main__":
         acc_diff_measures.append(acc_diff(clarius_data_manager.clarius_df.iloc[acc_i], 
                                           clarius_data_manager.clarius_df.iloc[acc_i + 1]))
 
-    # locating the beginning of the motion start (image data)
+    # locating motion start time (image data)
 
-    avg_end_time = clarius_data_manager.clarius_df.loc[0, "Onboard time"] + time_before_motion
-    avg_end_index = clarius_data_manager.clarius_df.index[clarius_data_manager.clarius_df["Onboard time"] <= avg_end_time][-1]
+    avg_end_time = clarius_data_manager.clarius_df.loc[0, target_time_stamp] + time_before_motion
+    avg_end_index = clarius_data_manager.clarius_df.index[clarius_data_manager.clarius_df[target_time_stamp] <= avg_end_time][-1]
     avg_img_diff = sum(img_diff_measures[ : avg_end_index]) / avg_end_index
     img_diff_tresh = avg_img_diff * (1 + img_diff_tresh_per)
 
     img_motion_start_time = None
     for img_i in range(avg_end_index + 1, len(img_diff_measures)):
         if img_diff_measures[img_i] > img_diff_tresh:
-            img_motion_start_time = ((clarius_data_manager.clarius_df.loc[img_i, "Onboard time"]) + 
-                                      clarius_data_manager.clarius_df.loc[img_i+1, "Onboard time"])/2
+            img_motion_start_time = (clarius_data_manager.clarius_df.loc[img_i, target_time_stamp] + 
+                                     clarius_data_manager.clarius_df.loc[img_i + 1, target_time_stamp])/2
             break
 
-    
+    # locating motion start time (acc data)
+    acc_motion_start_time = None
+    for acc_i in range(len(acc_diff_measures)):
+        if acc_diff_measures[acc_i] > acc_diff_tresh_per:
+            acc_motion_start_time = (clarius_data_manager.clarius_df.loc[acc_i, target_time_stamp] + 
+                                     clarius_data_manager.clarius_df.loc[acc_i + 1, target_time_stamp])/2
+            break
+
+    # calculating the motion start offset (us)
+    motion_offset = None
+    if (img_motion_start_time is not None) and (acc_motion_start_time is not None):
+        motion_offset = (np.abs(img_motion_start_time - acc_motion_start_time)) / 10000
+
+    print(f"Time offset (us) between the IMU data stream and the US image stream : {motion_offset}")

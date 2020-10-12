@@ -14,9 +14,9 @@ Processing scripts
 - [x] video frame indexing functionality
 - [x] iterator for real sens frames
 
-- [] temporal calibration script (jerk test)
+- [x] temporal calibration script (jerk test)
 
-- [] mean head-monitor distance measurement script
+- [] eyetracker gaze filtering
 - [] eye tracker accuracy measurement script
 
 - [] generate visual saliency maps
