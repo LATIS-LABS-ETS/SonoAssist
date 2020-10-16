@@ -66,16 +66,7 @@ class SonoFolderManager:
         except : pass
 
         return (gaze_data, head_data)
-
-    def load_head_position_data(self):
-
-        head_pos_data = None
-        try:
-            head_pos_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["eyetracker_head_data"]))
-        except : pass
-
-        return head_pos_data
-
+        
     def load_ext_imu_data(self):
 
         acc_data = None 

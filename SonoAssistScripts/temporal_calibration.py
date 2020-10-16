@@ -99,30 +99,27 @@ if __name__ == "__main__":
     # acc diff value percentage threshold (0 - 1)
     acc_diff_tresh_per = 0.1
 
+    # defining data containers
+    acc_diff_measures = []
+    img_diff_measures = []
+
     # parsing script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("acquisition_dir", help="Directory containing the acquisition files")
     args = parser.parse_args()
 
-    # loading acquisition data
-    folder_manager = SonoFolderManager(args.acquisition_dir)
-    clarius_data_manager = ClariusDataManager(folder_manager.load_clarius_data())
-    clarius_data_manager.avg_imu_data()
-    clarius_video_manager = VideoManager(folder_manager.folder_file_paths["clarius_video"])
-
-    # defining data containers
-    acc_diff_measures = []
-    img_diff_measures = []
-    
+    # loading clarius acquisition data
+    clarius_data_manager = ClariusDataManager(args.acquisition_dir)
+   
     # collecting image difference measures
     previous_img = None
-    for image_i, current_img in enumerate(clarius_video_manager):
+    for image_i, current_img in enumerate(clarius_data_manager.clarius_video):
         if previous_img is not None:
             img_diff_measures.append(img_diff(current_img[0], previous_img[0]))
         previous_img = current_img
 
     # collecting acceleration differences
-    for acc_i in range(len(clarius_data_manager.clarius_df.index)-1):
+    for acc_i in range(clarius_data_manager.n_acquisitions - 1):
         acc_diff_measures.append(acc_diff(clarius_data_manager.clarius_df.iloc[acc_i], 
                                           clarius_data_manager.clarius_df.iloc[acc_i + 1]))
 

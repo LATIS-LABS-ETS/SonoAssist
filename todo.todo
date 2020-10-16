@@ -1,26 +1,21 @@
-Acquisition tool
-----------------
-
-- [] Add timestamp for each imu acquisition (clarius)
-
-- [x] Update the configs documentation (move to readme)
-- [x] Update infrastructure / data flow diagram
-
 Processing scripts
 ------------------
 
 - [x] acquisition rate characterization script
 
 - [x] video frame indexing functionality
-- [x] iterator for real sens frames
+- [x] video frame iteration
+- [x] get clarius data (image / imu data) via nearest timestamp
 
 - [x] temporal calibration script (jerk test)
 
-- [] eyetracker gaze filtering
+- [] calculate future movement (translation + rotation) associated to clarius data
+
+- [x] eyetracker gaze filtering
+- [] generate visual saliency maps
 - [] eye tracker accuracy measurement script
 
-- [] generate visual saliency maps
-
+- [] training data generation script
 
 Models
 ------

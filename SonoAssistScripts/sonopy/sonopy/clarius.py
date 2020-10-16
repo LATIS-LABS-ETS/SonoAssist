@@ -1,24 +1,75 @@
 import numpy as np
 import pandas as pd
 
+from sonopy.video import VideoManager, VideoSource
+from sonopy.file_management import SonoFolderManager
+
+
 class ClariusDataManager():
 
     ''' Manages IMU data and US images from the clarius probe '''
 
-    def __init__(self, clarius_df):
+    def __init__(self, acquisition_dir_path):
 
         ''' 
         Parameters
         ----------
-        clarius_df (pd.DataFrame) : .csv data from the probe
+        acquisition_dir_path (str) : path to the acquisition directory
         '''
 
-        self.clarius_df = clarius_df
+        # loading clarius data from the acquisition folder
+        self.folder_manager = SonoFolderManager(acquisition_dir_path)
+        self.clarius_df = self.folder_manager.load_clarius_data()
+        self.clarius_video = VideoManager(self.folder_manager.folder_file_paths["clarius_video"])
 
-        # converting timestamps from str to numeric
+        # converting timestamps from str to numeric (clarius csv data)
         self.clarius_df["Reception OS time"] = pd.to_numeric(self.clarius_df["Reception OS time"], errors="coerce")
         self.clarius_df["Display OS time"] = pd.to_numeric(self.clarius_df["Display OS time"], errors="coerce")
         self.clarius_df["Onboard time"] = pd.to_numeric(self.clarius_df["Onboard time"], errors="coerce")
+
+        # removing / averaging out extra IMU acquisitions
+        self.avg_imu_data()
+        self.n_acquisitions = len(self.clarius_df.index)
+        
+        
+    def get_nearest_index(self, target_time, time_col_name="Display OS time"):
+
+        ''' 
+        Returns the index associated to the acquisition closest to the provided timestamp
+        This function works with the "Display OS time" timestamp (for pairing acquisitions with gaze data)
+
+        Parameters
+        ----------
+        target_time (int) : timestamp (us)
+        time_col_name (str) : identifier for the column to use for the timestamp calculations
+
+        Returns
+        -------
+        (int) : index for the nearest video frame and IMU acquisitions
+        '''
+
+        # getting the nearest index before the specified time
+        nearest_index = None
+        before_index = self.clarius_df.index[self.clarius_df[time_col_name] <= target_time][-1]
+        before_time = self.clarius_df.loc[before_index, time_col_name]
+        
+        # choosing between the indexes before and after the specified time
+
+        if before_time == target_time:
+            nearest_index = before_index    
+        
+        else :
+
+            after_index = before_index + 1
+            after_time = self.clarius_df.loc[after_index, time_col_name]
+            
+            if (target_time - before_time) <= (after_time - target_time):
+                nearest_index = before_index
+            else:
+                nearest_index = after_index
+        
+        return nearest_index
+        
 
     def avg_imu_data(self):
 
