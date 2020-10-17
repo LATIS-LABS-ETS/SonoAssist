@@ -2,36 +2,49 @@ import math
 import numpy as np
 import pandas as pd
 
+from sonopy.config import ConfigurationManager
 from sonopy.file_management import SonoFolderManager
 
 
 class GazeDataManager():
 
-
     ''' Manages acquired data from the tobii 4c eyetracker '''
+
+    # on display coordinates field names
+    x_display_coord = "X display"
+    y_display_coord = "Y display"
 
     # os acquisition time field name
     os_acquisition_time = "OS acquisition time"
-    # head position slicing percentage
-    head_data_slice_percentage = 10
-    # screen physical dimensions (meters)
-    screen_width = 0.35
-    screen_height = 0.20
-    # filter gaze speed (degrees / second)
-    max_gaze_speed = 30
 
 
-    def __init__(self, acquisition_dir_path):
+    def __init__(self, acquisition_dir_path, config_file_path):
 
         ''' 
         Parameters
         ----------
         acquisition_dir_path (str) : path to the acquisition directory
+        config_file_path (str) : path to the configuration (.json) file
         '''
 
-        # loading eye tracker data from the acquisition folder
+        # loading configurations
+        self.config_manager = ConfigurationManager(config_file_path)
+        self.max_gaze_speed = self.config_manager["max_gaze_speed"]
+        self.phys_screen_width = self.config_manager["phys_screen_width"]
+        self.phys_screen_height = self.config_manager["phys_screen_height"]
+        self.saliency_map_width = self.config_manager["saliency_map_width"]
+        self.saliency_point_max_reach = self.config_manager["saliency_point_max_reach"]
+        self.head_data_slice_percentage = self.config_manager["head_data_slice_percentage"]
+
+        # loading data from the acquisition folder
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
+        self.output_params = self.folder_manager.load_output_params()
         (self.gaze_data, self.head_pos_data) = self.folder_manager.load_eye_tracker_data()
+
+        # calulating saliency map generation params
+        self.saliency_size_factor = self.saliency_map_width / self.output_params["display_width"]
+        self.saliency_map_height = int(self.output_params["display_height"] * self.saliency_size_factor)
+        self.saliency_point_px_range = int(self.saliency_point_max_reach / self.saliency_size_factor)
 
         # converting timestamps from str to numeric
         self.gaze_data["Reception OS time"] = pd.to_numeric(self.gaze_data["Reception OS time"], errors="coerce")
@@ -47,12 +60,14 @@ class GazeDataManager():
 
         # defining data containers
         self.avg_head_positions = []
-
+        self.avg_v_angle_distances = []
+        self.gaze_point_gaussians = []
+        
         # data processing steps
         self.calculate_os_acquisition_time()
-        self.calculate_avg_head_positions()
-        self.filter_gaze_data(max_gaze_speed=self.max_gaze_speed, screen_width=self.screen_width, 
-            screen_height=self.screen_height)
+        self.calculate_avg_position_stats()
+        self.filter_gaze_speed()
+        self.filter_gaze_position()
 
 
     def calculate_os_acquisition_time(self):
@@ -68,16 +83,21 @@ class GazeDataManager():
                 (self.head_pos_data.loc[head_i, "Reception tobii time"] - self.head_pos_data.loc[head_i, "Onboard time"]))
 
 
-    def calculate_avg_head_positions(self):
+    def calculate_avg_position_stats(self):
 
         ''' 
-        Calculates the average head position for every 10% slice of data 
-        Measurements are converted from (mm) to (m)
+        Calculates : 
+            - user's average head position (m)
+            - distance (m) associated with 1 degree of visual angle for each head position
+            - 2D gaussian distribution representing a gaze point for each head position
+            * head position averages are calculated for every 10% slice of data 
         '''
 
+        # calculating the size of the slices for averaging
         n_slices = 100 // self.head_data_slice_percentage
         slice_size = self.n_head_acquisitions // n_slices
 
+        # calulating avg head positions
         for slice_i in range(n_slices):
 
             avg_data = [None, None]
@@ -93,25 +113,47 @@ class GazeDataManager():
 
             self.avg_head_positions.append(tuple(avg_data))
 
+        # calculating avg values of 1 deg of visual angle
+        for avg_head_pos_data in self.avg_head_positions:
+            angle_data = [None , None]
+            angle_data[0] = (2 * math.tan(math.radians(1) / 2)) / avg_head_pos_data[0]
+            angle_data[1] = avg_head_pos_data[1]
+            self.avg_v_angle_distances.append(tuple(angle_data))
 
-    def filter_gaze_data(self, max_gaze_speed=30, screen_width=40, screen_height=20):
+        # defining a gaze point gaussian template for all head position values
+        for v_angle_data in self.avg_v_angle_distances:
 
-        ''' 
-        Removes gaze points associated with a gaze speed higher than (max_gaze_speed)
+            gaussian_data = [None, None]
+            gaussian_data[1] = v_angle_data[1]
 
-        Parameters
-        ----------
-        max_gaze_speed (float) : the max gaze speed in (degress / second)
-        screen_width (float) : physical width of the screen
-        screen_height (float) : physical height of the screen
-        '''
+            # defining the gaussian function grid edges
+            if not (self.saliency_point_px_range % 2): self.saliency_point_px_range -= 1
+            grid_max = self.saliency_point_px_range // 2
+            grid_min = - (self.saliency_point_px_range // 2)
+            
+            # defining the gaussian function grid
+            x, y = np.meshgrid(
+                np.linspace(grid_min, grid_max, self.saliency_point_max_reach), 
+                np.linspace(grid_min, grid_max, self.saliency_point_max_reach))
+
+            # calculating the visual angle (1 degree) size in pixels
+            sigma = (v_angle_data[0] / self.phys_screen_width) * self.output_params["display_width"]
+
+            # defining the gaussian function
+            gaussian_data[0] = np.exp(-(x*x+y*y) / (2.0 * sigma**2))
+            self.gaze_point_gaussians.append(gaussian_data)
+
+
+    def filter_gaze_speed(self):
+
+        ''' Removes gaze points associated with a gaze speed higher than (self.max_gaze_speed) '''
 
         # calculating the max speeds for every average head position (m / s)
         max_speeds = []
-        for avg_data in self.avg_head_positions:
+        for v_angle_data in self.avg_v_angle_distances:
             speed_data = [None , None]
-            speed_data[0] = (2 * math.tan(math.radians(max_gaze_speed)/2)) / avg_data[0]
-            speed_data[1] = avg_data[1]
+            speed_data[1] = v_angle_data[1]
+            speed_data[0] = self.max_gaze_speed * v_angle_data[0]
             max_speeds.append(tuple(speed_data))
 
         # finding points with excessive speeds
@@ -123,8 +165,8 @@ class GazeDataManager():
 
             # calculating speed for the x and y directions
             time_diff = (second_point[self.os_acquisition_time] - first_point[self.os_acquisition_time]) / 1000000
-            x_speed = (abs(second_point["X"] - first_point["X"]) * screen_width) / time_diff
-            y_speed = (abs(second_point["Y"] - first_point["Y"]) * screen_height) / time_diff
+            x_speed = (abs(second_point["X"] - first_point["X"]) * self.phys_screen_width) / time_diff
+            y_speed = (abs(second_point["Y"] - first_point["Y"]) * self.phys_screen_height) / time_diff
 
             # getting the proper speed limit
             max_speed = max_speeds[-1][0]
@@ -135,9 +177,117 @@ class GazeDataManager():
 
             # marking gaze points with excessive speeds for deletion
             if (x_speed >= max_speed) or (y_speed >= max_speed):
-                drop_indexes.append(gaze_i)
+                drop_indexes.append(gaze_i+1)
                 if gaze_i not in drop_indexes : drop_indexes.append(gaze_i)
 
         # removing points with excessive speeds
         self.gaze_data.drop(drop_indexes, inplace=True)
         self.gaze_data.reset_index(drop=True, inplace=True)
+        self.n_gaze_acquisitions = len(self.gaze_data.index)
+
+
+    def filter_gaze_position(self):
+
+        ''' Removing gaze points out of bounds of the US image display '''
+
+        # calculating the US image borders (px)
+        top_border = self.output_params["display_y"]
+        left_border = self.output_params["display_x"]
+        right_border = left_border + self.output_params["display_width"]
+        bottom_border = top_border + self.output_params["display_height"]
+
+        # calculating the top-left display corner in relative values
+        top_border_rel = top_border / self.output_params["screen_height"]
+        left_border_rel = left_border / self.output_params["screen_width"]
+
+        # collecting the indexes of out of bounds points
+        drop_indexes = []
+        for gaze_i in range(self.n_gaze_acquisitions):
+
+            drop_entry = False
+
+            # checking the x coordinate
+            x_coord = self.gaze_data.loc[gaze_i, "X"] * self.output_params["screen_width"]
+            if not ((x_coord > left_border) and (x_coord < right_border)):
+                drop_entry = True
+                drop_indexes.append(gaze_i)
+
+            # checking the y coordinate
+            y_coord = self.gaze_data.loc[gaze_i, "Y"] * self.output_params["screen_height"]
+            if (not drop_entry) and (not ((y_coord > top_border) and (y_coord < bottom_border))):
+                drop_indexes.append(gaze_i)
+
+            # gaze points in bounds get new coordinate entries
+            if not drop_entry:
+                self.gaze_data.loc[gaze_i, self.y_display_coord] = self.gaze_data.loc[gaze_i, "Y"] - top_border_rel
+                self.gaze_data.loc[gaze_i, self.x_display_coord] = self.gaze_data.loc[gaze_i, "X"] - left_border_rel
+                
+        # droping out of bounds points
+        self.gaze_data.drop(drop_indexes, inplace=True)
+        self.gaze_data.reset_index(drop=True, inplace=True)
+        self.n_gaze_acquisitions = len(self.gaze_data.index)
+
+
+    def generate_saliency_map(self, timestamp, time_span=100000):
+
+        ''' 
+        Generates a saliency map with the gaze data arround the provided timestamp
+
+        Parameters
+        ----------
+        timestamp (int) : (us) the os timestamp arround which to get the gaze data
+        time_span (int) : (us) the span of time around the provided timestamp considered
+
+        Returns
+        -------
+        tuple (1, 2)
+        1 : (np.array or None) : saliency map or None if no gaze data is near the provided timestamp
+        2 : (list((x, y)) or None) : list of the relative (x, y) coordinates included in the saliency map or None 
+        '''
+
+        saliency_map = None
+        gaze_point_coordinates = None
+
+        # getting the gaze data around the time stamp
+        lower_bound_time = timestamp + time_span
+        upper_bound_time = timestamp - time_span
+        gaze_point_indexes = self.gaze_data.index[(self.gaze_data[self.os_acquisition_time] <= lower_bound_time) & 
+                                                  (self.gaze_data[self.os_acquisition_time] >= upper_bound_time)]
+
+        # making sure valid gaze data is available
+        if len(gaze_point_indexes) > 0:
+
+            # getting the proper gaussian template
+            gaussian_point = self.gaze_point_gaussians[-1][0]
+            for gaussian_data in self.gaze_point_gaussians:
+                if timestamp <= gaussian_data[1]:
+                    gaussian_point = gaussian_data[0]
+                    break
+            
+            # generating the saliency map
+            gaze_point_coordinates = []
+            saliency_map = np.zeros((self.saliency_map_height, self.saliency_map_width))
+            for gaze_i in gaze_point_indexes:
+
+                # getting the top left corner of the gaussian in saliency map coordinates
+                gaze_point = self.gaze_data.iloc[gaze_i]
+                x_position_rel = gaze_point["X display"]
+                y_position_rel = gaze_point["Y display"]
+                x_position = int(round(x_position_rel * self.saliency_map_width))
+                y_position = int(round(y_position_rel * self.saliency_map_height))
+                corner_top = y_position - (self.saliency_point_max_reach - 1) // 2
+                corner_left = x_position - (self.saliency_point_max_reach - 1) // 2
+
+                # collecting the relative gaze coordinates
+                gaze_point_coordinates.append((x_position_rel, y_position_rel))
+
+                # placing the gaussian nf the saliency map
+                for gauss_x, x in enumerate(range(corner_left, corner_left + self.saliency_point_max_reach)):
+                    for gauss_y, y in enumerate(range(corner_top, corner_top + self.saliency_point_max_reach)):
+                        if ((x >= 0) and (x < self.saliency_map_width)) and ((y >= 0) and (y < self.saliency_map_height)):
+                            saliency_map[y, x] += gaussian_point[gauss_y, gauss_x]
+
+                # normalizing the values of the saliency map
+                saliency_map /= np.sum(saliency_map)
+        
+        return (saliency_map, gaze_point_coordinates)

@@ -146,7 +146,7 @@ class VideoManager:
         
         Returns
         -------
-        VideoSource.VIDEO_FILE : tuple (frame (np.array))
+        VideoSource.VIDEO_FILE : tuple (frame (np.array), None)
         VideoSource.REAL_SENS_BAG : tuple(color frame (pyrealsense2.video_frame), depth frame (pyrealsense2.depth_frame))
         '''
 

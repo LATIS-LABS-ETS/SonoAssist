@@ -1,0 +1,8 @@
+{
+    "phys_screen_width" : 0.35,
+    "phys_screen_height" : 0.20,
+    "max_gaze_speed" : 30,
+    "head_data_slice_percentage" : 10,
+    "saliency_map_width" : 50,
+    "saliency_point_max_reach" : 11
+}

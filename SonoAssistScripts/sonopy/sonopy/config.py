@@ -25,3 +25,13 @@ class ConfigurationManager():
         with open(self.config_file_path) as config_f:
             self.config_data = json.load(config_f)
             config_f.close()
+
+
+    def __getitem__(self, key):
+
+        ''' Short cut for accessing config params '''
+
+        if isinstance(key, str):
+            return self.config_data[key]
+        else:
+            raise ValueError("Key must be a string")

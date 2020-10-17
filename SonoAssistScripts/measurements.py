@@ -125,8 +125,9 @@ def load_all_stats(parent_folder_path):
             stat_container = None
             if "config1" in element: stat_container = config1_stats
             elif "config2" in element: stat_container = config2_stats
-            else: stat_container = config3_stats
-
+            elif "config3" in element: stat_container = config3_stats
+            else: continue
+            
             # getting access to the acquisition output files
             folder_manager = SonoFolderManager(acquisition_folder)
 

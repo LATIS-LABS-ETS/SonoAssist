@@ -1,6 +1,9 @@
 Processing scripts
 ------------------
 
+- [x] get normalized acquisitions
+- [x] get jerk test acquisitions
+
 - [x] acquisition rate characterization script
 
 - [x] video frame indexing functionality
@@ -11,9 +14,14 @@ Processing scripts
 
 - [] calculate future movement (translation + rotation) associated to clarius data
 
+- [x] gaze data manager uses config file
 - [x] eyetracker gaze filtering
 - [] generate visual saliency maps
 - [] eye tracker accuracy measurement script
+
+- [x] procude acquisition frequency data
+- [] produce eye tracker accuracy data
+- [] produce jerk test data
 
 - [] training data generation script
 
