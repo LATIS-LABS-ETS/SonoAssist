@@ -5,7 +5,7 @@
 <br>
 
 ## SonoAssist recorder configuration
-#### This section details every entry in the SonoAssist recorder configuration file.
+#### This section details every entry in the SonoAssist recorder configuration file (.xml).
 Note that for all Redis related configurations, the [redis executable](https://github.com/dmajkic/redis/downloads) must be running if data is to be streamed to Redis
 #### Parameter descriptions
 |Entry Name|Description|
@@ -29,7 +29,19 @@ Note that for all Redis related configurations, the [redis executable](https://g
 |eye_tracker_target_path|**(String)** Defines the path to the image used as the eye tracker targets (for accuracy measurements).|
 |eye_tracker_crosshairs_path|**(String)** Defines the path to the image used as the eye tracker crosshairs int the preview display.|
 
-## Development notes 
+#### Additional development notes 
 + **Connecting to the Clarius probes**
     + The (L738-K-1711-A1500) probe network password: @ATFjm4d
     + Make sure custom firewall rules are activated
+
+## SonoAssist precessing scripts (Python)
+#### This section details every entry in the SonoAssist processing scripts configuration file (.json).
+#### Parameter descriptions
+|Entry Name|Description|
+|:--- |:---|
+|phys_screen_width|**(Float)** Physical measurement of the width of the monitor used with the eye tracker in meters.|
+|phys_screen_height|**(Float)** Physical measurement of the height of the monitor used with the eye tracker in meters.|
+|max_gaze_speed|**(Float)** Maximum gaze speed in visual angles per second (deg/sec). This is used for gaze point filtering. Gaze points associated with higher speeds are filtered out.|
+|head_data_slice_percentage|**(Integer)**  The size of the slices (in %) the head position data is divided in. Note that an average head position value is calculated for every slice of data. Because, the physical length associated with 1 degree of visual angle changes according to the head position, this value will be calculated for each slice.|
+|saliency_map_width|**(Integer)** The size in pixels of the with of the generated saliency maps. Only the width has to be specified because the aspect ratio of the US image display for the recorder tool is preserved.|
+|saliency_point_max_reach|**(Integer)** In the saliency map, each gaze point is represented by a 2D gaussian distribution. The standard deviation of the gaussian is associated with the size of 1 degree of visual angle. This parameter **(saliency_point_max_reach)** defines an area limit for the spread of the 2D gaussian distribution. Each gaussian distribution will be represented in a (saliency_point_max_reach x saliency_point_max_reach) px area. The saliency map pixels outside of this area remain unchanged by the gaussian.|
