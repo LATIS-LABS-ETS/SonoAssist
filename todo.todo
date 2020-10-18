@@ -4,19 +4,15 @@ Processing scripts
 - [x] get normalized acquisitions
 - [x] get jerk test acquisitions
 
+- [] documentation for the python script configs
+
 - [x] acquisition rate characterization script
-
-- [x] video frame indexing functionality
-- [x] video frame iteration
-- [x] get clarius data (image / imu data) via nearest timestamp
-
-- [x] temporal calibration script (jerk test)
 
 - [] calculate future movement (translation + rotation) associated to clarius data
 
 - [x] gaze data manager uses config file
-- [x] eyetracker gaze filtering
-- [] generate visual saliency maps
+- [x] eyetracker gaze filtering (speed and position)
+- [x] generate visual saliency maps
 - [] eye tracker accuracy measurement script
 
 - [x] procude acquisition frequency data

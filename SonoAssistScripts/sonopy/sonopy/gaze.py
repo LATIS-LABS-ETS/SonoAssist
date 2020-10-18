@@ -66,8 +66,8 @@ class GazeDataManager():
         # data processing steps
         self.calculate_os_acquisition_time()
         self.calculate_avg_position_stats()
-        self.filter_gaze_speed()
         self.filter_gaze_position()
+        self.filter_gaze_speed()
 
 
     def calculate_os_acquisition_time(self):
@@ -287,7 +287,7 @@ class GazeDataManager():
                         if ((x >= 0) and (x < self.saliency_map_width)) and ((y >= 0) and (y < self.saliency_map_height)):
                             saliency_map[y, x] += gaussian_point[gauss_y, gauss_x]
 
-                # normalizing the values of the saliency map
-                saliency_map /= np.sum(saliency_map)
+            # normalizing the values of the saliency map
+            saliency_map /= np.sum(saliency_map)
         
         return (saliency_map, gaze_point_coordinates)
