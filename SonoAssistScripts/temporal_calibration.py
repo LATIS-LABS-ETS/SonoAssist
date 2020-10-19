@@ -2,6 +2,8 @@
 Implementation of the temporal calibration procedure detailed in the
 ((Stradx: real-time acquisition and visualisation of freehand 3D ultrasound) article
 
+Hold still period : 10 seconds
+
 Usage : 
 
     python3 temporal_calibration.py (path to the acquisition folder)
@@ -88,7 +90,26 @@ def acc_diff(acq1, acq2):
     return np.abs(norm2-norm1) / norm1
 
 
-if __name__ == "__main__":
+def calculate_motion_offset(acquisition_dir):
+
+    ''' 
+    Calculates the time difference in (us) between the starting point of the jerk motion for the 2 streams : 
+        - clarius ultrasound images
+        - clarius IMU data
+
+    Parameters
+    ----------
+    acquisition_dir (str) : path to the target acquisition directory
+
+    Returns
+    -------
+    tuple()
+        1 (float) : time offset (us) between the IMU data stream and the US image stream
+        2 (int) : motion start index for clarius IMU diff measures
+        3 (int) : motion start index for clarius image diff measures
+        4 (list(float)) : difference of acceleration norm between all IMU acquisitions (in %)
+        5 (list(float)) : difference score between all US images 
+    ''' 
 
     # timestamp source to be used for calculations
     target_time_stamp = "Onboard time"
@@ -103,13 +124,8 @@ if __name__ == "__main__":
     acc_diff_measures = []
     img_diff_measures = []
 
-    # parsing script arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("acquisition_dir", help="Directory containing the acquisition files")
-    args = parser.parse_args()
-
     # loading clarius acquisition data
-    clarius_data_manager = ClariusDataManager(args.acquisition_dir)
+    clarius_data_manager = ClariusDataManager(acquisition_dir)
    
     # collecting image difference measures
     previous_img = None
@@ -130,24 +146,40 @@ if __name__ == "__main__":
     avg_img_diff = sum(img_diff_measures[ : avg_end_index]) / avg_end_index
     img_diff_tresh = avg_img_diff * (1 + img_diff_tresh_per)
 
+    img_motion_start_index = 0
     img_motion_start_time = None
     for img_i in range(avg_end_index + 1, len(img_diff_measures)):
         if img_diff_measures[img_i] > img_diff_tresh:
+            img_motion_start_index = img_i
             img_motion_start_time = (clarius_data_manager.clarius_df.loc[img_i, target_time_stamp] + 
                                      clarius_data_manager.clarius_df.loc[img_i + 1, target_time_stamp])/2
             break
 
     # locating motion start time (acc data)
+    acc_motion_start_index = 0
     acc_motion_start_time = None
     for acc_i in range(len(acc_diff_measures)):
         if acc_diff_measures[acc_i] > acc_diff_tresh_per:
+            acc_motion_start_index = acc_i
             acc_motion_start_time = (clarius_data_manager.clarius_df.loc[acc_i, target_time_stamp] + 
                                      clarius_data_manager.clarius_df.loc[acc_i + 1, target_time_stamp])/2
             break
 
     # calculating the motion start offset (us)
-    motion_offset = None
+    motion_offset_data = None
     if (img_motion_start_time is not None) and (acc_motion_start_time is not None):
         motion_offset = (np.abs(img_motion_start_time - acc_motion_start_time)) / 10000
+        motion_offset_data = (motion_offset, acc_motion_start_index, acc_motion_start_index, acc_diff_measures, img_diff_measures)
 
-    print(f"Time offset (us) between the IMU data stream and the US image stream : {motion_offset}")
+    return motion_offset_data
+
+
+if __name__ == "__main__":
+
+    # parsing input arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("acquisition_dir", help="Directory containing the acquisition files")
+    args = parser.parse_args()
+    
+    motion_offset_data = calculate_motion_offset(args.acquisition_dir)
+    print(f"Time offset (us) between the IMU data stream and the US image stream : {motion_offset_data[0]}")
