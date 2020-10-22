@@ -40,6 +40,13 @@ class SonoFolderManager:
             self.folder_file_paths[key] = os.path.join(acq_folder_path, self.folder_file_paths[key])
 
 
+    def __getitem__(self, key):
+
+        ''' Easy acces to full acquisition folder file paths '''
+
+        return self.folder_file_paths[key]
+
+
     def check_loaded_data(self, data):
 
         ''' Makes sure loaded data is properly formatted '''

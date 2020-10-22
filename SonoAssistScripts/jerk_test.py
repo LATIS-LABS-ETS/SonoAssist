@@ -105,7 +105,7 @@ def calculate_motion_offset(acquisition_dir):
     -------
     tuple()
         1 (float) : time offset (us) between the IMU data stream and the US image stream
-        2 (int) : motion start index for clarius IMU diff measures
+        2 (int) : motion start index for clarius acceleration diff measures
         3 (int) : motion start index for clarius image diff measures
         4 (list(float)) : difference of acceleration norm between all IMU acquisitions (in %)
         5 (list(float)) : difference score between all US images 

@@ -20,7 +20,7 @@ class ClariusDataManager():
         # loading clarius data from the acquisition folder
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
         self.clarius_df = self.folder_manager.load_clarius_data()
-        self.clarius_video = VideoManager(self.folder_manager.folder_file_paths["clarius_video"])
+        self.clarius_video = VideoManager(self.folder_manager["clarius_video"])
 
         # converting timestamps from str to numeric (clarius csv data)
         self.clarius_df["Reception OS time"] = pd.to_numeric(self.clarius_df["Reception OS time"], errors="coerce")

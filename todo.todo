@@ -16,8 +16,8 @@ Processing scripts
 - [] eye tracker accuracy measurement script
 
 - [x] procude acquisition frequency data
-- [] produce eye tracker accuracy data
-- [] produce jerk test data
+- [x] produce eye tracker accuracy data
+- [x] produce jerk test data
 
 - [] training data generation script
 

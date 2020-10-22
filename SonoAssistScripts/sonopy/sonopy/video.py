@@ -116,14 +116,25 @@ class VideoManager:
 
             # counting frames from normal video media file
             if self.video_source_type == VideoSource.VIDEO_FILE :
-                while self.video_source.read()[0] : self.frame_count += 1
-                self.video_source.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+                cv_m_version = int(cv2.__version__.split(".")[0])
+
+                # fast frame counting
+                try:
+                    if cv_m_version >= 3:
+                        self.frame_count = int(self.video_source.get(cv2.CAP_PROP_FRAME_COUNT))
+                    else:
+                        self.frame_count = int(self.video_source.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+
+                # slow frame counting
+                except:
+                    while self.video_source.read()[0] : self.frame_count += 1
+                    self.video_source.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
             # couting color frames from a .bag file
             elif self.video_source_type == VideoSource.REAL_SENS_BAG:
 
                 while True:
-                    
                     try :
                         frames = self.video_source.wait_for_frames(self.frame_timeout_ms)
                         self.frame_count += 1

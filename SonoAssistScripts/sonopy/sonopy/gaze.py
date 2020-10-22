@@ -18,14 +18,17 @@ class GazeDataManager():
     os_acquisition_time = "OS acquisition time"
 
 
-    def __init__(self, acquisition_dir_path, config_file_path):
+    def __init__(self, acquisition_dir_path, config_file_path, filter_gaze_data=True):
 
         ''' 
         Parameters
         ----------
         acquisition_dir_path (str) : path to the acquisition directory
         config_file_path (str) : path to the configuration (.json) file
+        filter_gaze_data (bool) : when true, the loaded gaze data is filtered in the constructor (speed and position)
         '''
+
+        self.filter_gaze_data = filter_gaze_data
 
         # loading configurations
         self.config_manager = ConfigurationManager(config_file_path)
@@ -66,8 +69,11 @@ class GazeDataManager():
         # data processing steps
         self.calculate_os_acquisition_time()
         self.calculate_avg_position_stats()
-        self.filter_gaze_position()
-        self.filter_gaze_speed()
+
+        # filtering gaze data according to speed and position
+        if self.filter_gaze_data:
+            self.filter_gaze_position()
+            self.filter_gaze_speed()
 
 
     def calculate_os_acquisition_time(self):
@@ -196,31 +202,20 @@ class GazeDataManager():
         right_border = left_border + self.output_params["display_width"]
         bottom_border = top_border + self.output_params["display_height"]
 
-        # calculating the top-left display corner in relative values
-        top_border_rel = top_border / self.output_params["screen_height"]
-        left_border_rel = left_border / self.output_params["screen_width"]
-
-        # collecting the indexes of out of bounds points
         drop_indexes = []
         for gaze_i in range(self.n_gaze_acquisitions):
 
-            drop_entry = False
+            x_screen_coord = round(self.gaze_data.loc[gaze_i, "X"] * self.output_params["screen_width"])
+            y_screen_coord = round(self.gaze_data.loc[gaze_i, "Y"] * self.output_params["screen_height"])
+            
+            # in bounds points get new coordinate entries
+            if (x_screen_coord > left_border) and (x_screen_coord < right_border) and\
+               (y_screen_coord > top_border) and (y_screen_coord < bottom_border):
+                self.gaze_data.loc[gaze_i, self.y_display_coord] = (y_screen_coord - top_border) / self.output_params["screen_height"]
+                self.gaze_data.loc[gaze_i, self.x_display_coord] = (x_screen_coord - left_border) / self.output_params["screen_width"]
 
-            # checking the x coordinate
-            x_coord = self.gaze_data.loc[gaze_i, "X"] * self.output_params["screen_width"]
-            if not ((x_coord > left_border) and (x_coord < right_border)):
-                drop_entry = True
-                drop_indexes.append(gaze_i)
-
-            # checking the y coordinate
-            y_coord = self.gaze_data.loc[gaze_i, "Y"] * self.output_params["screen_height"]
-            if (not drop_entry) and (not ((y_coord > top_border) and (y_coord < bottom_border))):
-                drop_indexes.append(gaze_i)
-
-            # gaze points in bounds get new coordinate entries
-            if not drop_entry:
-                self.gaze_data.loc[gaze_i, self.y_display_coord] = self.gaze_data.loc[gaze_i, "Y"] - top_border_rel
-                self.gaze_data.loc[gaze_i, self.x_display_coord] = self.gaze_data.loc[gaze_i, "X"] - left_border_rel
+            # collecting the indexes of out of bounds points
+            else: drop_indexes.append(gaze_i)
                 
         # droping out of bounds points
         self.gaze_data.drop(drop_indexes, inplace=True)
@@ -232,6 +227,7 @@ class GazeDataManager():
 
         ''' 
         Generates a saliency map with the gaze data arround the provided timestamp
+        This function should only be called if gaze data was filtered beforehand
 
         Parameters
         ----------
@@ -240,13 +236,14 @@ class GazeDataManager():
 
         Returns
         -------
-        tuple (1, 2)
-        1 : (np.array or None) : saliency map or None if no gaze data is near the provided timestamp
-        2 : (list((x, y)) or None) : list of the relative (x, y) coordinates included in the saliency map or None 
+        (np.array or None) : saliency map or None if no gaze data is near the provided timestamp
         '''
 
         saliency_map = None
-        gaze_point_coordinates = None
+
+        # making sure gaze data was filtered
+        if not self.filter_gaze_data:
+            raise ValueError("This method should only be called if the gaze was filtered (filter_gaze_data=True)")
 
         # getting the gaze data around the time stamp
         lower_bound_time = timestamp + time_span
@@ -265,21 +262,15 @@ class GazeDataManager():
                     break
             
             # generating the saliency map
-            gaze_point_coordinates = []
             saliency_map = np.zeros((self.saliency_map_height, self.saliency_map_width))
             for gaze_i in gaze_point_indexes:
 
                 # getting the top left corner of the gaussian in saliency map coordinates
                 gaze_point = self.gaze_data.iloc[gaze_i]
-                x_position_rel = gaze_point["X display"]
-                y_position_rel = gaze_point["Y display"]
-                x_position = int(round(x_position_rel * self.saliency_map_width))
-                y_position = int(round(y_position_rel * self.saliency_map_height))
-                corner_top = y_position - (self.saliency_point_max_reach - 1) // 2
-                corner_left = x_position - (self.saliency_point_max_reach - 1) // 2
-
-                # collecting the relative gaze coordinates
-                gaze_point_coordinates.append((x_position_rel, y_position_rel))
+                x_display_position = int(round(gaze_point[self.x_display_coord] * self.saliency_map_width))
+                y_display_position = int(round(gaze_point[self.y_display_coord] * self.saliency_map_height))
+                corner_top = y_display_position - (self.saliency_point_max_reach - 1) // 2
+                corner_left = x_display_position - (self.saliency_point_max_reach - 1) // 2
 
                 # placing the gaussian nf the saliency map
                 for gauss_x, x in enumerate(range(corner_left, corner_left + self.saliency_point_max_reach)):
@@ -290,4 +281,4 @@ class GazeDataManager():
             # normalizing the values of the saliency map
             saliency_map /= np.sum(saliency_map)
         
-        return (saliency_map, gaze_point_coordinates)
+        return saliency_map
