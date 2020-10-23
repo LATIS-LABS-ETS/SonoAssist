@@ -1,14 +1,5 @@
 #include "ClariusProbeClient.h"
 
-#ifdef _MEASURE_US_IMG_RATES_
- 
-// declaring performance measurement vars
-extern int n_clarius_frames;
-extern long long clarius_start, clarius_stop;
-extern std::vector<long long> input_img_stamps;
-
-#endif /*_MEASURE_US_IMG_RATES_*/
-
 // global pointers (for the Clarius callback(s))
 ClariusProbeClient* probe_client_p = nullptr;
 
@@ -19,26 +10,6 @@ Callback function for incoming processed images (as displayed on the tablet) fro
 Writes acquired data (IMU and images) to outputfiles and displays the images on the UI 
 */
  void new_processed_image_callback(const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos) {
-
-#ifdef _MEASURE_US_IMG_RATES_
-
-     // measuring img handling for the (N_US_FRAMES) first frames
-     if (n_clarius_frames < N_US_FRAMES) {
-     
-         // start point for avg FPS calculation
-         if (n_clarius_frames == 0) {
-             clarius_start = std::chrono::duration_cast<std::chrono::milliseconds>(
-                 std::chrono::system_clock::now().time_since_epoch()).count();
-         }
-
-         // memorising up to (N_US_FRAMES) points
-         input_img_stamps[n_clarius_frames] = std::chrono::duration_cast<std::chrono::milliseconds>(
-             std::chrono::system_clock::now().time_since_epoch()).count();
-         
-         n_clarius_frames ++;
-     } 
-
-#endif /*_MEASURE_US_IMG_RATES_*/
        
     // dropping the current frame if display is buisy
      if (!probe_client_p->m_handler_locked) {
@@ -63,7 +34,9 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
              std::string imu_entry;
              for (int i = 0; i < npos; i++) {
                  imu_entry = std::to_string(pos[i].gx) + "," + std::to_string(pos[i].gy) + "," + std::to_string(pos[i].gz) + "," +
-                     std::to_string(pos[i].ax) + "," + std::to_string(pos[i].ay) + "," + std::to_string(pos[i].az);
+                             std::to_string(pos[i].ax) + "," + std::to_string(pos[i].ay) + "," + std::to_string(pos[i].az) + "," + 
+                             std::to_string(pos[i].mx) + "," + std::to_string(pos[i].my) + "," + std::to_string(pos[i].mz) + "," + 
+                             std::to_string(pos[i].qw) + "," + std::to_string(pos[i].qx) + "," + std::to_string(pos[i].qy) + "," + std::to_string(pos[i].qz);
                  probe_client_p->m_imu_data.push_back(imu_entry);
              }
 
@@ -74,17 +47,6 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
          emit probe_client_p->new_us_image(probe_client_p->m_output_img);
 
      }
-
-#ifdef _MEASURE_US_IMG_RATES_
-
-    // stop point for avg FPS calculation
-    if (n_clarius_frames == N_US_FRAMES) {
-        clarius_stop = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-        n_clarius_frames ++;
-    }
-
-#endif /*_MEASURE_US_IMG_RATES_*/
 
 }
 
@@ -201,7 +163,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
 
         // writing the output file header
         m_output_imu_file.open(m_output_imu_file_str);
-        m_output_imu_file << "Reception OS time,Display OS time,Onboard time,gx,gy,gz,ax,ay,az" << std::endl;
+        m_output_imu_file << "Reception OS time,Display OS time,Onboard time,gx,gy,gz,ax,ay,az,mx,my,mz,qw,qx,qy,qz" << std::endl;
         m_output_imu_file.close();
 
         m_output_file_loaded = true;
@@ -224,7 +186,7 @@ void ClariusProbeClient::write_output_data() {
 
     // including the imu data
     if (m_imu_data.size() == 0) {
-        output_str += " , , , , , \n";
+        output_str += " , , , , , , , , , , , , \n";
     } else {
         output_str += m_imu_data[0] + "\n";
         for (int i = 1; i < m_imu_data.size(); i++) {
