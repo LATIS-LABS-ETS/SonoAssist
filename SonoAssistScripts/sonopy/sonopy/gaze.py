@@ -32,12 +32,8 @@ class GazeDataManager():
 
         # loading configurations
         self.config_manager = ConfigurationManager(config_file_path)
-        self.max_gaze_speed = self.config_manager["max_gaze_speed"]
-        self.phys_screen_width = self.config_manager["phys_screen_width"]
-        self.phys_screen_height = self.config_manager["phys_screen_height"]
         self.saliency_map_width = self.config_manager["saliency_map_width"]
         self.saliency_point_max_reach = self.config_manager["saliency_point_max_reach"]
-        self.head_data_slice_percentage = self.config_manager["head_data_slice_percentage"]
 
         # loading data from the acquisition folder
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
@@ -100,7 +96,7 @@ class GazeDataManager():
         '''
 
         # calculating the size of the slices for averaging
-        n_slices = 100 // self.head_data_slice_percentage
+        n_slices = 100 // self.config_manager["head_data_slice_percentage"]
         slice_size = self.n_head_acquisitions // n_slices
 
         # calulating avg head positions
@@ -143,7 +139,7 @@ class GazeDataManager():
                 np.linspace(grid_min, grid_max, self.saliency_point_max_reach))
 
             # calculating the visual angle (1 degree) size in pixels
-            sigma = (v_angle_data[0] / self.phys_screen_width) * self.output_params["display_width"]
+            sigma = (v_angle_data[0] / self.config_manager["phys_screen_width"]) * self.output_params["display_width"]
 
             # defining the gaussian function
             gaussian_data[0] = np.exp(-(x*x+y*y) / (2.0 * sigma**2))
@@ -152,14 +148,14 @@ class GazeDataManager():
 
     def filter_gaze_speed(self):
 
-        ''' Removes gaze points associated with a gaze speed higher than (self.max_gaze_speed) '''
+        ''' Removes gaze points associated with a gaze speed higher than (config -> max_gaze_speed) '''
 
         # calculating the max speeds for every average head position (m / s)
         max_speeds = []
         for v_angle_data in self.avg_v_angle_distances:
             speed_data = [None , None]
             speed_data[1] = v_angle_data[1]
-            speed_data[0] = self.max_gaze_speed * v_angle_data[0]
+            speed_data[0] = self.config_manager["max_gaze_speed"] * v_angle_data[0]
             max_speeds.append(tuple(speed_data))
 
         # finding points with excessive speeds
@@ -171,8 +167,8 @@ class GazeDataManager():
 
             # calculating speed for the x and y directions
             time_diff = (second_point[self.os_acquisition_time] - first_point[self.os_acquisition_time]) / 1000000
-            x_speed = (abs(second_point["X"] - first_point["X"]) * self.phys_screen_width) / time_diff
-            y_speed = (abs(second_point["Y"] - first_point["Y"]) * self.phys_screen_height) / time_diff
+            x_speed = (abs(second_point["X"] - first_point["X"]) * self.config_manager["phys_screen_width"]) / time_diff
+            y_speed = (abs(second_point["Y"] - first_point["Y"]) * self.config_manager["phys_screen_height"]) / time_diff
 
             # getting the proper speed limit
             max_speed = max_speeds[-1][0]
@@ -226,8 +222,9 @@ class GazeDataManager():
     def generate_saliency_map(self, timestamp, time_span=100000):
 
         ''' 
-        Generates a saliency map with the gaze data arround the provided timestamp
-        This function should only be called if gaze data was filtered beforehand
+        Generates a saliency map with the gaze data arround the provided timestamp.
+        This function should only be called if gaze data was filtered beforehand.
+        A saliency map requires a minimum of (config -> saliency_map_min_points) gaze points.
 
         Parameters
         ----------
@@ -252,7 +249,7 @@ class GazeDataManager():
                                                   (self.gaze_data[self.os_acquisition_time] >= upper_bound_time)]
 
         # making sure valid gaze data is available
-        if len(gaze_point_indexes) > 0:
+        if len(gaze_point_indexes) > self.config_manager["saliency_map_min_points"]:
 
             # getting the proper gaussian template
             gaussian_point = self.gaze_point_gaussians[-1][0]

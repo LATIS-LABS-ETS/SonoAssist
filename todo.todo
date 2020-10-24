@@ -8,12 +8,12 @@ Processing scripts
 
 - [x] acquisition rate characterization script
 
-- [] calculate future movement (translation + rotation) associated to clarius data
+- [x] calculate future movement (translation + rotation) associated to clarius data
 
 - [x] gaze data manager uses config file
 - [x] eyetracker gaze filtering (speed and position)
 - [x] generate visual saliency maps
-- [] eye tracker accuracy measurement script
+- [x] eye tracker accuracy measurement script
 
 - [x] procude acquisition frequency data
 - [x] produce eye tracker accuracy data

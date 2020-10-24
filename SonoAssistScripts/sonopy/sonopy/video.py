@@ -187,7 +187,17 @@ class VideoManager:
 
     def __getitem__(self, key):
         
-        ''' Frame indexing for (VideoSource.VIDEO_FILE) sources '''
+        ''' 
+        Frame indexing for (VideoSource.VIDEO_FILE) sources 
+        
+        Parameters
+        ----------
+        key (int) : clarius acquisition index
+
+        Returns
+        -------
+        (np.array) : US frame
+        '''
 
         indexed_frame = None
 
