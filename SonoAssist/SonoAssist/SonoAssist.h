@@ -79,9 +79,10 @@ class SonoAssist : public QMainWindow {
 		void on_start_acquisition_button_clicked(void);
 		void on_stop_acquisition_button_clicked(void);
 
-		// ui update slots
+		// data acquisition slots
 		void on_new_camera_image(QImage);
 		void on_new_clarius_image(QImage);
+		void on_clarius_no_imu_data(void);
 		void on_new_gaze_point(float, float);
 		void on_new_us_screen_capture(QImage);
 

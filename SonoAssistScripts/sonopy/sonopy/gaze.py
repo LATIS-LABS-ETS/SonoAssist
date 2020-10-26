@@ -207,8 +207,8 @@ class GazeDataManager():
             # in bounds points get new coordinate entries
             if (x_screen_coord > left_border) and (x_screen_coord < right_border) and\
                (y_screen_coord > top_border) and (y_screen_coord < bottom_border):
-                self.gaze_data.loc[gaze_i, self.y_display_coord] = (y_screen_coord - top_border) / self.output_params["screen_height"]
-                self.gaze_data.loc[gaze_i, self.x_display_coord] = (x_screen_coord - left_border) / self.output_params["screen_width"]
+                self.gaze_data.loc[gaze_i, self.y_display_coord] = (y_screen_coord - top_border) / self.output_params["display_height"]
+                self.gaze_data.loc[gaze_i, self.x_display_coord] = (x_screen_coord - left_border) / self.output_params["display_width"]
 
             # collecting the indexes of out of bounds points
             else: drop_indexes.append(gaze_i)

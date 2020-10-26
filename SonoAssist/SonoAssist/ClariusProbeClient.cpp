@@ -19,10 +19,13 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
          // taking note of the reception time
          probe_client_p->m_reception_time = probe_client_p->get_micro_timestamp();
 
+         // notification message after 2 missing IMU entries
+         if (npos < 1) probe_client_p->m_imu_counter ++;
+         if (probe_client_p->m_imu_counter >= CLARIUS_NO_IMU_TRESH) emit probe_client_p->no_imu_data();
+        
          // mapping the incoming image to a cv::Mat + gray scale conversion
          probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
          cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
-
          cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
              probe_client_p->m_output_img_mat.size(), 0, 0, cv::INTER_AREA);
 
@@ -104,6 +107,11 @@ void ClariusProbeClient::start_stream() {
     // making sure requirements are filled
     if (m_device_connected && !m_device_streaming) {
         
+        // preparing the US image callback
+        m_imu_counter = 0;
+        m_display_locked = true;
+        m_handler_locked = false;
+
         // preparing for image handling
         configure_img_acquisition();
         initialize_img_handling();
@@ -194,7 +202,7 @@ void ClariusProbeClient::write_output_data() {
         }
     }
 
-    // writing the output data
+    // writing the output data (output image is grayscale)
     m_writing_ouput = true;
     if (m_video->isOpened()) m_video->write(m_output_img_mat);
     if (m_output_imu_file.is_open()) m_output_imu_file << output_str;

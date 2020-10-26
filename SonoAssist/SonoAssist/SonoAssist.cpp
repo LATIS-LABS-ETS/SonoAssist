@@ -120,6 +120,15 @@ void SonoAssist::on_new_clarius_image(QImage new_image){
 
 }
 
+void SonoAssist::on_clarius_no_imu_data(void) {
+
+    // notifying the user about missing IMU data
+    QString message = "Check clarius probe settings";
+    QString title = "No incoming IMU data from the clarius probe.";
+    display_warning_message(title, message);
+
+}
+
 void SonoAssist::on_new_us_screen_capture(QImage new_image) {
 
     // displaying the US image only in preview mode
@@ -876,6 +885,8 @@ void SonoAssist::configure_device_clients() {
                 this, &SonoAssist::on_us_probe_status_change);
             connect(m_us_probe_client_p.get(), &ClariusProbeClient::new_us_image,
                 this, &SonoAssist::on_new_clarius_image);
+            connect(m_us_probe_client_p.get(), &ClariusProbeClient::no_imu_data, 
+                this, &SonoAssist::on_clarius_no_imu_data);
         }
 
         // there can only be one US image source

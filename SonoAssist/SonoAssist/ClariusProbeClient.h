@@ -44,6 +44,8 @@
 
 #define CLARIUS_VIDEO_FPS 20
 
+#define CLARIUS_NO_IMU_TRESH 2
+
 // required by the ClariusProbeClient
 class SonoAssist;
 
@@ -81,6 +83,9 @@ class ClariusProbeClient : public SensorDevice {
 		cv::Mat m_input_img_mat;
 		cv::Mat m_output_img_mat;
 
+		// imu check var
+		int m_imu_counter = 0;
+
 		// output vars (accessed from callback)
 		std::string m_onboard_time;
 		std::string m_display_time;
@@ -92,6 +97,7 @@ class ClariusProbeClient : public SensorDevice {
 		std::atomic<bool> m_handler_locked = false;
 
 	signals:
+		void no_imu_data(void);
 		void new_us_image(QImage image);
 
 	protected:
