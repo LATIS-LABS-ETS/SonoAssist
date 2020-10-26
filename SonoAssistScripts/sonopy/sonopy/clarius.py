@@ -123,9 +123,9 @@ class ClariusDataManager():
             nearest_index = 0
         # specified time is after acquisition stop
         elif (before_index == -1) and (after_index == -1):
-            nearest_index = self.n-acquisitions - 1
+            nearest_index = self.n_acquisitions - 1
 
-        # speciifed time is during acquisition
+        # specified time is during acquisition
         else:
 
             after_time = self.clarius_df.loc[after_index, time_col_name]

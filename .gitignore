@@ -8,6 +8,7 @@ SonoAssistScripts/test.py
 *.tlog
 
 # folders
+/.vscode/
 /deploy/
 SonoAssistScripts/data/
 SonoAssistScripts/notebooks/
@@ -554,6 +555,7 @@ FodyWeavers.xsd
 
 ########################################################### vs code stuff
 
+/.vscode/*
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
