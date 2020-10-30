@@ -1,26 +1,14 @@
 Processing scripts
 ------------------
 
-- [x] get normalized acquisitions
-- [x] get jerk test acquisitions
+- [x] calculate future movement (translation + rotation) associated to clarius data (v1)
+- [x] calculate future movement (translation + rotation) associated to clarius data (v2)
 
-- [x] documentation for the python script configs
+- [] imu probe tracking script
 
-- [x] acquisition rate characterization script
-
-- [x] calculate future movement (translation + rotation) associated to clarius data
-
-- [x] gaze data manager uses config file
-- [x] eyetracker gaze filtering (speed and position)
-- [x] generate visual saliency maps
-- [x] eye tracker accuracy measurement script
-
-- [x] procude acquisition frequency data
-- [x] produce eye tracker accuracy data
-- [x] produce jerk test data
-
-- [] training data generation script
-
+- [] jerk test (temporal calibration) results
+- [] gaze accuracy test results
+ 
 Models
 ------
 

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from skinematics.imus import analytical
 
 from sonopy.video import VideoManager, VideoSource
 from sonopy.file_management import SonoFolderManager
@@ -9,9 +10,10 @@ class ClariusDataManager():
 
     ''' Manages IMU data and US images from the clarius probe '''
 
+    gravity = 9.81
     df_time_fields = ["Reception OS time", "Display OS time", "Onboard time"]
 
-    def __init__(self, acquisition_dir_path, process_data=True):
+    def __init__(self, acquisition_dir_path, avg_data=True, process_data=True):
 
         ''' 
         Parameters
@@ -34,12 +36,26 @@ class ClariusDataManager():
         self.clarius_df["Display OS time"] = pd.to_numeric(self.clarius_df["Display OS time"], errors="coerce")
         self.clarius_df["Onboard time"] = pd.to_numeric(self.clarius_df["Onboard time"], errors="coerce")
 
-        # removing / averaging out extra IMU acquisitions
-        if self.process_data :
-            self.avg_imu_data()
-            self.convert_imu_data()
-    
+        # defining position estimation vars (IMU)
+        self.imu_positions = []
+        self.angular_velocities = []
+        self.linear_accelerations = []
+        self.acquisition_rate = None
 
+        # averaging out extra IMU acquisitions
+        self.avg_imu_data()
+
+        if self.process_data :
+
+            # conversions and data collection
+            self.process_imu_data()
+            
+            # reconstructing the position with an analytical solution (ignoring orientation)
+            # assumes a start in a stationary position and no compensation for drift
+            _, self.imu_positions, _ = analytical(omega=self.angular_velocities, accMeasured=self.linear_accelerations, 
+                                                  rate=self.acquisition_rate)
+
+            
     def avg_imu_data(self):
 
         ''' Averages IMU acquisitions to get one per US image '''
@@ -77,18 +93,30 @@ class ClariusDataManager():
         self.n_acquisitions = len(self.clarius_df.index)
 
 
-    def convert_imu_data(self):
+    def process_imu_data(self):
 
-        ''' Applies conversions to the acquired IMU data '''
+        ''' Applies conversions to IMU data and fills containers '''
 
+        # estimating the clarius acquisition rate (Hz)
+        acquisition_duration = (self.clarius_df.loc[self.n_acquisitions - 1, "Display OS time"] - self.clarius_df.loc[0, "Display OS time"]) / 1000000
+        self.acquisition_rate = int(self.n_acquisitions / acquisition_duration)
+
+        # going through the IMU data
         for row_i in range(self.n_acquisitions):
 
-            # converting the quaternion baesd orientation to euler
+            # converting the quaternion based orientation to euler angles
             row_data = self.clarius_df.iloc[row_i]
             roll, pitch, yaw = self.quaternion_to_euler_angle(row_data["qw"], row_data["qx"], row_data["qy"], row_data["qz"])
             self.clarius_df.loc[row_i, "roll"] = roll
             self.clarius_df.loc[row_i, "pitch"] = pitch
             self.clarius_df.loc[row_i, "yaw"] = yaw
+
+            # collecting angular and linear accelerations
+            self.angular_velocities.append([row_data["gx"], row_data["gy"], row_data["gz"]])
+            self.linear_accelerations.append([row_data["ax"]*self.gravity, row_data["ay"]*self.gravity, row_data["az"]*self.gravity])
+
+        self.angular_velocities = np.array(self.angular_velocities)
+        self.linear_accelerations = np.array(self.linear_accelerations)
 
     
     def get_nearest_index(self, target_time, time_col_name="Display OS time"):
@@ -132,10 +160,8 @@ class ClariusDataManager():
             before_time = self.clarius_df.loc[before_index, time_col_name]
       
             # choosing between the valid indexes before and after the specified time
-
             if before_time == target_time:
                 nearest_index = before_index 
-
             else :
                 after_index = before_index + 1
                 after_time = self.clarius_df.loc[after_index, time_col_name]
@@ -163,8 +189,8 @@ class ClariusDataManager():
         -------
         tuple or None: 
             0 : (np.array) : US frame
-            1 : (tuple) : (dax, day, daz) acceleration variation (g)
-            2 : (tuple) : (droll, dpitch, dyaw)
+            1 : (tuple) : (dx, dy, dz) position variation (m)
+            2 : (tuple) : (droll, dpitch, dyaw) angular variation (degrees)
         None : if the time span is out of bounds
         '''
 
@@ -172,23 +198,25 @@ class ClariusDataManager():
 
         try:
 
+            # getting data for the provided index
             us_frame = self.clarius_video[index]
-            acquisition_data = self.clarius_df.iloc[index]
+            cur_pos_data = self.imu_positions[index]
+            cur_acq_data = self.clarius_df.iloc[index]
             
+            # getting data further in time for probe motion calculation
+            fut_index = self.get_nearest_index(cur_acq_data["Display OS time"] + time_span)
+            fut_pos_data = self.imu_positions[fut_index] 
+            fut_acq_data = self.clarius_df.iloc[fut_index]
+
             # calculating the probe motion
-
-            motion_upper_timestamp = acquisition_data["Display OS time"] + time_span
-            motion_upper_data = self.clarius_df.iloc[self.get_nearest_index(motion_upper_timestamp)]
-
-            dax = acquisition_data["ax"] - motion_upper_data["ax"]
-            day = acquisition_data["ay"] - motion_upper_data["ay"]
-            daz = acquisition_data["az"] - motion_upper_data["az"]
-
-            dyaw = acquisition_data["yaw"] - motion_upper_data["yaw"]
-            droll = acquisition_data["roll"] - motion_upper_data["roll"]
-            dpitch = acquisition_data["pitch"] - motion_upper_data["pitch"]
+            dx = fut_pos_data[0] - cur_pos_data[0]
+            dy = fut_pos_data[1] - cur_pos_data[1]
+            dz = fut_pos_data[2] - cur_pos_data[2]
+            dyaw = fut_acq_data["yaw"] - cur_acq_data["yaw"]
+            droll = fut_acq_data["roll"] - cur_acq_data["roll"]
+            dpitch = fut_acq_data["pitch"] - cur_acq_data["pitch"]
         
-            clarius_data = (us_frame, (dax, day, daz), (droll, dpitch, dyaw))
+            clarius_data = (us_frame, (dx, dy, dz), (droll, dpitch, dyaw))
 
         except : pass
 

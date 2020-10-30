@@ -125,7 +125,7 @@ def calculate_motion_offset(acquisition_dir):
     img_diff_measures = []
 
     # loading clarius acquisition data
-    clarius_data_manager = ClariusDataManager(acquisition_dir)
+    clarius_data_manager = ClariusDataManager(acquisition_dir, process_data=False)
    
     # collecting image difference measures
     previous_img = None

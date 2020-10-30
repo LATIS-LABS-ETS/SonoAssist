@@ -35,7 +35,6 @@ if __name__ == "__main__":
 
     # loading gaze data + only filtering according to speed (allowing no movements) 
     gaze_manager = GazeDataManager(args.acquisition_dir, config_file_path, filter_gaze_data=False)
-    gaze_manager.max_gaze_speed = 0.25
     gaze_manager.filter_gaze_speed()
 
     # getting a frame from the full screen recording (for displaying gaze points)
