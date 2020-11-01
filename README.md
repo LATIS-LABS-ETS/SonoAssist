@@ -21,12 +21,12 @@ Note that for all Redis related configurations, the [redis executable](https://g
 |eye_tracker_to_redis|**("true" or "false")** When set to **true**, the recorder app will export data streamed from the eye tracker to Redis.|
 |eye_tracker_redis_rate_div|**(Integer)** In theory, the Tobii 4C eye tracker can reach a sampling rate of 90Hz. If someone is using the Redis interface for testing or visualization purposes, they may not want to read data at this frequency. This parameter divides the hardware sampling rate to set the new frequency at which data will be written to Redis. Ex: if the actual hardware sampling rate is 60Hz and "eye_tracker_redis_rate_div" is set to 2, gaze data will be written to Redis at a frequency of 30Hz.|
 |eye_tracker_redis_entry|**(String)** Defines the key for the Redis list containing the eye tracker data.|
-|gyroscope_to_redis |**("true" or "false")** When set to **true**, the recorder app will export data streamed from the gyroscope to Redis.|
-|gyroscope_redis_rate_div|**(Integer)** same principle as the "eye_tracker_redis_rate_div" parameter.|
-|gyroscope_redis_entry|**(String)** Defines the key for the Redis list containing the gyroscope data.|
-|ext_imu_to_redis |**("true" or "false")** When set to **true**, the recorder app will export data streamed from the clarius IMU to Redis.|
+|ext_imu_to_redis|**("true" or "false")** When set to **true**, the recorder app will export data streamed from the external IMU to Redis.|
 |ext_imu_redis_rate_div|**(Integer)** same principle as the "eye_tracker_redis_rate_div" parameter.|
-|ext_imu_redis_entry|**(String)** Defines the key for the Redis list containing the clarius IMU data.|
+|ext_imu_redis_entry|**(String)** Defines the key for the Redis list containing the external IMU data.|
+|us_probe_to_redis|**("true" or "false")** When set to **true**, the recorder app will export data streamed from the clarius IMU to Redis.|
+|us_probe_redis_rate_div|**(Integer)** same principle as the "eye_tracker_redis_rate_div" parameter.|
+|us_probe_redis_entry|**(String)** Defines the key for the Redis list containing the clarius IMU data.|
 |us_probe_ip_address|**(String)** Defines the IP address of the Clarius ultrasound probe to connect to.|
 |gyroscope_ble_address|**(String)** Defines the Bluetooth address of the gyroscope device (MetaWear C) to connect to.|
 |eye_tracker_target_path|**(String)** Defines the path to the image used as the eye tracker targets (for accuracy measurements).|
