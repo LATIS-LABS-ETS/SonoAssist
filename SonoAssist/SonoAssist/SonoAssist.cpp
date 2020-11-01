@@ -30,14 +30,14 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
-        {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""},
-        {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
-        {"us_probe_ip_address", ""}, {"eye_tracker_target_path", ""},
-        {"eye_tracker_to_redis", ""},  {"eye_tracker_redis_rate_div", ""},
-        {"eye_tracker_redis_entry", ""},  {"eye_tracker_crosshairs_path", ""},
+        {"us_probe_ip_address", ""}, {"ext_imu_ble_address", ""},
+        {"eye_tracker_crosshairs_path", ""},{"eye_tracker_target_path", ""},
         {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
-        {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""}, 
-        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"measure_eye_tracker_accuracy", ""}
+        {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""},
+        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"measure_eye_tracker_accuracy", ""},
+        {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
+        {"us_probe_to_redis", ""}, {"us_probe_redis_entry", ""}, {"us_probe_redis_rate_div", ""},
+        {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
     };
 
     // filling in the default config path
@@ -123,8 +123,8 @@ void SonoAssist::on_new_clarius_image(QImage new_image){
 void SonoAssist::on_clarius_no_imu_data(void) {
 
     // notifying the user about missing IMU data
-    QString message = "Check clarius probe settings";
-    QString title = "No incoming IMU data from the clarius probe.";
+    QString title = "Check clarius probe settings";
+    QString message = "No incoming IMU data from the clarius probe.";
     display_warning_message(title, message);
 
 }

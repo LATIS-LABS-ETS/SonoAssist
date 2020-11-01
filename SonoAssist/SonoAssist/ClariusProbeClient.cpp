@@ -19,9 +19,11 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
          // taking note of the reception time
          probe_client_p->m_reception_time = probe_client_p->get_micro_timestamp();
 
-         // notification message after 2 missing IMU entries
-         if (npos < 1) probe_client_p->m_imu_counter ++;
-         if (probe_client_p->m_imu_counter >= CLARIUS_NO_IMU_TRESH) emit probe_client_p->no_imu_data();
+         // notification message for missing IMU data
+         if ((npos < 1) && !probe_client_p->m_imu_missing) {
+             probe_client_p->m_imu_missing = true;
+             emit probe_client_p->no_imu_data();
+         }
         
          // mapping the incoming image to a cv::Mat + gray scale conversion
          probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
@@ -108,7 +110,7 @@ void ClariusProbeClient::start_stream() {
     if (m_device_connected && !m_device_streaming) {
         
         // preparing the US image callback
-        m_imu_counter = 0;
+        m_imu_missing = false;
         m_display_locked = true;
         m_handler_locked = false;
 
@@ -121,6 +123,13 @@ void ClariusProbeClient::start_stream() {
         m_output_imu_file.open(m_output_imu_file_str, std::fstream::app);
         m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
             CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), false);
+
+        // connecting to redis (if redis enabled)
+        if ((*m_config_ptr)["us_probe_to_redis"] == "true") {
+            m_redis_entry = (*m_config_ptr)["us_probe_redis_entry"];
+            m_redis_rate_div = std::atoi((*m_config_ptr)["us_probe_redis_rate_div"].c_str());
+            connect_to_redis();
+        }
 
         // connecting to the probe events
         try {
@@ -153,6 +162,7 @@ void ClariusProbeClient::stop_stream() {
         while (m_writing_ouput);
         m_video->release();
         m_output_imu_file.close();
+        disconnect_from_redis();
 
     }
 
@@ -204,6 +214,7 @@ void ClariusProbeClient::write_output_data() {
 
     // writing the output data (output image is grayscale)
     m_writing_ouput = true;
+    write_to_redis(output_str);
     if (m_video->isOpened()) m_video->write(m_output_img_mat);
     if (m_output_imu_file.is_open()) m_output_imu_file << output_str;
     m_writing_ouput = false;

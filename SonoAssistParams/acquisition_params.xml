@@ -2,15 +2,19 @@
 <params>
 
 	<ext_imu_active>false</ext_imu_active>
-	<us_probe_active>false</us_probe_active>
+	<us_probe_active>true</us_probe_active>
 	<rgb_camera_active>false</rgb_camera_active>
 	<eye_tracker_active>false</eye_tracker_active>
-	<screen_recorder_active>true</screen_recorder_active>
+	<screen_recorder_active>false</screen_recorder_active>
 	
 	<us_image_main_display_width>960</us_image_main_display_width>
 	<us_image_main_display_height>540</us_image_main_display_height>
 
 	<measure_eye_tracker_accuracy>false</measure_eye_tracker_accuracy>
+
+	<us_probe_to_redis>true</us_probe_to_redis>
+	<us_probe_redis_rate_div>10</us_probe_redis_rate_div>
+	<us_probe_redis_entry>us_probe_data</us_probe_redis_entry>
 	
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
@@ -18,7 +22,7 @@
 
 	<ext_imu_to_redis>false</ext_imu_to_redis>
 	<ext_imu_redis_rate_div>20</ext_imu_redis_rate_div>
-	<ext_imu_redis_entry>gyro_data</ext_imu_redis_entry>
+	<ext_imu_redis_entry>ext_imu_data</ext_imu_redis_entry>
 
 	<us_probe_ip_address>192.168.1.1</us_probe_ip_address>
 	<ext_imu_ble_address>F3:AC:8B:CE:E1:10</ext_imu_ble_address>

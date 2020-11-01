@@ -24,6 +24,9 @@ Note that for all Redis related configurations, the [redis executable](https://g
 |gyroscope_to_redis |**("true" or "false")** When set to **true**, the recorder app will export data streamed from the gyroscope to Redis.|
 |gyroscope_redis_rate_div|**(Integer)** same principle as the "eye_tracker_redis_rate_div" parameter.|
 |gyroscope_redis_entry|**(String)** Defines the key for the Redis list containing the gyroscope data.|
+|ext_imu_to_redis |**("true" or "false")** When set to **true**, the recorder app will export data streamed from the clarius IMU to Redis.|
+|ext_imu_redis_rate_div|**(Integer)** same principle as the "eye_tracker_redis_rate_div" parameter.|
+|ext_imu_redis_entry|**(String)** Defines the key for the Redis list containing the clarius IMU data.|
 |us_probe_ip_address|**(String)** Defines the IP address of the Clarius ultrasound probe to connect to.|
 |gyroscope_ble_address|**(String)** Defines the Bluetooth address of the gyroscope device (MetaWear C) to connect to.|
 |eye_tracker_target_path|**(String)** Defines the path to the image used as the eye tracker targets (for accuracy measurements).|

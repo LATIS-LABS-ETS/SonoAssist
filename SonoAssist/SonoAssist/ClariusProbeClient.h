@@ -44,8 +44,6 @@
 
 #define CLARIUS_VIDEO_FPS 20
 
-#define CLARIUS_NO_IMU_TRESH 2
-
 // required by the ClariusProbeClient
 class SonoAssist;
 
@@ -84,7 +82,7 @@ class ClariusProbeClient : public SensorDevice {
 		cv::Mat m_output_img_mat;
 
 		// imu check var
-		int m_imu_counter = 0;
+		bool m_imu_missing = false;
 
 		// output vars (accessed from callback)
 		std::string m_onboard_time;

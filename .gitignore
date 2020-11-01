@@ -7,11 +7,14 @@ SonoAssistScripts/test.py
 *.log
 *.tlog
 
-# folders
 /.vscode/
-/deploy/
-SonoAssistScripts/data/
-SonoAssistScripts/notebooks/
+
+# linux folders
+/SonoAssistScripts/data/
+/SonoAssistScripts/notebooks/
+
+# windows folders
+/Deploy/
 
 ##################################################################################################################### C++ related files
 
