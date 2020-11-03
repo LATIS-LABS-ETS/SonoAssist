@@ -9,5 +9,13 @@ setuptools.setup(
     description="Implementation of common functionalities for the SonoAssist project",
     content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=[]
+    install_requires=[
+        'numpy',
+        'pandas',
+        'imutils',
+        'matplotlib',
+        'pyrealsense2',
+        'opencv-python',
+        'scikit-kinematics'
+    ]
 )
