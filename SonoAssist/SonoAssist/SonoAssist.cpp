@@ -256,6 +256,8 @@ void SonoAssist::on_acquisition_preview_box_clicked() {
 
 void SonoAssist::on_start_acquisition_button_clicked() {
     
+    int n_used_sensors = 0;
+
     // making sure the device isnt already streaming
     if (!m_stream_is_active) {
 
@@ -266,8 +268,10 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             set_acquisition_label(true);
 
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_sensor_used())
+                if (m_sensor_devices[i]->get_sensor_used()) {
+                    n_used_sensors++;
                     m_sensor_devices[i]->start_stream();
+                }
             }
            
             // making sure devices are acquiring
@@ -283,15 +287,28 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             }
 
         } else {
+
+            QString message;
             QString title = "Stream can not be started";
-            QString message = "The following devices are not ready for acquisition : [ ";
-            if (!m_us_probe_client_p->get_connection_status() && m_us_probe_client_p->get_sensor_used()) message += "US Probe (Clarius),";
-            if (!m_screen_recorder_client_p->get_connection_status() && m_screen_recorder_client_p->get_sensor_used()) message += "Screen recorder,";
-            if (!m_gaze_tracker_client_p->get_connection_status() && m_gaze_tracker_client_p->get_sensor_used()) message += "Tobii 4C (eye tracker), ";
-            if (!m_metawear_client_p->get_connection_status() && m_metawear_client_p->get_sensor_used()) message += "MetaMotionC (external IMU), ";
-            if (!m_camera_client_p->get_connection_status() && m_camera_client_p->get_sensor_used()) message += "Intel Realsens camera (RGBD camera) ";
-            message += "].";
+
+            // indicating the problematic sensors
+            if (n_used_sensors > 0) {
+                message = "The following devices are not ready for acquisition : [ ";
+                if (!m_us_probe_client_p->get_connection_status() && m_us_probe_client_p->get_sensor_used()) message += "US Probe (Clarius),";
+                if (!m_screen_recorder_client_p->get_connection_status() && m_screen_recorder_client_p->get_sensor_used()) message += "Screen recorder,";
+                if (!m_gaze_tracker_client_p->get_connection_status() && m_gaze_tracker_client_p->get_sensor_used()) message += "Tobii 4C (eye tracker), ";
+                if (!m_metawear_client_p->get_connection_status() && m_metawear_client_p->get_sensor_used()) message += "MetaMotionC (external IMU), ";
+                if (!m_camera_client_p->get_connection_status() && m_camera_client_p->get_sensor_used()) message += "Intel Realsens camera (RGBD camera) ";
+                message += "].";
+            }
+
+            // no sensors are active
+            else {
+                message = "All sensors are marked as inactive.";
+            }
+            
             display_warning_message(title, message);
+
         }
 
     } else {
@@ -342,16 +359,14 @@ void SonoAssist::on_param_file_apply_clicked(){
     
         m_config_is_loaded = load_config_file(ui.param_file_input->text());
 
-        // a successful load updates the clients
+        // a successful load updates all clients
         if (m_config_is_loaded) {
         
             configure_device_clients();
             configure_normal_display();
 
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_sensor_used()) {
-                    m_sensor_devices[i]->set_configuration(m_app_params);
-                }
+                m_sensor_devices[i]->set_configuration(m_app_params);
             }
 
         } else {
@@ -445,6 +460,45 @@ void SonoAssist::on_udp_port_button_clicked(void) {
 
 }
 
+void SonoAssist::sensor_panel_selection_handler(int row, int column) {
+
+    // making sure requirements are filled
+    if (!m_stream_is_active && m_config_is_loaded) {
+    
+        QTableWidgetItem* target_item = ui.sensor_status_table->item(row, column);
+       
+        std::string sensor_activation_field = "";
+        switch (row) {
+            case EXT_IMU:
+                sensor_activation_field = "ext_imu_active";
+            break;
+            case EYE_TRACKER:
+                sensor_activation_field = "eye_tracker_active";
+            break;
+            case RGBD_CAMERA:
+                sensor_activation_field = "rgb_camera_active";
+            break;
+            case US_PROBE:
+                sensor_activation_field = "us_probe_active";
+            break;
+            case SCREEN_RECORDER:
+                sensor_activation_field = "screen_recorder_active";
+            break;
+        }
+
+        // toggling the target sensor state and reconfiguring
+        if ((*m_app_params)[sensor_activation_field] == "true") (*m_app_params)[sensor_activation_field] = "false";
+        else (*m_app_params)[sensor_activation_field] = "true";
+        configure_device_clients();
+
+    } else {
+        QString title = "Sensor statuses can not be updated";
+        QString message = "Make sure that the acquisition is off and that paths to the config and output files are defined.";
+        display_warning_message(title, message);
+    }
+
+}
+
 void SonoAssist::on_ext_imu_status_change(bool device_status){
     set_device_status(device_status, EXT_IMU);
 }
@@ -480,14 +534,12 @@ void SonoAssist::build_sensor_panel(void) {
     // adding the widgets to the table
     for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
         QTableWidgetItem* table_field = new QTableWidgetItem();
-        table_field->setFlags(table_field->flags() ^ Qt::ItemIsEditable);
+        table_field->setFlags(table_field->flags()^Qt::ItemIsEditable^Qt::ItemIsSelectable^Qt::ItemIsEnabled);
         ui.sensor_status_table->setItem(index, 0, table_field);
     }
 
-    // streatching the headers
+    // streatching the headers + ajusting the height of the side panel
     ui.sensor_status_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-    // ajusting the height of the side panel
     auto panelHeight = ui.sensor_status_table->horizontalHeader()->height();
     for (index = 0; index < ui.sensor_status_table->rowCount(); index++) {
         panelHeight += ui.sensor_status_table->rowHeight(index);
@@ -499,6 +551,10 @@ void SonoAssist::build_sensor_panel(void) {
     set_device_status(false, RGBD_CAMERA);
     set_device_status(false, EYE_TRACKER);
     set_device_status(false, SCREEN_RECORDER);
+
+    // connecting the item selection handler
+    connect(ui.sensor_status_table, &QTableWidget::cellClicked,
+        this, &SonoAssist::sensor_panel_selection_handler);
 
 }
 
@@ -842,6 +898,7 @@ void SonoAssist::configure_device_clients() {
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             m_sensor_devices[i]->disconnect_device();
             m_sensor_devices[i]->set_sensor_used(false);
+            ui.sensor_status_table->item(i, 0)->setBackground(QBrush(INACTIVE_SENSOR_FIELD_COLOR));
         }
 
         // configuring the ext IMU client
@@ -849,6 +906,7 @@ void SonoAssist::configure_device_clients() {
             m_metawear_client_p->set_sensor_used(true);
             connect(m_metawear_client_p.get(), &MetaWearBluetoothClient::device_status_change,
                 this, &SonoAssist::on_ext_imu_status_change);
+            ui.sensor_status_table->item(EXT_IMU, 0)->setBackground(QBrush(ACTIVE_SENSOR_FIELD_COLOR));
         }
 
         // configuring the eye tracker client
@@ -858,6 +916,7 @@ void SonoAssist::configure_device_clients() {
                 this, &SonoAssist::on_eye_tracker_status_change);
             connect(m_gaze_tracker_client_p.get(), &GazeTracker::new_gaze_point,
                 this, &SonoAssist::on_new_gaze_point);
+            ui.sensor_status_table->item(EYE_TRACKER, 0)->setBackground(QBrush(ACTIVE_SENSOR_FIELD_COLOR));
         }
 
         // configuring the RGB D camera client
@@ -867,6 +926,7 @@ void SonoAssist::configure_device_clients() {
                 this, &SonoAssist::on_rgbd_camera_status_change);
             connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame,
                 this, &SonoAssist::on_new_camera_image);
+            ui.sensor_status_table->item(RGBD_CAMERA, 0)->setBackground(QBrush(ACTIVE_SENSOR_FIELD_COLOR));
         }
 
         // configuring the screen recorder client
@@ -876,6 +936,7 @@ void SonoAssist::configure_device_clients() {
                 this, &SonoAssist::on_screen_recorder_status_change);
             connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture,
                 this, &SonoAssist::on_new_us_screen_capture);
+            ui.sensor_status_table->item(SCREEN_RECORDER, 0)->setBackground(QBrush(ACTIVE_SENSOR_FIELD_COLOR));
         }
 
         // configuring the US probe client
@@ -887,14 +948,20 @@ void SonoAssist::configure_device_clients() {
                 this, &SonoAssist::on_new_clarius_image);
             connect(m_us_probe_client_p.get(), &ClariusProbeClient::no_imu_data, 
                 this, &SonoAssist::on_clarius_no_imu_data);
+            ui.sensor_status_table->item(US_PROBE, 0)->setBackground(QBrush(ACTIVE_SENSOR_FIELD_COLOR));
         }
 
         // there can only be one US image source
         if (m_us_probe_client_p->get_sensor_used() && m_screen_recorder_client_p->get_sensor_used()) {
+            
             m_screen_recorder_client_p->set_sensor_used(false);
+            (*m_app_params)["screen_recorder_active"] = "false";
+            ui.sensor_status_table->item(SCREEN_RECORDER, 0)->setBackground(QBrush(INACTIVE_SENSOR_FIELD_COLOR));
+            
             QString title = "Too many US image sources";
             QString message = "The screen recorder has been deactivated because there can be only on US image source.";
             display_warning_message(title, message);
+
         }
 
     }

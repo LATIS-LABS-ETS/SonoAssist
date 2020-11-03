@@ -22,8 +22,10 @@
 #include "MetaWearBluetoothClient.h"
 
 #define RED_TEXT "#cc0000"
-#define GREEN_TEXT "#71ff3d"
+#define GREEN_TEXT "#008000"
 #define IMG_PLACE_HOLDER_COLOR "#000000"
+#define ACTIVE_SENSOR_FIELD_COLOR "#D3D3D3"
+#define INACTIVE_SENSOR_FIELD_COLOR "#ffffff"
 
 // US probe display (normal)
 #define US_DISPLAY_DEFAULT_WIDTH 640
@@ -94,6 +96,7 @@ class SonoAssist : public QMainWindow {
 
 		// other slots
 		void on_udp_port_button_clicked(void);
+		void sensor_panel_selection_handler(int row, int column);
 
 	private:
 
