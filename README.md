@@ -10,11 +10,11 @@ Note that for all Redis related configurations, the [redis executable](https://g
 #### Parameter descriptions
 |Entry Name|Description|
 |:--- |:---|
-|ext_imu_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the external IMU unit.|
-|us_probe_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Clarius ultrasound probe (IMU and US images).|
-|rgb_camera_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Intel realsense RGBD camera.|
-|eye_tracker_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Tobii 4c eye tracker.|
-|screen_recorder_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the built-in screen recorder.|
+|ext_imu_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the external IMU unit (sets the default value).|
+|us_probe_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Clarius ultrasound probe, i.e IMU data and US images (sets the default value).|
+|rgb_camera_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Intel realsense RGBD camera (sets the default value).|
+|eye_tracker_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Tobii 4c eye tracker (sets the default value).|
+|screen_recorder_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the built-in screen recorder (sets the default value).|
 |us_image_main_display_width|**(Interger)** Defines the width of the ultrasound image display (Clarius probe).|
 |us_image_main_display_height|**(Interger)** Defines the height of the ultrasound image display (Clarius probe).|
 |measure_eye_tracker_accuracy|**("true" or "false")** When set to **true**, a target image will appear on all 4 corners of the US image display. These red dots are useful for the eye tracker precision measurement script. The default targets are red dots.| 
