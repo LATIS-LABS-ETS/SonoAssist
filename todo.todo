@@ -1,12 +1,7 @@
-Acquisition tool
-----------------
-- [x] fix no IMU data notification
-- [x] write clarius IMU data to redis
-
 Processing scripts
 ------------------
 
-- [] auto install module dependencies
+- [x] auto install module dependencies
 
 - [x] calculate future movement (translation + rotation) associated to clarius data (v1)
 - [x] calculate future movement (translation + rotation) associated to clarius data (v2)

@@ -34,7 +34,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"eye_tracker_crosshairs_path", ""},{"eye_tracker_target_path", ""},
         {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
         {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""},
-        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"measure_eye_tracker_accuracy", ""},
+        {"screen_recorder_active", ""}, {"us_probe_active", ""},
         {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
         {"us_probe_to_redis", ""}, {"us_probe_redis_entry", ""}, {"us_probe_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
@@ -250,6 +250,31 @@ void SonoAssist::on_acquisition_preview_box_clicked() {
         QString message = "Make sure devices are connected and are not currently streaming.";
         display_warning_message(title, message);
     
+    }
+
+}
+
+void SonoAssist::on_eye_t_targets_box_clicked(void) {
+
+    // making sure required are filled
+    if (!m_stream_is_active && m_config_is_loaded) {
+
+        // updating the UI
+        m_eye_tracker_targets = ui.eye_t_targets_box->isChecked();
+        if (!m_preview_is_active) {
+            remove_normal_display();
+            generate_normal_display();
+        }
+
+    } else {
+
+        // reverting the check box selection
+        ui.eye_t_targets_box->setChecked(!ui.eye_t_targets_box->isChecked());
+
+        QString title = "Eye tracker targets can not be displayed";
+        QString message = "Make sure the configurations are loaded and that the tool is not streaming.";
+        display_warning_message(title, message);
+
     }
 
 }
@@ -737,55 +762,50 @@ void SonoAssist::clean_normal_display(void) {
 
 void SonoAssist::generate_eye_tracker_targets() {
     
-    // making sure required are filled
-    if (m_config_is_loaded && !m_preview_is_active) {
+    // placing eye tracker targets (accuracy measurement mode)
+    if (m_eye_tracker_targets) {
 
-        // placing eye tracker targets (accuracy measurement mode)
-        if ((*m_app_params)["measure_eye_tracker_accuracy"] == "true") {
+        // getting main display coordinates
+        QPointF display_pos = m_us_bg_p->pos();
+        int display_x_pos = display_pos.x();
+        int display_y_pos = display_pos.y();
 
-            // getting main display coordinates
-            QPointF display_pos = m_us_bg_p->pos();
-            int display_x_pos = display_pos.x();
-            int display_y_pos = display_pos.y();
+        for (int i(0); i < EYETRACKER_N_ACC_TARGETS; i++) {
 
-            for (int i(0); i < EYETRACKER_N_ACC_TARGETS; i++) {
+            // loading the eyetracker target
+            QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_target_path"].c_str()));
+            crosshair_img = crosshair_img.scaled(EYETRACKER_ACC_TARGET_WIDTH, EYETRACKER_ACC_TARGET_HEIGHT, Qt::KeepAspectRatio);
+            QGraphicsPixmapItem* curr_target_p = new QGraphicsPixmapItem(crosshair_img);
 
-                // loading the eyetracker target
-                QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_target_path"].c_str()));
-                crosshair_img = crosshair_img.scaled(EYETRACKER_ACC_TARGET_WIDTH, EYETRACKER_ACC_TARGET_HEIGHT, Qt::KeepAspectRatio);
-                QGraphicsPixmapItem* curr_target_p = new QGraphicsPixmapItem(crosshair_img);
-
-                // defining the current target position (on display)
-                int target_x_pos = 0, target_y_pos = 0;
-                switch (i) {
-                    // top left
-                    case 0:
-                        target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
-                        target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
-                    break;
-                    // bottom left
-                    case 1:
-                        target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
-                        target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
-                    break;
-                    // top rigth
-                    case 2:
-                        target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
-                        target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
-                    break;
-                    // bottom right
-                    case 3:
-                        target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
-                        target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
-                    break;
-                }
-
-                // placing the crosshair in the middle of the display
-                curr_target_p->setPos(target_x_pos, target_y_pos);
-                curr_target_p->setZValue(3);
-                m_main_scene_p->addItem(curr_target_p);
-
+            // defining the current target position (on display)
+            int target_x_pos = 0, target_y_pos = 0;
+            switch (i) {
+                // top left
+                case 0:
+                    target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                break;
+                // bottom left
+                case 1:
+                    target_x_pos = display_x_pos - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                break;
+                // top rigth
+                case 2:
+                    target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                break;
+                // bottom right
+                case 3:
+                    target_x_pos = display_x_pos + m_main_us_img_width - EYETRACKER_ACC_TARGET_WIDTH/2;
+                    target_y_pos = display_y_pos + m_main_us_img_height - EYETRACKER_ACC_TARGET_HEIGHT/2;
+                break;
             }
+
+            // placing the crosshair in the middle of the display
+            curr_target_p->setPos(target_x_pos, target_y_pos);
+            curr_target_p->setZValue(3);
+            m_main_scene_p->addItem(curr_target_p);
 
         }
 

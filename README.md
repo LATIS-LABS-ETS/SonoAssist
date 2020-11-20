@@ -16,8 +16,7 @@ Note that for all Redis related configurations, the [redis executable](https://g
 |eye_tracker_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the Tobii 4c eye tracker (sets the default value).|
 |screen_recorder_active|**("true" or "false")** When set to **true**, the recorder app will acquire data from the built-in screen recorder (sets the default value).|
 |us_image_main_display_width|**(Interger)** Defines the width of the ultrasound image display (Clarius probe).|
-|us_image_main_display_height|**(Interger)** Defines the height of the ultrasound image display (Clarius probe).|
-|measure_eye_tracker_accuracy|**("true" or "false")** When set to **true**, a target image will appear on all 4 corners of the US image display. These red dots are useful for the eye tracker precision measurement script. The default targets are red dots.| 
+|us_image_main_display_height|**(Interger)** Defines the height of the ultrasound image display (Clarius probe).| 
 |eye_tracker_to_redis|**("true" or "false")** When set to **true**, the recorder app will export data streamed from the eye tracker to Redis.|
 |eye_tracker_redis_rate_div|**(Integer)** In theory, the Tobii 4C eye tracker can reach a sampling rate of 90Hz. If someone is using the Redis interface for testing or visualization purposes, they may not want to read data at this frequency. This parameter divides the hardware sampling rate to set the new frequency at which data will be written to Redis. Ex: if the actual hardware sampling rate is 60Hz and "eye_tracker_redis_rate_div" is set to 2, gaze data will be written to Redis at a frequency of 30Hz.|
 |eye_tracker_redis_entry|**(String)** Defines the key for the Redis list containing the eye tracker data.|

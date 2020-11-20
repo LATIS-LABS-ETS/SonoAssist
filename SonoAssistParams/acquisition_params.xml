@@ -10,8 +10,6 @@
 	<us_image_main_display_width>960</us_image_main_display_width>
 	<us_image_main_display_height>540</us_image_main_display_height>
 
-	<measure_eye_tracker_accuracy>false</measure_eye_tracker_accuracy>
-
 	<us_probe_to_redis>true</us_probe_to_redis>
 	<us_probe_redis_rate_div>10</us_probe_redis_rate_div>
 	<us_probe_redis_entry>us_probe_data</us_probe_redis_entry>

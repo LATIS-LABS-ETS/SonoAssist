@@ -326,6 +326,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="eye_t_targets_box">
+          <property name="text">
+           <string>Eye tracker targets</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QLabel" name="acquisition_label">
           <property name="palette">
            <palette>

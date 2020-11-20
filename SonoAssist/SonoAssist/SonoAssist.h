@@ -77,6 +77,7 @@ class SonoAssist : public QMainWindow {
 		void on_screen_recorder_status_change(bool device_status);
 
 		// data streaming
+		void on_eye_t_targets_box_clicked(void);
 		void on_acquisition_preview_box_clicked(void);
 		void on_start_acquisition_button_clicked(void);
 		void on_stop_acquisition_button_clicked(void);
@@ -127,6 +128,7 @@ class SonoAssist : public QMainWindow {
 		bool m_preview_is_active = false;
 		bool m_config_is_loaded = false;
 		bool m_output_is_loaded = false;
+		bool m_eye_tracker_targets = false;
 
 		// config and output vars
 		QJsonObject m_output_params;
