@@ -31,18 +31,17 @@ class GazeDataManager():
         self.filter_gaze_data = filter_gaze_data
 
         # loading configurations
-        self.config_manager = ConfigurationManager(config_file_path)
+        self.config_manager = ConfigurationManager(config_file_path, acquisition_dir_path)
         self.saliency_map_width = self.config_manager["saliency_map_width"]
         self.saliency_point_max_reach = self.config_manager["saliency_point_max_reach"]
 
         # loading data from the acquisition folder
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
-        self.output_params = self.folder_manager.load_output_params()
         (self.gaze_data, self.head_pos_data) = self.folder_manager.load_eye_tracker_data()
 
         # calulating saliency map generation params
-        self.saliency_size_factor = self.saliency_map_width / self.output_params["display_width"]
-        self.saliency_map_height = int(self.output_params["display_height"] * self.saliency_size_factor)
+        self.saliency_size_factor = self.saliency_map_width / self.config_manager["display_width"]
+        self.saliency_map_height = int(self.config_manager["display_height"] * self.saliency_size_factor)
         self.saliency_point_px_range = int(self.saliency_point_max_reach / self.saliency_size_factor)
 
         # converting timestamps from str to numeric
@@ -65,6 +64,7 @@ class GazeDataManager():
         # data processing steps
         self.calculate_os_acquisition_time()
         self.calculate_avg_position_stats()
+        self.correct_gaze_drift()
 
         # filtering gaze data according to speed and position
         if self.filter_gaze_data:
@@ -83,6 +83,31 @@ class GazeDataManager():
         for head_i in range(self.n_head_acquisitions):
             self.head_pos_data.loc[head_i, self.os_acquisition_time] = (self.head_pos_data.loc[head_i, "Reception OS time"] - 
                 (self.head_pos_data.loc[head_i, "Reception tobii time"] - self.head_pos_data.loc[head_i, "Onboard time"]))
+
+
+    def correct_gaze_drift(self):
+
+        ''' Applying x and y offset values for gaze drift correction '''
+            
+        # calculating relative values for the drift offsets
+        x_offset_rel = self.config_manager["gaze_x_offset"] / self.config_manager["screen_width"]
+        y_offset_rel = self.config_manager["gaze_y_offset"] / self.config_manager["screen_height"]
+
+        # applying the drift corrections
+        if (not x_offset_rel == 0) or (not y_offset_rel == 0):
+
+            for gaze_i in range(self.n_gaze_acquisitions):
+
+                corrected_x_rel = self.gaze_data.loc[gaze_i ,"X"] + x_offset_rel
+                if corrected_x_rel > 1: corrected_x_rel = 1
+                elif corrected_x_rel < 0: corrected_x_rel = 0 
+                
+                corrected_y_rel = self.gaze_data.loc[gaze_i ,"Y"] + y_offset_rel
+                if corrected_y_rel > 1: corrected_y_rel = 1
+                elif corrected_y_rel < 0: corrected_y_rel = 0
+
+                self.gaze_data.loc[gaze_i ,"X"] = corrected_x_rel
+                self.gaze_data.loc[gaze_i ,"Y"] = corrected_y_rel
 
 
     def calculate_avg_position_stats(self):
@@ -139,7 +164,7 @@ class GazeDataManager():
                 np.linspace(grid_min, grid_max, self.saliency_point_max_reach))
 
             # calculating the visual angle (1 degree) size in pixels
-            sigma = (v_angle_data[0] / self.config_manager["phys_screen_width"]) * self.output_params["display_width"]
+            sigma = (v_angle_data[0] / self.config_manager["phys_screen_width"]) * self.config_manager["display_width"]
 
             # defining the gaussian function
             gaussian_data[0] = np.exp(-(x*x+y*y) / (2.0 * sigma**2))
@@ -193,22 +218,22 @@ class GazeDataManager():
         ''' Removing gaze points out of bounds of the US image display '''
 
         # calculating the US image borders (px)
-        top_border = self.output_params["display_y"]
-        left_border = self.output_params["display_x"]
-        right_border = left_border + self.output_params["display_width"]
-        bottom_border = top_border + self.output_params["display_height"]
+        top_border = self.config_manager["display_y"]
+        left_border = self.config_manager["display_x"]
+        right_border = left_border + self.config_manager["display_width"]
+        bottom_border = top_border + self.config_manager["display_height"]
 
         drop_indexes = []
         for gaze_i in range(self.n_gaze_acquisitions):
 
-            x_screen_coord = round(self.gaze_data.loc[gaze_i, "X"] * self.output_params["screen_width"])
-            y_screen_coord = round(self.gaze_data.loc[gaze_i, "Y"] * self.output_params["screen_height"])
+            x_screen_coord = round(self.gaze_data.loc[gaze_i, "X"] * self.config_manager["screen_width"])
+            y_screen_coord = round(self.gaze_data.loc[gaze_i, "Y"] * self.config_manager["screen_height"])
             
             # in bounds points get new coordinate entries
             if (x_screen_coord > left_border) and (x_screen_coord < right_border) and\
                (y_screen_coord > top_border) and (y_screen_coord < bottom_border):
-                self.gaze_data.loc[gaze_i, self.y_display_coord] = (y_screen_coord - top_border) / self.output_params["display_height"]
-                self.gaze_data.loc[gaze_i, self.x_display_coord] = (x_screen_coord - left_border) / self.output_params["display_width"]
+                self.gaze_data.loc[gaze_i, self.y_display_coord] = (y_screen_coord - top_border) / self.config_manager["display_height"]
+                self.gaze_data.loc[gaze_i, self.x_display_coord] = (x_screen_coord - left_border) / self.config_manager["display_width"]
 
             # collecting the indexes of out of bounds points
             else: drop_indexes.append(gaze_i)

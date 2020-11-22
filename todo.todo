@@ -1,16 +1,9 @@
 Processing scripts
 ------------------
 
-- [x] auto install module dependencies
-
-- [x] calculate future movement (translation + rotation) associated to clarius data (v1)
-- [x] calculate future movement (translation + rotation) associated to clarius data (v2)
-
-- [x] imu real time orientation display
-- [] imu probe tracking script
-
-- [] jerk test (temporal calibration) results
-- [] gaze accuracy test results
+- [] better param loading
+- [] gaze drift correction
+- [] imu probe tracking
  
 Models
 ------

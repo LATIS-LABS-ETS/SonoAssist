@@ -6,9 +6,6 @@ import imutils
 import numpy as np
 import pyrealsense2 as rs
 
-from .config import ConfigurationManager
-
-
 class VideoSource(Enum):
 
     ''' Enum for different video sources '''

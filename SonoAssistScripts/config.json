@@ -5,5 +5,7 @@
     "head_data_slice_percentage" : 10,
     "saliency_map_width" : 50,
     "saliency_map_min_points" : 5,
-    "saliency_point_max_reach" : 11
+    "saliency_point_max_reach" : 11,
+    "gaze_x_offset" : 0,
+    "gaze_y_offset" : 0
 }

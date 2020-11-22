@@ -25,7 +25,7 @@ if __name__ == "__main__":
     alpha = 0.7
     beta = 1 - alpha
     intensity_factor = 17000
-    us_display_size = (gaze_manager.output_params["display_width"], gaze_manager.output_params["display_height"])
+    us_display_size = (gaze_manager.config_manager["display_width"], gaze_manager.config_manager["display_height"])
     video_output = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc('M','J','P','G'), 20, us_display_size)
 
     # getting the first valid gaze point timestamp + coresponding clarius data index
