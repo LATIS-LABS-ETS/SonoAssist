@@ -1,3 +1,14 @@
+'''
+This script generates visual saliency maps from the gaze data in the specified acquisition folder.
+Furthermore, for visualization purposes, it generates a video displaying the saliency maps as a color 
+overlay on the collected ultrasound images.
+
+Usage
+-----
+python3 generate_us_saliency_maps.py (path to the acquisition folder)
+
+'''
+
 import cv2
 import argparse
 import numpy as np
@@ -7,6 +18,15 @@ from sonopy.clarius import ClariusDataManager
 
 if __name__ == "__main__":
 
+    # TODO : define the full path to the config file and the output video file 
+    config_file_path = ""
+    output_video_path = ""
+    '''
+    ex :   
+    config_file_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/config.json"
+    output_video_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/us_video.avi"
+    '''
+
     # parsing script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("acquisition_dir", help="Directory containing the acquisition files")
@@ -14,8 +34,8 @@ if __name__ == "__main__":
 
     # defining required paths
     acquisition_dir_path = args.acquisition_dir
-    config_file_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/config.json"
-    output_video_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/us_video.avi"
+    config_file_path
+    config_file_path
 
     # loading acquisition data
     clarius_manager = ClariusDataManager(acquisition_dir_path)

@@ -1,15 +1,12 @@
 ##################################################################################################################### custom
 
-# temp debug files
-SonoAssistScripts/test.py
-
 # log files
 *.log
 *.tlog
 
 /.vscode/
 
-# linux folders
+# data folders
 /SonoAssistScripts/data/
 /SonoAssistScripts/notebooks/
 

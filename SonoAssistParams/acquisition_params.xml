@@ -7,10 +7,10 @@
 	<eye_tracker_active>false</eye_tracker_active>
 	<screen_recorder_active>false</screen_recorder_active>
 	
-	<us_image_main_display_width>960</us_image_main_display_width>
-	<us_image_main_display_height>540</us_image_main_display_height>
+	<us_image_main_display_width>1260</us_image_main_display_width>
+	<us_image_main_display_height>720</us_image_main_display_height>
 
-	<us_probe_to_redis>true</us_probe_to_redis>
+	<us_probe_to_redis>false</us_probe_to_redis>
 	<us_probe_redis_rate_div>10</us_probe_redis_rate_div>
 	<us_probe_redis_entry>us_probe_data</us_probe_redis_entry>
 	
