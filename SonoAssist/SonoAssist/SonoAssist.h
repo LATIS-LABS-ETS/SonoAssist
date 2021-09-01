@@ -21,6 +21,8 @@
 #include "ClariusProbeClient.h"
 #include "MetaWearBluetoothClient.h"
 
+#include "process_management.h"
+
 #define RED_TEXT "#cc0000"
 #define GREEN_TEXT "#008000"
 #define IMG_PLACE_HOLDER_COLOR "#000000"
@@ -51,8 +53,8 @@
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 // defining default config file path
-//#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
-#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\\resources\\params.xml"
+#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
+//#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\\resources\\params.xml"
 
 enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;
@@ -142,6 +144,9 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<ScreenRecorder> m_screen_recorder_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
+
+		// redis process info
+		PROCESS_INFORMATION m_redis_process;
 
 		// graphical functions
 		void build_sensor_panel(void);

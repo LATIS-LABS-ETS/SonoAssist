@@ -34,7 +34,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"eye_tracker_crosshairs_path", ""},{"eye_tracker_target_path", ""},
         {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
         {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""},
-        {"screen_recorder_active", ""}, {"us_probe_active", ""},
+        {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"redis_server_path", ""}, 
         {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
         {"us_probe_to_redis", ""}, {"us_probe_redis_entry", ""}, {"us_probe_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
@@ -386,7 +386,12 @@ void SonoAssist::on_param_file_apply_clicked(){
 
         // a successful load updates all clients
         if (m_config_is_loaded) {
-        
+
+            // launching redis server (not checking for succes)
+            if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
+                qDebug() << "\nSonoAssist - failed to launch redis server - error code : " << GetLastError();
+            }
+
             configure_device_clients();
             configure_normal_display();
 
@@ -415,8 +420,12 @@ void SonoAssist::on_output_folder_apply_clicked() {
     
         std::string output_folder_path = ui.output_folder_input->text().toStdString();
 
+        // converting str to proper windows format
+        // https://stackoverflow.com/questions/27220/how-to-convert-stdstring-to-lpcwstr-in-c-unicode
+        std::wstring stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
+        
         // creating the output folder and updating the clients
-        if (CreateDirectory(output_folder_path.c_str(), NULL) ||
+        if (CreateDirectory(stemp.c_str(), NULL) ||
             ERROR_ALREADY_EXISTS == GetLastError()) {
 
             m_output_is_loaded = true;

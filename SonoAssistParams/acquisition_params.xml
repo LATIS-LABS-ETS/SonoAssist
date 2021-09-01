@@ -21,6 +21,7 @@
 	<ext_imu_to_redis>false</ext_imu_to_redis>
 	<ext_imu_redis_rate_div>20</ext_imu_redis_rate_div>
 	<ext_imu_redis_entry>ext_imu_data</ext_imu_redis_entry>
+	<redis_server_path>C:/Program Files (x86)/SonoAssist/redis-server.exe</redis_server_path>
 
 	<us_probe_ip_address>192.168.1.1</us_probe_ip_address>
 	<ext_imu_ble_address>F3:AC:8B:CE:E1:10</ext_imu_ble_address>
