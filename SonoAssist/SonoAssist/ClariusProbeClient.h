@@ -71,6 +71,11 @@ class ClariusProbeClient : public SensorDevice {
 
 		void write_output_data(void);
 
+		// custom functions to connect and write acquired data to redis
+		void connect_to_redis(void);
+		void write_to_redis(std::string) {};
+		void write_data_to_redis(std::string, cv::Mat&);
+
 		// ouput image dimensions (accessed from callback)
 		int m_out_img_width = CLARIUS_NORMAL_DEFAULT_WIDTH;
 		int m_out_img_height = CLARIUS_NORMAL_DEFAULT_HEIGHT;
@@ -113,6 +118,10 @@ class ClariusProbeClient : public SensorDevice {
 		bool m_writing_ouput = false;
 		std::ofstream m_output_imu_file;
 		std::unique_ptr<cv::VideoWriter> m_video;
+
+		// defining custom redis entry names
+		std::string m_redis_imu_entry;
+		std::string m_redis_img_entry;
 
 		int m_udp_port = 0;
 		

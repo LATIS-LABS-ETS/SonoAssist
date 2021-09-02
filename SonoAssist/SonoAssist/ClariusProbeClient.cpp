@@ -126,7 +126,8 @@ void ClariusProbeClient::start_stream() {
 
         // connecting to redis (if redis enabled)
         if ((*m_config_ptr)["us_probe_to_redis"] == "true") {
-            m_redis_entry = (*m_config_ptr)["us_probe_redis_entry"];
+            m_redis_imu_entry = (*m_config_ptr)["us_probe_imu_redis_entry"];;
+            m_redis_img_entry = (*m_config_ptr)["us_probe_img_redis_entry"];;
             m_redis_rate_div = std::atoi((*m_config_ptr)["us_probe_redis_rate_div"].c_str());
             connect_to_redis();
         }
@@ -199,27 +200,70 @@ void ClariusProbeClient::set_udp_port(int port) {
 
 void ClariusProbeClient::write_output_data() {
 
-    // including the 3 different timestamps
-    std::string output_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
-
-    // including the imu data
+    // building the imu data string (including the 3 different timestamps)
+    std::string imu_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
     if (m_imu_data.size() == 0) {
-        output_str += " , , , , , , , , , , , , \n";
+        imu_str += " , , , , , , , , , , , , \n";
     } else {
-        output_str += m_imu_data[0] + "\n";
-        for (int i = 1; i < m_imu_data.size(); i++) {
-            output_str += " , , ," + m_imu_data[i] + "\n";
-        }
+        imu_str += m_imu_data[0] + "\n";
+        for (int i = 1; i < m_imu_data.size(); i++)
+            imu_str += " , , ," + m_imu_data[i] + "\n";
     }
-
-    // writing the output data (output image is grayscale)
+    
     m_writing_ouput = true;
-    write_to_redis(output_str);
+
+    // writing the probe data to redis (imu + img (BGR))
+    write_data_to_redis(imu_str, m_output_img_mat);
+
+    // writing the probe data to the output files (output image is grayscale)
     if (m_video->isOpened()) m_video->write(m_output_img_mat);
-    if (m_output_imu_file.is_open()) m_output_imu_file << output_str;
+    if (m_output_imu_file.is_open()) m_output_imu_file << imu_str;
     m_writing_ouput = false;
 
     m_imu_data.clear();
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////// Redis related methods
+
+/**
+* Connects to redis and creates a list with a name specified by the (m_redis_entry) variable
+*/
+void ClariusProbeClient::connect_to_redis(void) {
+
+    m_redis_client.connect();
+
+    // initializing the data list
+    if (m_redis_imu_entry != "" && m_redis_img_entry != "") {
+        m_redis_client.del(std::vector<std::string>({ m_redis_imu_entry, m_redis_img_entry }));
+        m_redis_client.rpush(m_redis_imu_entry, std::vector<std::string>({ "" }));
+        m_redis_client.set(m_redis_img_entry, "");
+    }
+
+    m_redis_client.sync_commit();
+
+}
+
+/**
+* Once every (m_redis_rate_div) function calls, the provided data (string and image) is written to redis
+*/
+void ClariusProbeClient::write_data_to_redis(std::string imu_data_str, cv::Mat& img_mat) {
+
+    if (m_redis_client.is_connected()) {
+        if ((m_redis_data_count % m_redis_rate_div) == 0) {
+
+            size_t mat_byte_size = img_mat.step[0] * img_mat.rows;
+            m_redis_client.set(m_redis_img_entry, std::string((char*)img_mat.data, mat_byte_size));
+
+            m_redis_client.rpushx(m_redis_imu_entry, imu_data_str);
+
+            m_redis_client.sync_commit();
+            m_redis_data_count = 1;
+        }
+        else {
+            m_redis_data_count++;
+        }
+    }
 
 }
 

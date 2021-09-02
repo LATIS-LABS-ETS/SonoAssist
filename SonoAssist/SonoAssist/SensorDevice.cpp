@@ -48,10 +48,14 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 */
 void SensorDevice::connect_to_redis(void) {
 
-	// connecting to redis and initializing the data list
 	m_redis_client.connect();
-	m_redis_client.del(std::vector<std::string>({m_redis_entry}));
-	m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
+
+	// initializing the data list
+	if (m_redis_entry != "") {
+		m_redis_client.del(std::vector<std::string>({ m_redis_entry }));
+		m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
+	}
+	
 	m_redis_client.sync_commit();
 
 }
@@ -62,12 +66,10 @@ void SensorDevice::disconnect_from_redis(void) {
 
 
 /**
-* Once every (m_redis_rate_div) function calls, the provided data is appended to the
-* (m_redis_entry) list
+* Once every (m_redis_rate_div) function calls, the provided data is appended to the (m_redis_entry) list
 */
 void SensorDevice::write_to_redis(std::string data_str){
 
-	// writing to redis
 	if (m_redis_client.is_connected()) {
 		if ((m_redis_data_count % m_redis_rate_div) == 0) {
 			m_redis_client.rpushx(m_redis_entry, data_str);

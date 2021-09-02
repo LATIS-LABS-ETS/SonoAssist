@@ -36,7 +36,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"rgb_camera_active", ""}, {"ext_imu_active" , ""}, {"eye_tracker_active", ""},
         {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"redis_server_path", ""}, 
         {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
-        {"us_probe_to_redis", ""}, {"us_probe_redis_entry", ""}, {"us_probe_redis_rate_div", ""},
+        {"us_probe_to_redis", ""}, {"us_probe_imu_redis_entry", ""}, {"us_probe_img_redis_entry", ""} , {"us_probe_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
     };
 
@@ -388,10 +388,15 @@ void SonoAssist::on_param_file_apply_clicked(){
         if (m_config_is_loaded) {
 
             // launching redis server (not checking for succes)
-            if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
-                qDebug() << "\nSonoAssist - failed to launch redis server - error code : " << GetLastError();
-            }
+            if ((*m_app_params)["us_probe_to_redis"] == "true" || (*m_app_params)["eye_tracker_to_redis"] == "true" || 
+                (*m_app_params)["ext_imu_to_redis"] == "true") {
+                
+                if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
+                    qDebug() << "\nSonoAssist - failed to launch redis server - error code : " << GetLastError();
+                }
 
+            }
+            
             configure_device_clients();
             configure_normal_display();
 

@@ -6,7 +6,6 @@ overlay on the collected ultrasound images.
 Usage
 -----
 python3 generate_us_saliency_maps.py (path to the acquisition folder)
-
 '''
 
 import cv2

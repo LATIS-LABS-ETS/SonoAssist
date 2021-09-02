@@ -11,8 +11,9 @@
 	<us_image_main_display_height>720</us_image_main_display_height>
 
 	<us_probe_to_redis>false</us_probe_to_redis>
-	<us_probe_redis_rate_div>10</us_probe_redis_rate_div>
-	<us_probe_redis_entry>us_probe_data</us_probe_redis_entry>
+	<us_probe_redis_rate_div>2</us_probe_redis_rate_div>
+	<us_probe_imu_redis_entry>us_probe_imu_data</us_probe_imu_redis_entry>
+	<us_probe_img_redis_entry>us_probe_img_data</us_probe_img_redis_entry>
 	
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
@@ -28,5 +29,5 @@
 	
 	<eye_tracker_target_path>C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/tracker_target.svg</eye_tracker_target_path>
 	<eye_tracker_crosshairs_path>C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/tracker_crosshair.png</eye_tracker_crosshairs_path>
-	
+
 </params>
