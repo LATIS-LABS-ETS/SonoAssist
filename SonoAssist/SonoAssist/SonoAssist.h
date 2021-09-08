@@ -53,8 +53,8 @@
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 // defining default config file path
-#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
-//#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\\resources\\params.xml"
+//#define DEFAULT_CONFIG_PATH "C:\\Users\\david\\Documents\\MedicalUltrasound\\SonoAsist\\SonoAssistParams\\acquisition_params.xml"
+#define DEFAULT_CONFIG_PATH "C:\\Program Files (x86)\\SonoAssist\\resources\\params.xml"
 
 enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;
@@ -95,10 +95,9 @@ class SonoAssist : public QMainWindow {
 		void on_param_file_browse_clicked(void);
 		void on_output_folder_browse_clicked(void);
 		void on_param_file_apply_clicked();
-		void on_output_folder_apply_clicked();
 
 		// other slots
-		void on_udp_port_button_clicked(void);
+		void on_udp_port_input_editingFinished(void);
 		void sensor_panel_selection_handler(int row, int column);
 
 	private:
@@ -129,7 +128,6 @@ class SonoAssist : public QMainWindow {
 		bool m_stream_is_active = false;
 		bool m_preview_is_active = false;
 		bool m_config_is_loaded = false;
-		bool m_output_is_loaded = false;
 		bool m_eye_tracker_targets = false;
 
 		// config and output vars
@@ -171,6 +169,7 @@ class SonoAssist : public QMainWindow {
 
 		// param write/load functions
 		void write_output_params(void);
+		bool create_output_folder(void);
 		bool load_config_file(QString param_file_path);
 
 };

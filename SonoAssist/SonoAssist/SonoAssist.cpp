@@ -50,7 +50,7 @@ SonoAssist::~SonoAssist(){
 
     try {
 
-        // making sur the streams are shut off
+        // making sure all streams are shut off
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->stop_stream();
@@ -202,9 +202,8 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
 
 void SonoAssist::on_sensor_connect_button_clicked(){
 
-    // make sure requirements are filled
-    if (!m_stream_is_active && m_config_is_loaded && m_output_is_loaded) {
-     
+    if (!m_stream_is_active && m_config_is_loaded && create_output_folder()) {
+    
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->connect_device();
@@ -213,10 +212,10 @@ void SonoAssist::on_sensor_connect_button_clicked(){
 
     } else {
         QString title = "Devices can not be connected";
-        QString message = "Make sure that the acquisition is off and that paths to the config and output files are defined";
+        QString message = "Make sure that the acquisition is off and the paths to the config and output files are defined";
         display_warning_message(title, message);
     }
-
+   
 }
 
 void SonoAssist::on_acquisition_preview_box_clicked() {
@@ -360,7 +359,9 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         }
 
         // writing output params
-        if (!m_preview_is_active) write_output_params();
+        if (!m_preview_is_active) {
+            write_output_params();
+        }
 
         // cleaning the appropriate display
         if (m_preview_is_active) {
@@ -377,26 +378,24 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     
 }
 
-void SonoAssist::on_param_file_apply_clicked(){
-   
+void SonoAssist::on_param_file_apply_clicked() {
+
     // making sure devices arent streaming
     if (!m_stream_is_active) {
-    
+
         m_config_is_loaded = load_config_file(ui.param_file_input->text());
 
         // a successful load updates all clients
         if (m_config_is_loaded) {
 
-            // launching redis server (not checking for succes)
-            if ((*m_app_params)["us_probe_to_redis"] == "true" || (*m_app_params)["eye_tracker_to_redis"] == "true" || 
+            // launching redis server (not checking for success)
+            if ((*m_app_params)["us_probe_to_redis"] == "true" || (*m_app_params)["eye_tracker_to_redis"] == "true" ||
                 (*m_app_params)["ext_imu_to_redis"] == "true") {
-                
                 if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
                     qDebug() << "\nSonoAssist - failed to launch redis server - error code : " << GetLastError();
                 }
-
             }
-            
+
             configure_device_clients();
             configure_normal_display();
 
@@ -409,51 +408,13 @@ void SonoAssist::on_param_file_apply_clicked(){
             QString message = "An invalid file path was specified or the config file is ill-formatted.";
             display_warning_message(title, message);
         }
-    
+
     } else {
         QString title = "Parameters can not be loaded";
         QString message = "The stream has to be shut off.";
         display_warning_message(title, message);
     }
 
-}
-
-void SonoAssist::on_output_folder_apply_clicked() {
-
-    // making sure devices arent streaming
-    if (!m_stream_is_active) {
-    
-        std::string output_folder_path = ui.output_folder_input->text().toStdString();
-
-        // converting str to proper windows format
-        // https://stackoverflow.com/questions/27220/how-to-convert-stdstring-to-lpcwstr-in-c-unicode
-        std::wstring stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
-        
-        // creating the output folder and updating the clients
-        if (CreateDirectory(stemp.c_str(), NULL) ||
-            ERROR_ALREADY_EXISTS == GetLastError()) {
-
-            m_output_is_loaded = true;
-            m_output_folder_path = output_folder_path;
-
-            for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                m_sensor_devices[i]->set_output_file(output_folder_path);
-            }
-
-        } else {
-            m_output_is_loaded = false;
-            QString title = "Unable to create output folder";
-            QString message = "The application failed to create the output folder for data files.";
-            display_warning_message(title, message);
-        }
-    
-    } else {
-        m_output_is_loaded = false;
-        QString title = "Output file can not be defined";
-        QString message = "The stream has to be shut off.";
-        display_warning_message(title, message);
-    }
-    
 }
 
 void SonoAssist::on_param_file_browse_clicked(){
@@ -482,21 +443,12 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
 }
 
 // inserting the port in the config map
-void SonoAssist::on_udp_port_button_clicked(void) {
+void SonoAssist::on_udp_port_input_editingFinished(void) {
 
-    // making sure devices arent streaning
-    if (!m_stream_is_active) {
-
-        try {
-            m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());
-        } catch (...) {}
+    try {
+        m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());
+    } catch (...) {}
         
-    } else {
-        QString title = "Clarius UDP port can not be defined";
-        QString message = "The stream has to be shut off.";
-        display_warning_message(title, message);
-    }
-
 }
 
 void SonoAssist::sensor_panel_selection_handler(int row, int column) {
@@ -608,8 +560,7 @@ void SonoAssist::set_device_status(bool device_status, sensor_device_t device) {
     if (device_status) {
         status_str += "connected";
         color_str = QString(GREEN_TEXT);
-    }
-    else {
+    } else {
         status_str += "disconnected";
         color_str = QString(RED_TEXT);
     }
@@ -829,6 +780,38 @@ void SonoAssist::generate_eye_tracker_targets() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// input / output params
 
+bool SonoAssist::create_output_folder() {
+
+    bool valid_output_folder = false;
+    std::string output_folder_path = ui.output_folder_input->text().toStdString();
+
+    // converting str to proper windows format
+    // https://stackoverflow.com/questions/27220/how-to-convert-stdstring-to-lpcwstr-in-c-unicode
+    std::wstring stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
+
+    // creating the output folder and updating the clients
+    if (CreateDirectory(stemp.c_str(), NULL) ||
+        ERROR_ALREADY_EXISTS == GetLastError()) {
+
+        valid_output_folder = true;
+        m_output_folder_path = output_folder_path;
+
+        for (auto i = 0; i < m_sensor_devices.size(); i++) {
+            m_sensor_devices[i]->set_output_file(output_folder_path);
+        }
+
+    }
+    else {
+        valid_output_folder = false;
+        QString title = "Unable to create output folder";
+        QString message = "The application failed to create the output folder for data files.";
+        display_warning_message(title, message);
+    }
+
+    return valid_output_folder;
+
+}
+
 bool SonoAssist::load_config_file(QString param_file_path) {
 
     // loading the contents of the param file
@@ -858,7 +841,6 @@ bool SonoAssist::load_config_file(QString param_file_path) {
     return true;
 
 }
-
 
 void SonoAssist::write_output_params(void) {
 

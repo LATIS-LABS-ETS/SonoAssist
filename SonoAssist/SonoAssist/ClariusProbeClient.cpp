@@ -250,19 +250,20 @@ void ClariusProbeClient::connect_to_redis(void) {
 void ClariusProbeClient::write_data_to_redis(std::string imu_data_str, cv::Mat& img_mat) {
 
     if (m_redis_client.is_connected()) {
+
         if ((m_redis_data_count % m_redis_rate_div) == 0) {
 
             size_t mat_byte_size = img_mat.step[0] * img_mat.rows;
             m_redis_client.set(m_redis_img_entry, std::string((char*)img_mat.data, mat_byte_size));
-
             m_redis_client.rpushx(m_redis_imu_entry, imu_data_str);
 
             m_redis_client.sync_commit();
             m_redis_data_count = 1;
-        }
-        else {
+
+        } else {
             m_redis_data_count++;
         }
+
     }
 
 }
