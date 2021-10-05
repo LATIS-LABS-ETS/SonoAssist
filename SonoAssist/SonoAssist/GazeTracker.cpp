@@ -131,7 +131,7 @@ void GazeTracker::connect_device(void) {
 			error = tobii_gaze_point_subscribe(m_tobii_device, gaze_point_callback, (void*)this);
 			error = tobii_head_pose_subscribe(m_tobii_device, head_pose_callback, (void*)this);
 			
-			if (error == TOBII_ERROR_NO_ERROR && *url == '\0') m_device_connected = true;
+			if (error == TOBII_ERROR_NO_ERROR) m_device_connected = true;
 		
 		} catch (...) { }
 		
@@ -143,10 +143,13 @@ void GazeTracker::connect_device(void) {
 void GazeTracker::disconnect_device(void) {
 	
 	// unsubscribing the callback and destroying device
-	tobii_head_pose_unsubscribe(m_tobii_device);
-	tobii_gaze_point_unsubscribe(m_tobii_device);
-	tobii_device_destroy(m_tobii_device);
-		
+	if (m_tobii_device != nullptr) {
+		tobii_head_pose_unsubscribe(m_tobii_device);
+		tobii_gaze_point_unsubscribe(m_tobii_device);
+		tobii_device_destroy(m_tobii_device);
+		m_tobii_device = nullptr;
+	}
+
 	m_device_connected = false;
 	emit device_status_change(false);
 
