@@ -32,8 +32,9 @@ void on_disconnect_wrap(void* context, const void* caller, MblMwFnVoidVoidPtrInt
 */
 void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler) {
 
-	// proceed if the required characteristic is valid
 	int service_index;
+
+	// proceed if the required characteristic is valid
 	QLowEnergyCharacteristic target_characteristic = find_characteristic(characteristic, service_index, "read_gatt_char");
 	if (target_characteristic.isValid()) {
 
@@ -52,15 +53,16 @@ void MetaWearBluetoothClient::read_gatt_char(const void* caller, const MblMwGatt
 * The function does nothing if no device is not connected or if the provided characteristic is invalid.
 * 
 * @param [in] writeType Specifies if the write operation should prompt an update (not really usefull).
-* @param [in] characteristic UUIDs specifying the characteristic to be read (service and char uuids).
+* @param [in] characteristic UUIDs specifying the characteristic to be writen to (service and char uuids).
 * @param [in] value payload to be sent to the target characteristic 
 * @param [in] length length of the value array 
 */
 void MetaWearBluetoothClient::write_gatt_char(MblMwGattCharWriteType writeType, const MblMwGattChar* characteristic,
 	const uint8_t* value, uint8_t length) {
 
-	// proceed if the required characteristic is valid
 	int service_index;
+
+	// proceed if the required characteristic is valid
 	QLowEnergyCharacteristic target_characteristic = find_characteristic(characteristic, service_index, "write_gatt_char");
 	if (target_characteristic.isValid()) {
 
@@ -96,8 +98,9 @@ void MetaWearBluetoothClient::write_gatt_char(MblMwGattCharWriteType writeType, 
 void MetaWearBluetoothClient::enable_notifications(const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler,
 	MblMwFnVoidVoidPtrInt ready) {
 
-	// proceed if the required characteristic is valid
 	int service_index;
+
+	// proceed if the required characteristic is valid
 	QLowEnergyCharacteristic target_characteristic = find_characteristic(characteristic, service_index, "enable_notifications");
 	if (target_characteristic.isValid()) {
 
@@ -109,9 +112,8 @@ void MetaWearBluetoothClient::enable_notifications(const void* caller, const Mbl
 			m_metawear_services_p[service_index]->writeDescriptor(notification, QByteArray::fromHex("0100"));
 
 			// adding an entry in the characteristic-callback map
-			m_char_update_callback_map[target_characteristic.uuid().toString()] =
-				std::tuple<const void*, MblMwFnIntVoidPtrArray>(caller, handler);
-
+			m_char_update_callback_map[target_characteristic.uuid().toString()] = std::tuple<const void*, MblMwFnIntVoidPtrArray>(caller, handler);
+			
 		}
 
 	}
@@ -144,11 +146,28 @@ MetaWearBluetoothClient::MetaWearBluetoothClient(){
 	m_discovery_agent.setLowEnergyDiscoveryTimeout(DISCOVERY_TIMEOUT);
 
 	// hooking scanning events to their handler
+
 	QObject::connect(&m_discovery_agent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, 
 		this, &MetaWearBluetoothClient::device_discovered);
+	
+	QObject::connect(&m_discovery_agent, &QBluetoothDeviceDiscoveryAgent::finished, 
+		this, [this](void) {
+			
+			// checking if a device was discovered
+			if (m_metawear_device_controller_p) {
+				if (m_metawear_device_controller_p->state() == QLowEnergyController::UnconnectedState) {
+					disconnect_device();
+				}
+			} else {
+				disconnect_device();
+			}
+
+		});
+	
 	QObject::connect(&m_discovery_agent,
 		static_cast<void (QBluetoothDeviceDiscoveryAgent::*)(QBluetoothDeviceDiscoveryAgent::Error)>(&QBluetoothDeviceDiscoveryAgent::error),
 		[this](QBluetoothDeviceDiscoveryAgent::Error error) {
+			disconnect_device();
 			qDebug() << "\nMetaWearBluetoothClient - ble device discovery level error occured, code : " << error;
 		});
 
@@ -163,44 +182,22 @@ void MetaWearBluetoothClient::connect_device() {
 	// making sure that requirements have been loaded
 	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
 		
-		// disconnect the device if already connected
-		disconnect_device();
-		
+		clear_metawear_connection();
+
 		// launching device discovery
 		m_discovery_agent.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
-		qDebug() << "\nMetaWearBluetoothClient - starting device scan\n";
+		qDebug() << "\nMetaWearBluetoothClient - starting device scan";
 	}
 
 }
 
 void MetaWearBluetoothClient::disconnect_device() {
 
-	// making sure the device is connected
-	if (m_device_connected) {
-
-		// stopping the data stream
-		stop_stream();
-		m_device_connected = false;
-
-		// clearing the metawear related vars
-		mbl_mw_metawearboard_free(m_metawear_board_p);
-		m_metawear_ble_interface = { 0 };
-
-		// clearing qt communication vars
-		m_metawear_services_p.clear();
-		m_metawear_device_controller_p.reset();
-
-		// clearing callback structures / vars
-		m_char_update_callback_map.clear();
-		bytes_callback_queue empty_queue;
-		std::swap(m_char_read_callback_queue, empty_queue);
-		m_disconnect_event_caller = nullptr;
-		m_disconnect_handler = nullptr;
-
-		// changing the device state
-		emit device_status_change(false);	
+	stop_stream();
 	
-	}
+	// changing the device state
+	m_device_connected = false;
+	emit device_status_change(false);	
 
 }
 
@@ -340,49 +337,56 @@ void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
 
 void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& device) {
 	
-	// only interested in the target device
-	QString incoming_adress_str = device.address().toString();
-	QString target_device_adress((*m_config_ptr)["ext_imu_ble_address"].c_str());
-	if((incoming_adress_str == target_device_adress) && !m_metawear_device_controller_p) {
-		
-		qDebug() << "\nMetaWearBluetoothClient - device with address : " << incoming_adress_str << "discovered\n";
-
-		// creating a controller to interface with the device
-		m_metawear_device_controller_p = std::shared_ptr<QLowEnergyController>(QLowEnergyController::createCentral(device));
-
-		// hooking the relevant device event handlers
-		
-		connect(m_metawear_device_controller_p.get(), &QLowEnergyController::serviceDiscovered,
-			this, &MetaWearBluetoothClient::service_discovered);
-		
-		connect(m_metawear_device_controller_p.get(), &QLowEnergyController::connected,
-			[this](void) {
-				m_metawear_device_controller_p->discoverServices();
-			});
-
-		connect(m_metawear_device_controller_p.get(), &QLowEnergyController::disconnected,
-			this, &MetaWearBluetoothClient::device_disconnected);
-		
-		connect(m_metawear_device_controller_p.get(), &QLowEnergyController::discoveryFinished, 
-			this, &MetaWearBluetoothClient::service_discovery_finished);
-		
-		connect(m_metawear_device_controller_p.get(), 
-			static_cast<void (QLowEnergyController::*)(QLowEnergyController::Error)>(&QLowEnergyController::error),
-			[this](QLowEnergyController::Error error) {
-				this->disconnect_device();
-				qDebug() << "\nMetaWearBluetoothClient - ble device communication level error occured, code : " << error;
-			});
+	try {
 	
-		// connecting to the target device
-		m_metawear_device_controller_p->connectToDevice();
+		QString incoming_adress_str = device.address().toString();
+		QString target_device_adress((*m_config_ptr)["ext_imu_ble_address"].c_str());
+
+		// only interested in the target device
+		if ((incoming_adress_str == target_device_adress) && !m_metawear_device_controller_p) {
+
+			qDebug() << "\nMetaWearBluetoothClient - device with address : " << incoming_adress_str << "discovered";
+
+			// creating a controller to interface with the device	
+			m_metawear_device_controller_p = std::shared_ptr<QLowEnergyController>(QLowEnergyController::createCentral(device));
+		
+			// hooking the relevant device event handlers
+
+			connect(m_metawear_device_controller_p.get(), &QLowEnergyController::serviceDiscovered,
+				this, &MetaWearBluetoothClient::service_discovered);
+
+			connect(m_metawear_device_controller_p.get(), &QLowEnergyController::connected,
+				[this](void) {
+					m_metawear_device_controller_p->discoverServices();
+				});
+
+			connect(m_metawear_device_controller_p.get(), &QLowEnergyController::disconnected,
+				this, &MetaWearBluetoothClient::device_disconnected);
+
+			connect(m_metawear_device_controller_p.get(), &QLowEnergyController::discoveryFinished,
+				this, &MetaWearBluetoothClient::service_discovery_finished, Qt::QueuedConnection);
+
+			connect(m_metawear_device_controller_p.get(),
+				static_cast<void (QLowEnergyController::*)(QLowEnergyController::Error)>(&QLowEnergyController::error),
+				[](QLowEnergyController::Error error) {
+					qDebug() << "\nMetaWearBluetoothClient - ble device communication level error occured, code : " << error;
+				});
+
+			// connecting to the target device
+			m_metawear_device_controller_p->connectToDevice();
+
+		}
 	
+	} catch (...) {
+		disconnect_device();
+		qDebug() << "\nMetaWearBluetoothClient - device discovery failed";
 	}
 
 }
 
 void MetaWearBluetoothClient::device_disconnected(){
 
-	// calling the registered call back for the MblMwBtleConnection structure
+	// calling the registered callback for the MblMwBtleConnection structure
 	if(m_disconnect_handler != nullptr) {
 		m_disconnect_handler(m_disconnect_event_caller, 0);
 	}
@@ -393,39 +397,44 @@ void MetaWearBluetoothClient::device_disconnected(){
 
 void MetaWearBluetoothClient::service_discovered(const QBluetoothUuid& gatt_uuid){
 
-	// creating the service object from the uuid
-	QLowEnergyService* service_p = m_metawear_device_controller_p->createServiceObject(gatt_uuid, this);
-	
-	// storing and configuring the object if valid
-	if(service_p) {
+	try {
 
-		// service objects are stored in a shared pointer vector
-		int service_index = m_metawear_services_p.size();
-		m_metawear_services_p.emplace_back(std::shared_ptr<QLowEnergyService>(service_p));
+		// creating the service object from the uuid
+		QLowEnergyService* service_p = m_metawear_device_controller_p->createServiceObject(gatt_uuid, this);
+		
+		// storing and configuring the object if valid
+		if (service_p) {
 
-		// connecting the service object to the necessary call backs
-		connect(m_metawear_services_p[service_index].get(), &QLowEnergyService::characteristicRead,
-			this, &MetaWearBluetoothClient::service_characteristic_read);
-		connect(m_metawear_services_p[service_index].get(), &QLowEnergyService::characteristicChanged,
-			this, &MetaWearBluetoothClient::service_characteristic_changed);
-		connect(m_metawear_services_p[service_index].get(), &QLowEnergyService::characteristicWritten,
-			this, &MetaWearBluetoothClient::service_characteristic_changed);
-		connect(m_metawear_services_p[service_index].get(), 
-			QOverload<QLowEnergyService::ServiceError>::of(&QLowEnergyService::error),
-			[this](QLowEnergyService::ServiceError error){
-				qDebug() << "\nble service level error occured : " << error << "\n";
-			});
+			// service objects are stored in a shared pointer vector
+			int service_index = m_metawear_services_p.size();
+			m_metawear_services_p.emplace_back(std::shared_ptr<QLowEnergyService>(service_p));
+			
+			// connecting the service object to the necessary callbacks
+			connect(m_metawear_services_p[service_index].get(), &QLowEnergyService::characteristicRead,
+				this, &MetaWearBluetoothClient::service_characteristic_read);
+			connect(m_metawear_services_p[service_index].get(), &QLowEnergyService::characteristicChanged,
+				this, &MetaWearBluetoothClient::service_characteristic_changed);
+			connect(m_metawear_services_p[service_index].get(), &QLowEnergyService::characteristicWritten,
+				this, &MetaWearBluetoothClient::service_characteristic_changed);
+			connect(m_metawear_services_p[service_index].get(),
+				QOverload<QLowEnergyService::ServiceError>::of(&QLowEnergyService::error),
+				[this](QLowEnergyService::ServiceError error) {
+					qDebug() << "\nble service level error occured : " << error;
+				});
 
-		// discovering the characteristics associated to the service
-		m_metawear_services_p[service_index]->discoverDetails();
+			
+			// discovering the characteristics associated to the service (ISSUE IS HERE)
+			m_metawear_services_p[service_index]->discoverDetails();
 
-		// debug service description
-		qDebug() << "\n";
-		qDebug() << "service with uuid : " << gatt_uuid.toString() << "discovered, info : ";
-		qDebug() << "service state : " << m_metawear_services_p[service_index]->state();
-		qDebug() << "service name : " << m_metawear_services_p[service_index]->serviceName();
-		qDebug() << "\n";
+			// debug service description
+			qDebug() << "\nservice with uuid : " << gatt_uuid.toString() << "discovered, info : ";
+			qDebug() << "service name : " << m_metawear_services_p[service_index]->serviceName();
 
+		}
+
+	} catch (...) {
+		disconnect_device();
+		qDebug() << "\nnMetaWearBluetoothClient - service discovery failed";
 	}
 
 }
@@ -435,31 +444,66 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 	// making sure services were detected
 	if (!m_metawear_services_p.empty()) {
 
-		// waiting some time so that service details can be acquired
-		QThread::msleep(DISCOVER_DETAILS_DELAY);
+		// waiting for the details of each service to be discovered
+		int ms_wait_time = 0;
+		int discovered_count = 0;
+		while (ms_wait_time < DISCOVER_DETAILS_DELAY) {
+			discovered_count = 0;
+			for (int i = 0; i < m_metawear_services_p.size(); i++) {
+				if (m_metawear_services_p[i]->state() == QLowEnergyService::ServiceDiscovered) {
+					discovered_count ++;
+				} else {
+					m_metawear_services_p[i]->discoverDetails();
+				}
+			}
+			if (discovered_count == m_metawear_services_p.size()) break;
+			ms_wait_time += 500;
+			QThread::msleep(500);
+		}
 
 		// creating the object for interfacing with the metawear board
-		m_metawear_ble_interface = {this, write_gatt_char_wrap, read_gatt_char_wrap, enable_notifications_wrap, on_disconnect_wrap};
+		m_metawear_ble_interface = { this, write_gatt_char_wrap, read_gatt_char_wrap, enable_notifications_wrap, on_disconnect_wrap };
 		m_metawear_board_p = mbl_mw_metawearboard_create(&m_metawear_ble_interface);
+		mbl_mw_metawearboard_set_time_for_response(m_metawear_board_p, METAWEARTIMEOUT);
 
 		// initializing the board and defining a call back upon initialisation
 		mbl_mw_metawearboard_initialize(m_metawear_board_p, this, [](void* context, MblMwMetaWearBoard* board, int32_t status) -> void {
-			
-			// configuring the device output stream
-			mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_NDOF);
-			mbl_mw_sensor_fusion_set_acc_range(board, MBL_MW_SENSOR_FUSION_ACC_RANGE_8G);
-			mbl_mw_sensor_fusion_write_config(board);
-		
-			// notifying the main window
-			(static_cast<MetaWearBluetoothClient*>(context))->set_connection_status(true);
-			emit(static_cast<MetaWearBluetoothClient*>(context))->device_status_change(true);
+
+			bool connection_status = (status == 0);
+			MetaWearBluetoothClient* bluetooth_client = (static_cast<MetaWearBluetoothClient*>(context));
+
+			// configuring the board on succes
+			if (connection_status) {
+				mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_NDOF);
+				mbl_mw_sensor_fusion_set_acc_range(board, MBL_MW_SENSOR_FUSION_ACC_RANGE_8G);
+				mbl_mw_sensor_fusion_write_config(board);
+			} else {
+				bluetooth_client->disconnect_device();
+			}
+
+			// updating the connection status + notifying the main window
+			bluetooth_client->set_connection_status(connection_status);
+			emit bluetooth_client->device_status_change(connection_status);
+
 		});
-	
+
+	} else {
+		disconnect_device();
 	}
+
 }
 
+/*
+* Callback function for the (QLowEnergyService::characteristicRead) signal emited by all BLE services 
+* Flow : 
+* 1) The metaWear API calls read_gatt_char_wrap() -> read_gatt_char() which sends out a characteristic read request to the device and adds the specified handler to the callback queue
+* 2) The MetaWear device responds to the request with the appropriate data and trigger this callback function
+* 3) This function pulls the oldest handler from the callback queue and calls it with the received data
+*/
 void MetaWearBluetoothClient::service_characteristic_read(const QLowEnergyCharacteristic& descriptor, const QByteArray& value) {
 	
+	qDebug() << "\nMetaWearBluetoothClient - service_characteristic_read callback - (begin) ";
+
 	// making sure request information is available
 	if(!m_char_read_callback_queue.empty()) {
 	
@@ -468,16 +512,28 @@ void MetaWearBluetoothClient::service_characteristic_read(const QLowEnergyCharac
 		m_char_read_callback_queue.pop();
 
 		// calling the associated call back function
-		std::get<1>(info_tuple)(
-			std::get<0>(info_tuple), 
-			(uint8_t*) value.data(),
-			(uint8_t) value.length()
-		);
-			
+		try {
+			std::get<1>(info_tuple)(
+				std::get<0>(info_tuple),
+				(uint8_t*)value.data(),
+				(uint8_t)value.length()
+			);
+		} catch (...) {};
+		
 	}
+
+	qDebug() << "\nMetaWearBluetoothClient - service_characteristic_read callback - (end) ";
 	
 }
 
+
+/*
+* Callback function for the (QLowEnergyService::characteristicChanged) and (QLowEnergyService::characteristicWritten) signals emited by all BLE services
+* Flow :
+* 1) The metaWear API calls write_gatt_char_wrap() -> write_gatt_char() which sends out a characteristic write request to the device
+* 2) The MetaWear device confirms that data was written to the characteristic, trigerring this callback
+* 3) This calls the registered callback function for the characteristic (if one was registered[) 
+*/
 void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCharacteristic& characteristic, const QByteArray& newValue) {
 
 	// checking if the changed characteristic is registered to a call back
@@ -491,17 +547,41 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 			converted_data[i] = (uint8_t) byte_array_data[i];
 		
 		// calling the proper call back (specified in the map)
-		std::get<1>(callback_map_entry->second)(
-			std::get<0>(callback_map_entry->second),
-			converted_data,
-			newValue.length()
-		);
-			
+		try {
+			std::get<1>(callback_map_entry->second)(
+				std::get<0>(callback_map_entry->second),
+				converted_data,
+				newValue.length()
+			);
+		} catch (...) {}
+		
 	}
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// conveniance functions
+
+void MetaWearBluetoothClient::clear_metawear_connection() {
+
+	// clearing the metawear related vars
+	if (m_metawear_board_p != nullptr) {
+		m_metawear_ble_interface = { 0 };
+		mbl_mw_metawearboard_free(m_metawear_board_p);
+		m_metawear_board_p = nullptr;
+	}
+
+	// clearing qt communication vars
+	m_metawear_services_p.clear();
+	m_metawear_device_controller_p.reset();
+
+	// clearing callback structures / vars
+	m_char_update_callback_map.clear();
+	bytes_callback_queue empty_queue;
+	std::swap(m_char_read_callback_queue, empty_queue);
+	m_disconnect_event_caller = nullptr;
+	m_disconnect_handler = nullptr;
+
+}
 
  QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str) const {
 
@@ -530,7 +610,7 @@ void MetaWearBluetoothClient::service_characteristic_changed(const QLowEnergyCha
 	if (characteristic.isValid()) qDebug() << "target characteristic name : " << characteristic.name();
 	qDebug() << "requests in the callback queue : " << m_char_read_callback_queue.size();
 	qDebug() << "debug string : " << debug_str;
-	qDebug() << "........................... find_characteristic call (end)\n";
+	qDebug() << "........................... find_characteristic call (end)";
 
 	return characteristic;
 

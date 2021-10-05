@@ -116,42 +116,39 @@ void GazeTracker::connect_device(void) {
 	if (m_tobii_api_valid && m_config_loaded && m_output_file_loaded && m_sensor_used) {
 
 		// making sure device is disconnected
-		disconnect_device();
+		tobii_head_pose_unsubscribe(m_tobii_device);
+		tobii_gaze_point_unsubscribe(m_tobii_device);
+		tobii_device_destroy(m_tobii_device);
 
 		// initializing communication (device level)
-		error = tobii_enumerate_local_device_urls(m_tobii_api, url_receiver, url);
-		if (error != TOBII_ERROR_NO_ERROR && *url != '\0') return;
-		error = tobii_device_create(m_tobii_api, url, TOBII_FIELD_OF_USE_INTERACTIVE, &m_tobii_device);
-		if (error != TOBII_ERROR_NO_ERROR) return;
-
-		// subscribing the gaze data callback
-		error = tobii_gaze_point_subscribe(m_tobii_device, gaze_point_callback, (void*) this);
-		if (error != TOBII_ERROR_NO_ERROR) return;
-
-		// subscribing the head pose data callback
-		error = tobii_head_pose_subscribe(m_tobii_device, head_pose_callback, (void*) this);
-		if (error != TOBII_ERROR_NO_ERROR) return;
-
-		m_device_connected = true;
-		emit device_status_change(true);
+		try {
+			
+			error = tobii_enumerate_local_device_urls(m_tobii_api, url_receiver, url);
+			error = tobii_device_create(m_tobii_api, url, TOBII_FIELD_OF_USE_INTERACTIVE, &m_tobii_device);
+			
+			// subscribing the gaze data callback
+			// subscribing the head pose data callback
+			error = tobii_gaze_point_subscribe(m_tobii_device, gaze_point_callback, (void*)this);
+			error = tobii_head_pose_subscribe(m_tobii_device, head_pose_callback, (void*)this);
+			
+			if (error == TOBII_ERROR_NO_ERROR && *url == '\0') m_device_connected = true;
+		
+		} catch (...) { }
+		
+		emit device_status_change(m_device_connected);
 
 	}
 }
 
 void GazeTracker::disconnect_device(void) {
 	
-	// making sure requirements are filled
-	if (m_device_connected) {
+	// unsubscribing the callback and destroying device
+	tobii_head_pose_unsubscribe(m_tobii_device);
+	tobii_gaze_point_unsubscribe(m_tobii_device);
+	tobii_device_destroy(m_tobii_device);
 		
-		// unsubscribing the callback and destroying device
-		tobii_head_pose_unsubscribe(m_tobii_device);
-		tobii_gaze_point_unsubscribe(m_tobii_device);
-		tobii_device_destroy(m_tobii_device);
-		
-		m_device_connected = false;
-		emit device_status_change(false);
-
-	}
+	m_device_connected = false;
+	emit device_status_change(false);
 
 }
 

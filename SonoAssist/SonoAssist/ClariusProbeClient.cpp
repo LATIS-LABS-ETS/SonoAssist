@@ -62,7 +62,7 @@ void ClariusProbeClient::connect_device() {
     // making sure requirements are filled
     if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
 
-        disconnect_device();
+        clariusDestroyListener();
 
         // global instance pointer (for the clarius callbacks)
         if (probe_client_p == nullptr) probe_client_p = this;
@@ -89,19 +89,16 @@ void ClariusProbeClient::connect_device() {
 }
 
 void ClariusProbeClient::disconnect_device() {
-    
-    if (m_device_connected) { 
 
-        if (clariusDestroyListener() == 0) {
-            qDebug() << "\nClariusProbeClient - destroyed the listener\n";
-        } else {
-            qDebug() << "\nClariusProbeClient - failed to destroy the listener\n";
-        }
-                
-        m_device_connected = false;
-        emit device_status_change(false);
+    if (clariusDestroyListener() == 0) {
+        qDebug() << "\nClariusProbeClient - destroyed the listener\n";
+    } else {
+        qDebug() << "\nClariusProbeClient - failed to destroy the listener\n";
     }
-
+                
+    m_device_connected = false;
+    emit device_status_change(false);
+   
 }
 
 void ClariusProbeClient::start_stream() {

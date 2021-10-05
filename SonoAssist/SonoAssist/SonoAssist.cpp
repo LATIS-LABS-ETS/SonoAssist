@@ -201,21 +201,28 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
 }
 
 void SonoAssist::on_sensor_connect_button_clicked(){
-
-    if (!m_stream_is_active && m_config_is_loaded && create_output_folder()) {
     
+    if (!m_stream_is_active && m_config_is_loaded && create_output_folder()) {
+
+        // preventing multiple connection button clicks
+        m_device_connection_count = 0;
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if (m_sensor_devices[i]->get_sensor_used()) {
-                m_sensor_devices[i]->connect_device();
-            }
+            if (m_sensor_devices[i]->get_sensor_used()) m_device_connection_count++;
+        }
+        if (m_device_connection_count > 0) ui.sensor_connect_button->setEnabled(false);
+
+        // connecting the devices
+        for (auto i = 0; i < m_sensor_devices.size(); i++) {
+            if (m_sensor_devices[i]->get_sensor_used()) m_sensor_devices[i]->connect_device();
         }
 
-    } else {
+    }
+    else {
         QString title = "Devices can not be connected";
         QString message = "Make sure that the acquisition is off and the paths to the config and output files are defined";
         display_warning_message(title, message);
     }
-   
+
 }
 
 void SonoAssist::on_acquisition_preview_box_clicked() {
@@ -455,8 +462,6 @@ void SonoAssist::sensor_panel_selection_handler(int row, int column) {
 
     // making sure requirements are filled
     if (!m_stream_is_active && m_config_is_loaded) {
-    
-        QTableWidgetItem* target_item = ui.sensor_status_table->item(row, column);
        
         std::string sensor_activation_field = "";
         switch (row) {
@@ -568,6 +573,12 @@ void SonoAssist::set_device_status(bool device_status, sensor_device_t device) {
     // applying changes to the widget
     device_field->setText(status_str);
     device_field->setForeground(QBrush(QColor(color_str)));
+
+    // checking the status of active devices
+    m_device_connection_count--;
+    if (m_device_connection_count <= 0) {
+        ui.sensor_connect_button->setEnabled(true);
+    }
     
 }
 
@@ -912,7 +923,7 @@ void SonoAssist::configure_device_clients() {
     
         // resetting the relevant client configuration
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            m_sensor_devices[i]->disconnect_device();
+            if (m_sensor_devices[i]->get_connection_status()) m_sensor_devices[i]->disconnect_device();
             m_sensor_devices[i]->set_sensor_used(false);
             ui.sensor_status_table->item(i, 0)->setBackground(QBrush(INACTIVE_SENSOR_FIELD_COLOR));
         }

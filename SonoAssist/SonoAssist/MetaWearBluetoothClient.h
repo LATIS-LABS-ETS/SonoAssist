@@ -22,9 +22,10 @@
 #include "metawear/sensor/accelerometer.h"
 #include "metawear/sensor/sensor_fusion.h"
 
-#define DISCOVERY_TIMEOUT 5000
-#define DISCOVER_DETAILS_DELAY 1000
+#define DISCOVER_DETAILS_DELAY 10000
 #define DESCRIPTOR_WRITE_DELAY 500
+#define DISCOVERY_TIMEOUT 5000
+#define METAWEARTIMEOUT 500
 
 typedef std::map<QString, std::tuple<const void*, MblMwFnIntVoidPtrArray>> bytes_callback_map;
 typedef std::queue<std::tuple<const void*, MblMwFnIntVoidPtrArray>> bytes_callback_queue;
@@ -71,8 +72,8 @@ class MetaWearBluetoothClient : public SensorDevice {
 		std::ofstream m_output_acc_file;
 
 		// metawear communication attributes
-		MblMwBtleConnection m_metawear_ble_interface = { 0 };
 		MblMwMetaWearBoard* m_metawear_board_p = nullptr;
+		MblMwBtleConnection m_metawear_ble_interface = { 0 };
 
 	private slots:
 
@@ -112,6 +113,7 @@ class MetaWearBluetoothClient : public SensorDevice {
 		bytes_callback_queue m_char_read_callback_queue;
 
 		// convenience functions
+		void clear_metawear_connection(void);
 		QBluetoothUuid metawear_uuid_to_qt_uuid(const uint64_t uuid_low, const uint64_t uuid_high) const;
 		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str="") const;
 

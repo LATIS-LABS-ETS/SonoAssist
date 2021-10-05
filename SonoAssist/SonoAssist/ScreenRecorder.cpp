@@ -34,11 +34,8 @@ void ScreenRecorder::connect_device() {
 
 void ScreenRecorder::disconnect_device() {
 
-	// making sure requirements are filled
-	if (m_device_connected) {
-		m_device_connected = false;
-		emit device_status_change(false);
-	}
+	m_device_connected = false;
+	emit device_status_change(false);
 
 }
 
