@@ -298,6 +298,9 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             m_stream_is_active = true;
             set_acquisition_label(true);
 
+            // graying out the (start acquisition button while streaming)
+            ui.start_acquisition_button->setEnabled(false);
+
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
                 if (m_sensor_devices[i]->get_sensor_used()) {
                     n_used_sensors++;
@@ -310,6 +313,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
 
                 // stopping the acquisition
                 on_stop_acquisition_button_clicked();
+                ui.start_acquisition_button->setEnabled(true);
                 
                 QString title = "Streaming failed";
                 QString message = "Ensure that all sensors are correclty configured.";
@@ -376,6 +380,9 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         } else {
             clean_normal_display();
         }
+
+        // enabling the start acquisition button
+        ui.start_acquisition_button->setEnabled(true);
 
     } else {
         QString title = "Stream can not be stoped";

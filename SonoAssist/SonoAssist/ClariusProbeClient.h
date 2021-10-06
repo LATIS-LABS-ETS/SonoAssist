@@ -85,6 +85,7 @@ class ClariusProbeClient : public SensorDevice {
 		cv::Mat m_cvt_mat;
 		cv::Mat m_input_img_mat;
 		cv::Mat m_output_img_mat;
+		cv::Mat m_video_img_mat; 
 
 		// imu check var
 		bool m_imu_missing = false;

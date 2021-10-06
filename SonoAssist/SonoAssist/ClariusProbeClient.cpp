@@ -118,13 +118,14 @@ void ClariusProbeClient::start_stream() {
         // preparing the writing of data
         set_output_file(m_output_folder_path);
         m_output_imu_file.open(m_output_imu_file_str, std::fstream::app);
-        m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
-            CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), false);
+        
+        m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+            CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), true);
 
         // connecting to redis (if redis enabled)
         if ((*m_config_ptr)["us_probe_to_redis"] == "true") {
-            m_redis_imu_entry = (*m_config_ptr)["us_probe_imu_redis_entry"];;
-            m_redis_img_entry = (*m_config_ptr)["us_probe_img_redis_entry"];;
+            m_redis_imu_entry = (*m_config_ptr)["us_probe_imu_redis_entry"];
+            m_redis_img_entry = (*m_config_ptr)["us_probe_img_redis_entry"];
             m_redis_rate_div = std::atoi((*m_config_ptr)["us_probe_redis_rate_div"].c_str());
             connect_to_redis();
         }
@@ -185,7 +186,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
         m_output_file_loaded = true;
 
     } catch (...) {
-        qDebug() << "\ClariusProbeClient - error occured while setting the output file";
+        qDebug() << "\nClariusProbeClient - error occured while setting the output file";
     }
 
 }
@@ -195,29 +196,40 @@ void ClariusProbeClient::set_udp_port(int port) {
 }
 
 
+/*
+Writes collected data (imu data + images the appropriate output files)
+*/
 void ClariusProbeClient::write_output_data() {
 
-    // building the imu data string (including the 3 different timestamps)
-    std::string imu_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
-    if (m_imu_data.size() == 0) {
-        imu_str += " , , , , , , , , , , , , \n";
-    } else {
-        imu_str += m_imu_data[0] + "\n";
-        for (int i = 1; i < m_imu_data.size(); i++)
-            imu_str += " , , ," + m_imu_data[i] + "\n";
+    try {
+
+        // building the imu data string (including the 3 different timestamps)
+        std::string imu_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
+        if (m_imu_data.size() == 0) {
+            imu_str += " , , , , , , , , , , , , \n";
+        }
+        else {
+            imu_str += m_imu_data[0] + "\n";
+            for (int i = 1; i < m_imu_data.size(); i++)
+                imu_str += " , , ," + m_imu_data[i] + "\n";
+        }
+
+        m_writing_ouput = true;
+
+        // converting the display format to the video format
+        cv::cvtColor(m_output_img_mat, m_video_img_mat, CV_GRAY2BGR);
+
+        // writing the probe data to the output files + redis (output image is grayscale)
+        write_data_to_redis(imu_str, m_output_img_mat);
+        if (m_video->isOpened()) m_video->write(m_video_img_mat);
+        if (m_output_imu_file.is_open()) m_output_imu_file << imu_str;
+
+        m_writing_ouput = false;
+        m_imu_data.clear();
+
+    } catch (...) {
+        qDebug() << "\nClariusProbeClient - error occured while writting to outputs";
     }
-    
-    m_writing_ouput = true;
-
-    // writing the probe data to redis (imu + img (BGR))
-    write_data_to_redis(imu_str, m_output_img_mat);
-
-    // writing the probe data to the output files (output image is grayscale)
-    if (m_video->isOpened()) m_video->write(m_output_img_mat);
-    if (m_output_imu_file.is_open()) m_output_imu_file << imu_str;
-    m_writing_ouput = false;
-
-    m_imu_data.clear();
 
 }
 
@@ -258,7 +270,7 @@ void ClariusProbeClient::write_data_to_redis(std::string imu_data_str, cv::Mat& 
             m_redis_data_count = 1;
 
         } else {
-            m_redis_data_count++;
+            m_redis_data_count ++;
         }
 
     }
@@ -270,15 +282,16 @@ void ClariusProbeClient::write_data_to_redis(std::string imu_data_str, cv::Mat& 
 void ClariusProbeClient::initialize_img_handling() {
 
     // initializing the input containers
-    m_input_img_mat = cv::Mat(CLARIUS_DEFAULT_IMG_HEIGHT, CLARIUS_DEFAULT_IMG_WIDTH, CV_8UC4);
-    
-    // initializing the color conversion containers
     m_cvt_mat = cv::Mat(CLARIUS_DEFAULT_IMG_HEIGHT, CLARIUS_DEFAULT_IMG_WIDTH, CV_8UC1);
-
+    m_input_img_mat = cv::Mat(CLARIUS_DEFAULT_IMG_HEIGHT, CLARIUS_DEFAULT_IMG_WIDTH, CV_8UC4);
+   
     // initializing the output containers
     m_output_img = QImage(m_out_img_width, m_out_img_height, QImage::Format_Grayscale8);
     m_output_img_mat = cv::Mat(m_out_img_height, m_out_img_width, CV_8UC1,
         m_output_img.bits(), m_output_img.bytesPerLine());
+
+    // initializing the video frame cointainer
+    m_video_img_mat = cv::Mat(m_out_img_height, m_out_img_width, CV_8UC3);
 
 }
 
