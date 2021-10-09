@@ -53,7 +53,7 @@
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 // defining default config file path
-//#define DEFAULT_CONFIG_PATH "C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/acquisition_params.xml"
+// define DEFAULT_CONFIG_PATH "C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/acquisition_params.xml"
 #define DEFAULT_CONFIG_PATH "C:/Program Files (x86)/SonoAssist/resources/params.xml"
 
 enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
@@ -125,7 +125,6 @@ class SonoAssist : public QMainWindow {
 		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
 
 		// state check vars
-		int m_device_connection_count = 0;
 		bool m_stream_is_active = false;
 		bool m_preview_is_active = false;
 		bool m_config_is_loaded = false;
@@ -137,17 +136,21 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<config_map> m_app_params;
 		
 		// sensor devices
+		
 		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
 		std::shared_ptr<GazeTracker> m_gaze_tracker_client_p;
 		std::shared_ptr<ClariusProbeClient> m_us_probe_client_p;
 		std::shared_ptr<ScreenRecorder> m_screen_recorder_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
+		
+		std::vector<int> m_sensor_conn_updates;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
 
 		// redis process info
 		PROCESS_INFORMATION m_redis_process;
 
 		// graphical functions
+		void add_debug_text(QString);
 		void build_sensor_panel(void);
 		void set_acquisition_label(bool active);
 		void set_device_status(bool device_status, sensor_device_t device);

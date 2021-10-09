@@ -11,7 +11,6 @@
 #include <librealsense2/rs.hpp>
 
 #include <QImage>
-#include <QDebug>
 
 #define RGB_FPS 30
 #define RGB_WIDTH 1920 

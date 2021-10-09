@@ -2,15 +2,7 @@
 
 SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
-	// setting up the gui
-	ui.setupUi(this);
-    build_sensor_panel();
-    set_acquisition_label(false);
-   
-    // setting up the UI
-    m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
-    ui.graphicsView->setScene(m_main_scene_p.get());
-    generate_normal_display();
+    ui.setupUi(this);
 
     // creating the sensor clients
     m_gaze_tracker_client_p = std::make_shared<GazeTracker>();
@@ -18,9 +10,28 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_screen_recorder_client_p = std::make_shared<ScreenRecorder>();
     m_us_probe_client_p = std::make_shared<ClariusProbeClient>();
     m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
-    m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>({ m_gaze_tracker_client_p, m_camera_client_p , m_screen_recorder_client_p, 
-                                                                    m_us_probe_client_p, m_metawear_client_p});
+
+    // lined up in this order : {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
+    m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>({ m_metawear_client_p, m_gaze_tracker_client_p, m_camera_client_p, 
+                                                                    m_us_probe_client_p, m_screen_recorder_client_p});
+    
+    // filling the connection state update counter list
+    // connecting to the sensor (debug output) sigals    
+    for (auto i(0); i < m_sensor_devices.size(); i++) {
+        m_sensor_conn_updates.push_back(0);
+        connect(m_sensor_devices[i].get(), &SensorDevice::debug_output, this, 
+            &SonoAssist::add_debug_text, Qt::QueuedConnection);
+    }
 	
+    // setting up the gui
+    build_sensor_panel();
+    set_acquisition_label(false);
+
+    // setting up the image display
+    m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
+    ui.graphicsView->setScene(m_main_scene_p.get());
+    generate_normal_display();
+
     // writting screen dimensions to the output params
     int screen_width = 0, screen_height = 0;
     m_screen_recorder_client_p->get_screen_dimensions(screen_width, screen_height);
@@ -204,20 +215,24 @@ void SonoAssist::on_sensor_connect_button_clicked(){
     
     if (!m_stream_is_active && m_config_is_loaded && create_output_folder()) {
 
+        // making sure all devices are disconnected (for proper state update check)
+        for (auto i = 0; i < m_sensor_devices.size(); i++) m_sensor_devices[i]->disconnect_device();         
+
         // preventing multiple connection button clicks
-        m_device_connection_count = 0;
+        int n_sensors_used = 0;
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if (m_sensor_devices[i]->get_sensor_used()) m_device_connection_count++;
+            m_sensor_conn_updates[i] = 0;
+            if (m_sensor_devices[i]->get_sensor_used()) n_sensors_used ++;
         }
-        if (m_device_connection_count > 0) ui.sensor_connect_button->setEnabled(false);
+        if (n_sensors_used > 0) ui.sensor_connect_button->setEnabled(false);
 
         // connecting the devices
+        ui.debug_text_edit->clear();
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) m_sensor_devices[i]->connect_device();
         }
 
-    }
-    else {
+    } else {
         QString title = "Devices can not be connected";
         QString message = "Make sure that the acquisition is off and the paths to the config and output files are defined";
         display_warning_message(title, message);
@@ -522,6 +537,15 @@ void SonoAssist::on_us_probe_status_change(bool device_status) {
     set_device_status(device_status, US_PROBE);
 }
 
+
+void SonoAssist::add_debug_text(QString debug_str) {
+    
+    try {
+        ui.debug_text_edit->setText(ui.debug_text_edit->toPlainText() + "\n" + debug_str);
+    } catch (...) {};
+    
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// graphical functions
 
 void SonoAssist::build_sensor_panel(void) {
@@ -581,12 +605,22 @@ void SonoAssist::set_device_status(bool device_status, sensor_device_t device) {
     device_field->setText(status_str);
     device_field->setForeground(QBrush(QColor(color_str)));
 
-    // checking the status of active devices
-    m_device_connection_count--;
-    if (m_device_connection_count <= 0) {
-        ui.sensor_connect_button->setEnabled(true);
-    }
+    if (m_sensor_conn_updates.size() > device) {
     
+        // taking note of the state update
+        m_sensor_conn_updates[device] ++;
+
+        // checking if all used devices have produced a state update
+        bool updates_complete = true;
+        for (auto i(0); i < m_sensor_conn_updates.size(); i++) {
+            if (m_sensor_devices[i]->get_sensor_used()) {
+                updates_complete *= (m_sensor_conn_updates[i] > 0);
+            }
+        }
+        if (updates_complete) ui.sensor_connect_button->setEnabled(true);
+    
+    }
+
 }
 
 void SonoAssist::set_acquisition_label(bool active) {

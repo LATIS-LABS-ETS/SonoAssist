@@ -5,9 +5,10 @@
 #include <memory>
 #include <chrono>
 
-#include <cpp_redis/cpp_redis>
-
+#include <QDebug>
 #include <QObject>
+
+#include <cpp_redis/cpp_redis>
 
 typedef std::map<std::string, std::string> config_map;
 
@@ -42,8 +43,9 @@ class SensorDevice : public QObject {
 		void write_to_redis(std::string data_str);
 
 		// helper functions
+		void write_debug_output(QString);
 		std::string get_micro_timestamp(void) const;
-		
+
 		// interface functions (virtual)
 		// all interface functions must be non-bloking
 		virtual void stop_stream(void) = 0;
@@ -53,6 +55,7 @@ class SensorDevice : public QObject {
 		virtual void set_output_file(std::string ouput_folder) = 0;
 
 	signals:
+		void debug_output(QString debug_str);
 		void device_status_change(bool is_connected);
 
 	protected:

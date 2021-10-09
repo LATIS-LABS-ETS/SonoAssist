@@ -22,7 +22,8 @@
 #include "metawear/sensor/accelerometer.h"
 #include "metawear/sensor/sensor_fusion.h"
 
-#define DISCOVER_DETAILS_DELAY 10000
+#define CONNECTION_TIME_LIMIT 10000
+#define DISCOVER_DETAILS_DELAY 5000
 #define DESCRIPTOR_WRITE_DELAY 500
 #define DISCOVERY_TIMEOUT 5000
 #define METAWEARTIMEOUT 500
@@ -78,7 +79,8 @@ class MetaWearBluetoothClient : public SensorDevice {
 	private slots:
 
 		// ble device slots
-		void device_disconnected();
+		void device_disconnected(void);
+		void device_discovery_finished(void);
 		void device_discovered(const QBluetoothDeviceInfo& device);
 		
 		// ble service slots
@@ -115,6 +117,6 @@ class MetaWearBluetoothClient : public SensorDevice {
 		// convenience functions
 		void clear_metawear_connection(void);
 		QBluetoothUuid metawear_uuid_to_qt_uuid(const uint64_t uuid_low, const uint64_t uuid_high) const;
-		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str="") const;
+		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str="");
 
 };

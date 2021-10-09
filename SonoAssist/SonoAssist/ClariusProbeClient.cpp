@@ -74,12 +74,12 @@ void ClariusProbeClient::connect_device() {
                 CLARIUS_NORMAL_DEFAULT_WIDTH, CLARIUS_NORMAL_DEFAULT_HEIGHT) == 0)
         {
             m_device_connected = true;
-            qDebug() << "\nClariusProbeClient - successfully connected\n";
+            write_debug_output("ClariusProbeClient - successfully connected\n");
         } 
         
         // failure to map events
         else {
-            qDebug() << "\nClariusProbeClient - failed to connect\n";
+            write_debug_output("ClariusProbeClient - failed to connect\n");
         }
 
     }
@@ -91,9 +91,9 @@ void ClariusProbeClient::connect_device() {
 void ClariusProbeClient::disconnect_device() {
 
     if (clariusDestroyListener() == 0) {
-        qDebug() << "\nClariusProbeClient - destroyed the listener\n";
+        write_debug_output("ClariusProbeClient - destroyed the listener\n");
     } else {
-        qDebug() << "\nClariusProbeClient - failed to destroy the listener\n";
+        write_debug_output("ClariusProbeClient - failed to destroy the listener\n");
     }
                 
     m_device_connected = false;
@@ -137,8 +137,8 @@ void ClariusProbeClient::start_stream() {
             }  
         } catch (...) {}
 
-        if (m_device_streaming) qDebug() << "\nClariusProbeClient - successfully started the acquisition\n";
-        else qDebug() << "\nClariusProbeClient - failed to start the acquisition\n";
+        if (m_device_streaming) write_debug_output("ClariusProbeClient - successfully started the acquisition\n");
+        else write_debug_output("ClariusProbeClient - failed to start the acquisition\n");
 
     }
 
@@ -152,9 +152,9 @@ void ClariusProbeClient::stop_stream() {
 
         // stopping the acquisition
         if (clariusDisconnect(nullptr) == 0) {
-            qDebug() << "\nClariusProbeClient - disconnected\n";
+            write_debug_output("ClariusProbeClient - disconnected\n");
         }else {
-            qDebug() << "\nClariusProbeClient - failed to disconnect\n";
+            write_debug_output("ClariusProbeClient - failed to disconnect\n");
         }
 
         // closing the outputs
@@ -186,7 +186,7 @@ void ClariusProbeClient::set_output_file(std::string output_folder_path) {
         m_output_file_loaded = true;
 
     } catch (...) {
-        qDebug() << "\nClariusProbeClient - error occured while setting the output file";
+        write_debug_output("ClariusProbeClient - error occured while setting the output file");
     }
 
 }
@@ -228,7 +228,7 @@ void ClariusProbeClient::write_output_data() {
         m_imu_data.clear();
 
     } catch (...) {
-        qDebug() << "\nClariusProbeClient - error occured while writting to outputs";
+        write_debug_output("ClariusProbeClient - error occured while writting to outputs");
     }
 
 }

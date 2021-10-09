@@ -10,7 +10,6 @@
 #include <tobii/tobii.h>
 #include <tobii/tobii_streams.h>
 
-#include <QDebug>
 
 /*
 * Class to enable communication with the tobii eye tracker 4C

@@ -8,7 +8,6 @@
 #include <chrono>
 #include <fstream>
 
-#include <QDebug>
 #include <QImage>
 
 #include <opencv2/opencv.hpp>

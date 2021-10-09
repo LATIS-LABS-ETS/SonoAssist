@@ -98,3 +98,11 @@ std::string SensorDevice::get_micro_timestamp(void) const {
 	return std::to_string(time_stamp);
 
 }
+
+/*
+* Writes debug output to QDebug (the debug console) and the debug output window
+*/
+void SensorDevice::write_debug_output(QString debug_str) {
+	qDebug() << "\n" + debug_str;
+	emit debug_output(debug_str);
+}

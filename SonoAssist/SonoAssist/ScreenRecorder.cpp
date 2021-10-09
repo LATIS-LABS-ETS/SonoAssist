@@ -13,7 +13,7 @@ ScreenRecorder::ScreenRecorder() {
 void ScreenRecorder::connect_device() {
 
 	if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
-        
+
         // defining the display dimensions
         m_resized_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
         m_resized_img_height = m_window_rc.bottom / SR_PREVIEW_RESIZE_FACTOR;
@@ -52,6 +52,7 @@ void ScreenRecorder::start_stream() {
 		m_collect_data = true;
 		m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
 		m_device_streaming = true;
+
 	}
 
 }
@@ -94,7 +95,7 @@ void ScreenRecorder::set_output_file(std::string output_folder_path) {
 
     }
     catch (...) {
-        qDebug() << "\ClariusProbeClient - error occured while setting the output file";
+        write_debug_output("ClariusProbeClient - error occured while setting the output file");
     }
 
 }

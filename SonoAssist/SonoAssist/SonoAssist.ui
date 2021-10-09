@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1093</width>
-    <height>738</height>
+    <width>1141</width>
+    <height>889</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -52,9 +52,9 @@
      <colorrole role="Window">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>76</red>
-        <green>76</green>
-        <blue>76</blue>
+        <red>40</red>
+        <green>40</green>
+        <blue>40</blue>
        </color>
       </brush>
      </colorrole>
@@ -81,9 +81,9 @@
      <colorrole role="Window">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>76</red>
-        <green>76</green>
-        <blue>76</blue>
+        <red>40</red>
+        <green>40</green>
+        <blue>40</blue>
        </color>
       </brush>
      </colorrole>
@@ -101,18 +101,18 @@
      <colorrole role="Base">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>76</red>
-        <green>76</green>
-        <blue>76</blue>
+        <red>40</red>
+        <green>40</green>
+        <blue>40</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Window">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>76</red>
-        <green>76</green>
-        <blue>76</blue>
+        <red>40</red>
+        <green>40</green>
+        <blue>40</blue>
        </color>
       </brush>
      </colorrole>
@@ -397,7 +397,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>185</width>
+              <width>298</width>
               <height>0</height>
              </size>
             </property>
@@ -421,6 +421,35 @@
           </property>
          </spacer>
         </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Debug output</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="debug_text_edit">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>250</height>
+           </size>
+          </property>
+          <property name="lineWrapMode">
+           <enum>QTextEdit::NoWrap</enum>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
      </layout>
@@ -433,8 +462,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1093</width>
-     <height>26</height>
+     <width>1141</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>

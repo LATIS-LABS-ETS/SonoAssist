@@ -30,7 +30,6 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <QDebug>
 #include <QtGui/QtGui>
 #include <QStandardPaths>
 #include <QtWidgets/QApplication>
