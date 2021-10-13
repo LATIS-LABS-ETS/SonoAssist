@@ -11,8 +11,10 @@
 /SonoAssistScripts/notebooks/
 
 # windows folders
+/Data/
 /Deploy/
 /Dependencies/
+/Data/
 
 ##################################################################################################################### C++ related files
 

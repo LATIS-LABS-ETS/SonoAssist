@@ -33,8 +33,6 @@ if __name__ == "__main__":
 
     # defining required paths
     acquisition_dir_path = args.acquisition_dir
-    config_file_path
-    config_file_path
 
     # loading acquisition data
     clarius_manager = ClariusDataManager(acquisition_dir_path)

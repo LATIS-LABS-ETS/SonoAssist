@@ -142,6 +142,10 @@ class VideoManager:
         return self.frame_count
 
 
+    def __len__(self):
+        return self.frame_count
+
+
     def __iter__(self):
         self.get_video_source()
         return self

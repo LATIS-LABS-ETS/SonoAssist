@@ -22,7 +22,6 @@
 #include "metawear/sensor/accelerometer.h"
 #include "metawear/sensor/sensor_fusion.h"
 
-#define CONNECTION_TIME_LIMIT 10000
 #define DISCOVER_DETAILS_DELAY 5000
 #define DESCRIPTOR_WRITE_DELAY 500
 #define DISCOVERY_TIMEOUT 5000
