@@ -40,3 +40,14 @@ Note that the configuration parameters for the processing scripts are detailed i
 ### Installing the sonopy package
     - cd SonoAssistScrips/
     - pip install sonopy
+
+## Installing for development (Windows)
+
+1. Clone the repository
+2. Install [RealSense](https://www.intelrealsense.com/sdk-2/)
+3. Install [Qt](https://www.qt.io/download-open-source?hsCtaTracking=9f6a2170-a938-42df-a8e2-a9f0b1d6cdce%7C6cb0de4f-9bb5-4778-ab02-bfb62735f3e5) and add the extension to your IDE. _This project is known to be compatible with Qt 5.14.2_
+4. Run the `dependencies-download.ps1` script as administrator. You must have previously [allowed script execution on your machine](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-7.1). Script is located in `Utils` folder.
+
+    **Note 1 :** Ensure the Qt Installation version is a valid version number in the project settings.
+
+    **Note 2 :** Ensure the project's Character Set is Unicode.
