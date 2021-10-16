@@ -8,7 +8,7 @@ python3 display_recorded_imu.py (path to the acquisition folder)
 
 import argparse
 
-from sonopy.imu import IMUDataManager, ArrowScene
+from sonopy.imu import IMUDataManager, OrientationScene
 
 
 if __name__ == "__main__":
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     imu_data = IMUDataManager(args.acquisition_dir, avg_window=avg_window)
     
     # initializing the graphics display
-    scene = ArrowScene(avg_window)
+    scene = OrientationScene(avg_window)
     
     # updating the arrow display by feeding in IMU orientation data
     for i in range(len(imu_data)):

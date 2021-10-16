@@ -240,16 +240,19 @@ void ClariusProbeClient::write_output_data() {
 */
 void ClariusProbeClient::connect_to_redis(void) {
 
-    m_redis_client.connect();
-
-    // initializing the data list
     if (m_redis_imu_entry != "" && m_redis_img_entry != "") {
-        m_redis_client.del(std::vector<std::string>({ m_redis_imu_entry, m_redis_img_entry }));
-        m_redis_client.rpush(m_redis_imu_entry, std::vector<std::string>({ "" }));
-        m_redis_client.set(m_redis_img_entry, "");
-    }
+        
+        m_redis_client.connect("127.0.0.1", 6379, nullptr, REDIS_TIMEOUT);
 
-    m_redis_client.sync_commit();
+        // initializing the data list
+        if (m_redis_client.is_connected()) {
+            m_redis_client.del(std::vector<std::string>({ m_redis_imu_entry, m_redis_img_entry }));
+            m_redis_client.rpush(m_redis_imu_entry, std::vector<std::string>({ "" }));
+            m_redis_client.set(m_redis_img_entry, "");
+            m_redis_client.sync_commit();
+        }
+    
+    }
 
 }
 

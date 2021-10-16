@@ -10,7 +10,7 @@ import time
 import redis
 import numpy as np
 
-from sonopy.imu import ArrowScene
+from sonopy.imu import OrientationScene
 
 
 class IMUProbeRedisModel:
@@ -59,7 +59,7 @@ class IMUProbeRedisModel:
 if __name__ == "__main__":
     
     # initializing the graphics display + redis model
-    scene = ArrowScene(0.05)
+    scene = OrientationScene(0.05)
     us_model = IMUProbeRedisModel()
     
     while True:
@@ -76,3 +76,5 @@ if __name__ == "__main__":
                 scene.update_display()
 
                 print(f"queue size : {us_model.r_connection.llen(us_model.data_key)}")
+
+        else: time.sleep(0.05)

@@ -48,15 +48,18 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 */
 void SensorDevice::connect_to_redis(void) {
 
-	m_redis_client.connect();
-
-	// initializing the data list
 	if (m_redis_entry != "") {
-		m_redis_client.del(std::vector<std::string>({ m_redis_entry }));
-		m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
-	}
+
+		m_redis_client.connect("127.0.0.1", 6379, nullptr, REDIS_TIMEOUT);
+
+		// initializing the data list
+		if (m_redis_client.is_connected()) {
+			m_redis_client.del(std::vector<std::string>({ m_redis_entry }));
+			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
+			m_redis_client.sync_commit();
+		}
 	
-	m_redis_client.sync_commit();
+	}
 
 }
 

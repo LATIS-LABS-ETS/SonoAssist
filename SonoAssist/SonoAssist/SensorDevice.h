@@ -10,6 +10,8 @@
 
 #include <cpp_redis/cpp_redis>
 
+#define REDIS_TIMEOUT 500
+
 typedef std::map<std::string, std::string> config_map;
 
 /*

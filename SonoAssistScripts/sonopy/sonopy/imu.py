@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.axes3d import Axes3D
 from scipy.spatial.transform import Rotation as R
+from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 from sonopy.file_management import SonoFolderManager
 
@@ -33,7 +33,7 @@ class IMUDataManager:
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
         self.ori_df, _ = self.folder_manager.load_ext_imu_data()
         
-        # conerting all columns from str to numeric
+        # converting all columns from str to numeric
         for col_name in self.ori_df.columns:
             self.ori_df[col_name] = pd.to_numeric(self.ori_df[col_name], errors="coerce")
 
@@ -185,23 +185,29 @@ class IMUDataManager:
         return indexed_data
 
 
-class ArrowScene:
+class OrientationScene:
 
     ''' Manages the display of an IMU's orientation '''
 
-    def __init__(self, update_pause_time):
+    def __init__(self, update_pause_time=0.05, display_triangles=False):
 
         '''
         update_pause_time (float) : time (in seconds) between graphic updates
         '''
 
+        self.display_triangles = display_triangles
         self.update_pause_time = update_pause_time
-        self.arrow_starting_pos = [0 ,0 , 1]
 
         # defining the initial state of the display arrows
         # the base of the arrows / vectors are at the [0,0,0] point
+        self.arrow_starting_pos = [0 ,0 , 1]
+        self.support_starting_pos = [0.25, 0, 1]
+        self.static_arrow = self.arrow_starting_pos
         self.dynamic_arrow = self.arrow_starting_pos
-        self.target_arrow = self.arrow_starting_pos
+
+        # defining arrows parallel to the display ones (to define a plane)
+        self.static_arrow_2 = self.support_starting_pos
+        self.dynamic_arrow_2 = self.support_starting_pos
 
         # setting up the display and first display
         self.fig = plt.figure()
@@ -210,13 +216,15 @@ class ArrowScene:
 
 
     def update_dynamic_arrow(self, roll, pitch, yaw):
-        self.dynamic_arrow = self.update_arrow(self.dynamic_arrow, roll, pitch, yaw)
+        self.dynamic_arrow = self.update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
+        self.dynamic_arrow_2 = self.update_arrow(self.support_starting_pos, roll, pitch, yaw)
 
-    def update_target_arrow(self, roll, pitch, yaw):
-        self.target_arrow = self.update_arrow(self.target_arrow, roll, pitch, yaw)
+    def update_static_arrow(self, roll, pitch, yaw):
+        self.static_arrow = self.update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
+        self.static_arrow_2 = self.update_arrow(self.support_starting_pos, roll, pitch, yaw)
 
 
-    def update_arrow(self, arrow_vect, roll, pitch, yaw):
+    def update_arrow(self, starting_pos, roll, pitch, yaw):
 
         ''' 
         Applying a (roll, pitch, yaw) rotation to the provided vector 
@@ -224,22 +232,37 @@ class ArrowScene:
         '''
 
         r_mat = R.from_euler('XYZ', [roll, pitch, yaw], degrees=True)
-        return r_mat.apply(self.arrow_starting_pos)
+        return r_mat.apply(starting_pos)
             
 
     def update_display(self):
 
         ''' Updating the position of the arrows on the display '''
 
-        # plotting the arrows
         plt.cla()
-        self.ax.plot([0, self.dynamic_arrow[0]], [0, self.dynamic_arrow[1]], [0, self.dynamic_arrow[2]], "-o", color="#0331fc", ms=4, mew=0.5)
-        self.ax.plot([0, self.target_arrow[0]],[0, self.target_arrow[1]], [0, self.target_arrow[2]], '-o', color="#000000")
+
+        # plotting arrows or triangles
+        if not self.display_triangles:
+            self.ax.plot([0, self.dynamic_arrow[0]], [0, self.dynamic_arrow[1]], [0, self.dynamic_arrow[2]], "-o", color="#0331fc", ms=4, mew=0.5)
+            self.ax.plot([0, self.static_arrow[0]],[0, self.static_arrow[1]], [0, self.static_arrow[2]], '-o', color="#000000")
         
-        # setting limits
-        self.ax.set_xlim(-3, 3)
-        self.ax.set_ylim(-3, 3)
-        self.ax.set_zlim(-3, 3)
+        else:
+
+            # plotting the dynamic arrows
+            dynamic_third_point = [2 * self.dynamic_arrow[i] - self.dynamic_arrow_2[i] for i in range(3)]
+            self.ax.plot([0, self.dynamic_arrow[0]], [0, self.dynamic_arrow[1]], [0, self.dynamic_arrow[2]], "-o", color="orange", ms=4, mew=0.5)
+            self.ax.plot([0, self.dynamic_arrow_2[0]],[0, self.dynamic_arrow_2[1]], [0, self.dynamic_arrow_2[2]], '-o', color="orange", ms=4, mew=0.5)
+            self.ax.plot([0, dynamic_third_point[0]],[0, dynamic_third_point[1]], [0, dynamic_third_point[2]], '-o', color="orange", ms=4, mew=0.5)
+            
+            # plotting the static arrows
+            static_third_point = [2 * self.static_arrow[i] - self.static_arrow_2[i] for i in range(3)]
+            self.ax.plot([0, self.static_arrow[0]], [0, self.static_arrow[1]], [0, self.static_arrow[2]], "-o", color="blue", ms=4, mew=0.5)
+            self.ax.plot([0, self.static_arrow_2[0]],[0, self.static_arrow_2[1]], [0, self.static_arrow_2[2]], '-o', color="blue", ms=4, mew=0.5)
+            self.ax.plot([0, static_third_point[0]],[0, static_third_point[1]], [0, static_third_point[2]], '-o', color="blue", ms=4, mew=0.5)
         
+            self.ax.set_xlim(-1, 1)
+            self.ax.set_ylim(-1, 1)
+            self.ax.set_zlim(-1, 1)
+
         plt.draw()
         plt.pause(self.update_pause_time)
