@@ -4,7 +4,8 @@
 *.log
 *.tlog
 
-/.vscode/
+# redis dump
+*.rdb
 
 # data folders
 /SonoAssistScripts/data/

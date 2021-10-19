@@ -46,7 +46,7 @@ class SensorDevice : public QObject {
 
 		// helper functions
 		void write_debug_output(QString);
-		std::string get_micro_timestamp(void) const;
+		static std::string get_micro_timestamp(void);
 
 		// interface functions (virtual)
 		// all interface functions must be non-bloking

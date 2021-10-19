@@ -3,7 +3,9 @@
 #define _WINSOCKAPI_
 #include <windows.h>
 
+#include <tuple>
 #include <memory>
+#include <vector>
 
 #include <QFile>
 #include <QString>
@@ -30,8 +32,8 @@
 #define INACTIVE_SENSOR_FIELD_COLOR "#ffffff"
 
 // US probe display (normal)
-#define US_DISPLAY_DEFAULT_WIDTH 640
-#define US_DISPLAY_DEFAULT_HEIGHT 480
+#define US_DISPLAY_DEFAULT_WIDTH 1260
+#define US_DISPLAY_DEFAULT_HEIGHT 720
 
 // US probe display (preview)
 #define PREVIEW_US_DISPLAY_WIDTH 640
@@ -100,6 +102,9 @@ class SonoAssist : public QMainWindow {
 		void on_udp_port_input_editingFinished(void);
 		void sensor_panel_selection_handler(int row, int column);
 
+	protected:
+		void keyPressEvent(QKeyEvent* event);
+
 	private:
 
 		Ui::MainWindow ui;
@@ -134,9 +139,12 @@ class SonoAssist : public QMainWindow {
 		QJsonObject m_output_params;
 		std::string m_output_folder_path = "";
 		std::shared_ptr<config_map> m_app_params;
-		
+
+		// time marker handling vars
+		QJsonArray m_time_markers_json;
+
 		// sensor devices
-		
+
 		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
 		std::shared_ptr<GazeTracker> m_gaze_tracker_client_p;
 		std::shared_ptr<ClariusProbeClient> m_us_probe_client_p;
@@ -176,4 +184,6 @@ class SonoAssist : public QMainWindow {
 		bool create_output_folder(void);
 		bool load_config_file(QString param_file_path);
 
+		// time marker funcions
+		void clear_time_markers(void);
 };

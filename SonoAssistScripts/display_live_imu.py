@@ -75,6 +75,7 @@ if __name__ == "__main__":
                 scene.update_dynamic_arrow(orientation_data[1], orientation_data[2], orientation_data[3])
                 scene.update_display()
 
-                print(f"queue size : {us_model.r_connection.llen(us_model.data_key)}")
+                # print(f"queue size : {us_model.r_connection.llen(us_model.data_key)}")
 
+        # compatible with > 20 Hz acquisition
         else: time.sleep(0.05)

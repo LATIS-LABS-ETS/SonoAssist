@@ -93,7 +93,7 @@ void SensorDevice::write_to_redis(std::string data_str){
 * 
 * @returns string of micro second count since epoch
 */
-std::string SensorDevice::get_micro_timestamp(void) const {
+std::string SensorDevice::get_micro_timestamp(void) {
 
 	auto time_stamp = std::chrono::duration_cast<std::chrono::microseconds>(
 		std::chrono::high_resolution_clock::now().time_since_epoch()).count();

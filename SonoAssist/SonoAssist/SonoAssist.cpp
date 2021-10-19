@@ -313,6 +313,8 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             m_stream_is_active = true;
             set_acquisition_label(true);
 
+            clear_time_markers();
+
             // graying out the (start acquisition button while streaming)
             ui.start_acquisition_button->setEnabled(false);
 
@@ -537,7 +539,6 @@ void SonoAssist::on_us_probe_status_change(bool device_status) {
     set_device_status(device_status, US_PROBE);
 }
 
-
 void SonoAssist::add_debug_text(QString debug_str) {
     
     try {
@@ -545,6 +546,55 @@ void SonoAssist::add_debug_text(QString debug_str) {
     } catch (...) {};
     
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// time marker handling
+
+/*
+Using the key press handler to detect "a" and "d" presses for the creation and deletion of time markers
+*/
+void SonoAssist::keyPressEvent(QKeyEvent* event) {
+
+    if (m_stream_is_active) {
+
+        // adding a time marker
+        if (event->key() == Qt::Key_A) {
+
+            // adding the marker to the display list + json time marker list
+            QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) + " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
+            ui.time_marker_list->addItem(new QListWidgetItem(marker_str));
+            m_time_markers_json.push_back(QJsonValue(marker_str));
+
+            // updating the output params
+            m_output_params["time_markers"] = m_time_markers_json;
+
+        }
+
+        // removing a time marker
+        else if (event->key() == Qt::Key_D) {
+
+            // removing the latest time marker
+            if (ui.time_marker_list->count() > 0) {
+                m_time_markers_json.pop_back();
+                delete ui.time_marker_list->takeItem(ui.time_marker_list->count() - 1);
+            }
+
+            // updating the output params
+            m_output_params["time_markers"] = m_time_markers_json;
+
+        }
+
+    }
+
+}
+
+void SonoAssist::clear_time_markers(void) {
+
+    if (ui.time_marker_list->count() > 0) {
+        ui.time_marker_list->clear();
+    }
+    
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// graphical functions
 
@@ -653,7 +703,9 @@ void SonoAssist::configure_normal_display(void) {
     // loading the normal normal display dimensions
     try {
         m_main_us_img_width = std::stoi((*m_app_params)["us_image_main_display_width"]);
+        if (m_main_us_img_width > US_DISPLAY_DEFAULT_WIDTH) m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
         m_main_us_img_height = std::stoi((*m_app_params)["us_image_main_display_height"]);
+        if (m_main_us_img_height > US_DISPLAY_DEFAULT_HEIGHT) m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
     } catch (...) {
         m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
         m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;

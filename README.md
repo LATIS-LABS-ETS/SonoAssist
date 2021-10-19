@@ -38,7 +38,9 @@ The python processing scripts were developed and tested in the Ubuntu operating 
 Note that the configuration parameters for the processing scripts are detailed in the [wiki](https://github.com/OneWizzardBoi/SonoAsist/wiki/Processing-scripts-configuration).
 
 ### Installing the sonopy package
-    - cd SonoAssistScrips/
+1. Clone the repository
+2. Use pip install
+    - cd SonoAssist/SonoAssistScrips/
     - pip install sonopy
 
 ## Installing for development (Windows)
