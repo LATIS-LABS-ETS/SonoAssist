@@ -7,15 +7,10 @@
 # redis dump
 *.rdb
 
-# data folders
-/SonoAssistScripts/data/
-/SonoAssistScripts/notebooks/
-
 # windows folders
 /Data/
 /Deploy/
 /Dependencies/
-/Data/
 
 ##################################################################################################################### C++ related files
 
