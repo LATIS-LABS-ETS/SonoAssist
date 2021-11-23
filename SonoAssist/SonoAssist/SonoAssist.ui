@@ -343,6 +343,13 @@
          </layout>
         </item>
         <item>
+         <widget class="QCheckBox" name="pass_through_box">
+          <property name="text">
+           <string>Pass through mode</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="acquisition_preview_box">
           <property name="text">
            <string>Acquisition preview</string>

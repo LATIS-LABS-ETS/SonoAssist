@@ -10,6 +10,14 @@ void SensorDevice::set_sensor_used(bool state) {
 	m_sensor_used = state;
 }
 
+bool SensorDevice::get_pass_through(void) const {
+	return m_pass_through;
+}
+
+void SensorDevice::set_pass_through(bool state) {
+	m_pass_through = state;
+}
+
 bool SensorDevice::get_connection_status(void) const {
 	return m_device_connected;
 }

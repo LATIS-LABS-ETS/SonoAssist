@@ -48,6 +48,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"screen_recorder_active", ""}, {"us_probe_active", ""}, {"redis_server_path", ""}, 
         {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
         {"us_probe_to_redis", ""}, {"us_probe_imu_redis_entry", ""}, {"us_probe_img_redis_entry", ""} , {"us_probe_redis_rate_div", ""},
+        {"sc_to_redis", ""}, {"sc_img_redis_entry", ""}, {"sc_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
     };
 
@@ -242,7 +243,7 @@ void SonoAssist::on_sensor_connect_button_clicked(){
 
 void SonoAssist::on_acquisition_preview_box_clicked() {
    
-    // acquisition preview mode requirements filled
+    // devices should be connected
     if (!m_stream_is_active && check_device_connections()) {
         
         m_preview_is_active = ui.acquisition_preview_box->isChecked();
@@ -275,9 +276,8 @@ void SonoAssist::on_acquisition_preview_box_clicked() {
 
 }
 
-void SonoAssist::on_eye_t_targets_box_clicked(void) {
+void SonoAssist::on_eye_t_targets_box_clicked() {
 
-    // making sure required are filled
     if (!m_stream_is_active && m_config_is_loaded) {
 
         // updating the UI
@@ -293,6 +293,29 @@ void SonoAssist::on_eye_t_targets_box_clicked(void) {
         ui.eye_t_targets_box->setChecked(!ui.eye_t_targets_box->isChecked());
 
         QString title = "Eye tracker targets can not be displayed";
+        QString message = "Make sure the configurations are loaded and that the tool is not streaming.";
+        display_warning_message(title, message);
+
+    }
+
+}
+
+void SonoAssist::on_pass_through_box_clicked() {
+
+    if (!m_stream_is_active && m_config_is_loaded) {
+
+        // updating the state for all devices
+        bool pass_through_active = ui.pass_through_box->isChecked();
+        for (auto i = 0; i < m_sensor_devices.size(); i++) {
+            m_sensor_devices[i]->set_pass_through(pass_through_active);
+        }
+    
+    } else {
+    
+        // reverting the check box selection
+        ui.pass_through_box->setChecked(!ui.pass_through_box->isChecked());
+
+        QString title = "Stream pass through mode can not be toggled";
         QString message = "Make sure the configurations are loaded and that the tool is not streaming.";
         display_warning_message(title, message);
 
@@ -421,7 +444,7 @@ void SonoAssist::on_param_file_apply_clicked() {
 
             // launching redis server (not checking for success)
             if ((*m_app_params)["us_probe_to_redis"] == "true" || (*m_app_params)["eye_tracker_to_redis"] == "true" ||
-                (*m_app_params)["ext_imu_to_redis"] == "true") {
+                (*m_app_params)["ext_imu_to_redis"] == "true" || (*m_app_params)["sc_to_redis"] == "true") {
                 if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
                     qDebug() << "\nSonoAssist - failed to launch redis server - error code : " << GetLastError();
                 }

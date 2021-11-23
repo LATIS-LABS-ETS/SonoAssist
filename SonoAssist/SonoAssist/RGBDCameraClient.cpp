@@ -45,7 +45,7 @@ void RGBDCameraClient::start_stream() {
 		m_camera_cfg_p->enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGHT, RS2_FORMAT_Z16, DEPTH_FPS);
 
 		// preview mode does not record the camera images
-		if (!m_stream_preview) {
+		if (!m_stream_preview || !m_pass_through) {
 			m_camera_cfg_p->enable_record_to_file(m_output_file_str);
 			m_output_index_file.open(m_output_index_file_str, std::fstream::app);
 		} 
@@ -151,8 +151,16 @@ void RGBDCameraClient::collect_camera_data(void) {
 
 		}
 
-		// indexing received images in main mode
-		else m_output_index_file << get_micro_timestamp() << "\n";
+		// main mode
+		else {
+
+			// indexing received images in main mode
+			if (!m_pass_through) {
+				m_output_index_file << get_micro_timestamp() << "\n";
+			}
+
+		}
+		
 
 	}
 

@@ -229,8 +229,12 @@ void MetaWearBluetoothClient::start_stream() {
 					+ "\n";
 
 				client_p->write_to_redis(output_str);
-				client_p->m_output_ori_file << output_str;
-			
+
+				// writing to output file after passthrough mode check
+				if (!client_p->get_pass_through()) {
+					client_p->m_output_ori_file << output_str;
+				}
+				
 			}
 
 		};
@@ -241,7 +245,7 @@ void MetaWearBluetoothClient::start_stream() {
 			MetaWearBluetoothClient* client_p = static_cast<MetaWearBluetoothClient*>(context);
 
 			// only writtingdata to file in normal mode
-			if (!client_p->get_stream_preview_status()) {
+			if (!client_p->get_stream_preview_status() && !client_p->get_pass_through()) {
 			
 				// getting timestamps strings
 				std::string reception_time_os = client_p->get_micro_timestamp();
@@ -251,8 +255,9 @@ void MetaWearBluetoothClient::start_stream() {
 				std::string output_str = reception_time_os + "," + data_time + "," + std::to_string(acceleration->x) + ','
 					+ std::to_string(acceleration->y) + "," + std::to_string(acceleration->z) + "\n";
 
+				// writing to output file after passthrough mode check
 				client_p->m_output_acc_file << output_str;
-			
+				
 			}
 
 		};

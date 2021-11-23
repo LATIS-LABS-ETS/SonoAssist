@@ -81,6 +81,7 @@ class SonoAssist : public QMainWindow {
 		void on_screen_recorder_status_change(bool device_status);
 
 		// data streaming
+		void on_pass_through_box_clicked(void);
 		void on_eye_t_targets_box_clicked(void);
 		void on_acquisition_preview_box_clicked(void);
 		void on_start_acquisition_button_clicked(void);

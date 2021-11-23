@@ -14,7 +14,11 @@
 	<us_probe_redis_rate_div>2</us_probe_redis_rate_div>
 	<us_probe_imu_redis_entry>us_probe_imu_data</us_probe_imu_redis_entry>
 	<us_probe_img_redis_entry>us_probe_img_data</us_probe_img_redis_entry>
-	
+
+	<sc_to_redis>false</sc_to_redis>
+	<sc_redis_rate_div>1</sc_redis_rate_div>
+	<sc_img_redis_entry>us_probe_img_data</sc_img_redis_entry>
+
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
 	<eye_tracker_redis_rate_div>10</eye_tracker_redis_rate_div>
 	<eye_tracker_redis_entry>eye_tracker_data</eye_tracker_redis_entry>
@@ -22,6 +26,7 @@
 	<ext_imu_to_redis>true</ext_imu_to_redis>
 	<ext_imu_redis_rate_div>10</ext_imu_redis_rate_div>
 	<ext_imu_redis_entry>ext_imu_data</ext_imu_redis_entry>
+	
 	<redis_server_path>C:/Program Files (x86)/SonoAssist/redis-server.exe</redis_server_path>
 
 	<us_probe_ip_address>192.168.1.1</us_probe_ip_address>

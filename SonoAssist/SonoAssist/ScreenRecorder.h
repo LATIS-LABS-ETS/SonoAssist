@@ -14,6 +14,7 @@
 
 // SR_PREVIEW_RESIZE_FACTOR : to fit a (360 x 640) px display
 #define SR_PREVIEW_RESIZE_FACTOR 3
+#define REDIS_RESIZE_FACTOR 2
 
 #define SCREEN_CAPTURE_FPS 20
 #define CAPTURE_DISPLAY_THREAD_DELAY_MS 150
@@ -36,6 +37,11 @@ class ScreenRecorder : public SensorDevice {
 		// threaded collection function
 		void collect_window_captures(void);
 
+		// custom functions to connect and write acquired data to redis
+		void connect_to_redis(void);
+		void write_to_redis(std::string) {};
+		void write_data_to_redis(cv::Mat&);
+
 		// utility functions
 		void hwnd2mat(void);
 		void get_screen_dimensions(int&, int&) const;
@@ -48,14 +54,14 @@ class ScreenRecorder : public SensorDevice {
 		// window capture vars
 		RECT m_window_rc;
 		HWND m_window_handle;
-		int m_resized_img_width = 0;
-		int m_resized_img_height = 0;
-		// image handling containers
-		QImage m_output_img;
-		cv::Mat m_capture_mat;
-		cv::Mat m_output_img_mat;
-		cv::Mat m_capture_cvt_mat;
 		
+		// image handling containers
+		QImage m_preview_img;
+		cv::Mat m_preview_img_mat;
+		cv::Mat m_capture_mat;
+		cv::Mat m_capture_cvt_mat;
+		cv::Mat m_redis_img_mat;
+
 		// thread vars
 		bool m_collect_data = false;
 		std::thread m_collection_thread;
@@ -68,6 +74,9 @@ class ScreenRecorder : public SensorDevice {
 
 		// video output vars
 		std::unique_ptr<cv::VideoWriter> m_video;
+
+		// custom redis entry
+		std::string m_redis_img_entry;
 		
 };
 

@@ -219,11 +219,15 @@ void ClariusProbeClient::write_output_data() {
         // converting the display format to the video format
         cv::cvtColor(m_output_img_mat, m_video_img_mat, CV_GRAY2BGR);
 
-        // writing the probe data to the output files + redis (output image is grayscale)
+        // writing the probe data to redis (output image is grayscale)
         write_data_to_redis(imu_str, m_output_img_mat);
-        if (m_video->isOpened()) m_video->write(m_video_img_mat);
-        if (m_output_imu_file.is_open()) m_output_imu_file << imu_str;
 
+        // writing to the output files, after passthrough check
+        if (!m_pass_through) {
+            if (m_video->isOpened()) m_video->write(m_video_img_mat);
+            if (m_output_imu_file.is_open()) m_output_imu_file << imu_str;
+        }
+        
         m_writing_ouput = false;
         m_imu_data.clear();
 

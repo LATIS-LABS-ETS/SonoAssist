@@ -119,7 +119,7 @@ class ClariusProbeClient : public SensorDevice {
 		std::ofstream m_output_imu_file;
 		std::unique_ptr<cv::VideoWriter> m_video;
 
-		// defining custom redis entry names
+		// custom redis entry names
 		std::string m_redis_imu_entry;
 		std::string m_redis_img_entry;
 

@@ -48,9 +48,14 @@ void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) 
 			std::string output_str = reception_time_os + "," + reception_time_tobii + "," + data_time_tobii + "," +
 				std::to_string(gaze_point->position_xy[0]) + "," + std::to_string(gaze_point->position_xy[1]) + "\n";
 
+			// writing to redis
 			manager->write_to_redis(output_str);
-			manager->m_output_gaze_file << output_str;
 
+			// writing to output files, after passthrough check
+			if (!manager->get_pass_through()) {
+				manager->m_output_gaze_file << output_str;
+			}
+			
 		}
 
 	}
@@ -73,7 +78,7 @@ void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 	if (head_pose->position_validity == TOBII_VALIDITY_VALID) {
 	
 		// only writting out data in main display mode
-		if (!manager->get_stream_preview_status()) {
+		if (!manager->get_stream_preview_status() && !manager->get_pass_through()) {
 		
 			// getting timestamp strings
 			tobii_system_clock(manager->m_tobii_api, &tobii_time);

@@ -29,11 +29,13 @@ class SensorDevice : public QObject {
 		// status getters and setters
 		
 		bool get_sensor_used(void) const;
+		bool get_pass_through(void) const;
 		bool get_stream_status(void) const;
 		bool get_connection_status(void) const;
 		bool get_stream_preview_status(void) const;
 		
 		void set_sensor_used(bool state);
+		void set_pass_through(bool state);
 		void set_stream_status(bool state);
 		void set_connection_status(bool state);
 		void set_stream_preview_status(bool state);
@@ -64,6 +66,7 @@ class SensorDevice : public QObject {
 
 		// sensor status vars
 		bool m_sensor_used = false;
+		bool m_pass_through = false;
 		bool m_stream_preview = false;
 		bool m_device_connected = false;
 		bool m_device_streaming = false;
