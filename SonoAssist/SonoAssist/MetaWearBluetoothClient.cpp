@@ -140,7 +140,7 @@ void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidP
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// MetaWearBluetoothClient public methods
 
-MetaWearBluetoothClient::MetaWearBluetoothClient(){
+MetaWearBluetoothClient::MetaWearBluetoothClient(std::string log_file_path) : SensorDevice(log_file_path){
 
 	// configuring the discovery agent
 	m_discovery_agent.setLowEnergyDiscoveryTimeout(DISCOVERY_TIMEOUT);

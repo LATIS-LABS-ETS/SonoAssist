@@ -2,7 +2,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
-ScreenRecorder::ScreenRecorder() {
+ScreenRecorder::ScreenRecorder(std::string log_file_path) : SensorDevice(log_file_path) {
 
     // getting the target window handle and bounding rectangle
     m_window_handle = GetDesktopWindow();

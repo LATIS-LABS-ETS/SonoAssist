@@ -272,7 +272,7 @@
            <bool>true</bool>
           </property>
           <property name="placeholderText">
-           <string>Debug output</string>
+           <string>Debug logs are at : C:/Users/&lt;username&gt;/AppData/SonoAssist/</string>
           </property>
          </widget>
         </item>

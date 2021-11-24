@@ -1,9 +1,11 @@
 #pragma once
 
 #include <map>
+#include <mutex>
 #include <string>
 #include <memory>
 #include <chrono>
+#include <fstream>
 
 #include <QDebug>
 #include <QObject>
@@ -26,8 +28,11 @@ class SensorDevice : public QObject {
 
 	public : 
 
+		// constructor & destructor
+		SensorDevice(std::string log_file_path);
+		~SensorDevice();
+
 		// status getters and setters
-		
 		bool get_sensor_used(void) const;
 		bool get_pass_through(void) const;
 		bool get_stream_status(void) const;
@@ -81,7 +86,11 @@ class SensorDevice : public QObject {
 		std::string m_redis_entry;
 		cpp_redis::client m_redis_client;
 
+		// output writing vars
 		std::string m_output_folder_path;
 
-};
+		// logging vars
+		std::mutex m_log_mutex;
+		std::ofstream m_log_file;
 
+};

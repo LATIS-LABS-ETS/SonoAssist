@@ -2,6 +2,7 @@
 
 #define _WINSOCKAPI_
 #include <windows.h>
+#include <Lmcons.h>
 
 #include <tuple>
 #include <memory>
@@ -55,8 +56,8 @@
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 // defining default config file path
-// define DEFAULT_CONFIG_PATH "C:/Users/david/Documents/MedicalUltrasound/SonoAsist/SonoAssistParams/acquisition_params.xml"
 #define DEFAULT_CONFIG_PATH "C:/Program Files (x86)/SonoAssist/resources/params.xml"
+#define DEFAULT_LOG_PATH "C:/Users/<username>/AppData/SonoAssist/"
 
 enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;
@@ -183,6 +184,7 @@ class SonoAssist : public QMainWindow {
 		// param write/load functions
 		void write_output_params(void);
 		bool create_output_folder(void);
+		std::string create_log_folder(void);
 		bool load_config_file(QString param_file_path);
 
 		// time marker funcions

@@ -48,7 +48,7 @@ class MetaWearBluetoothClient : public SensorDevice {
 
 	public:
 	
-		MetaWearBluetoothClient();
+		MetaWearBluetoothClient(std::string log_file_path);
 		~MetaWearBluetoothClient();
 		
 		// SensorDevice interface functions

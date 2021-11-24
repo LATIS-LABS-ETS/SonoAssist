@@ -101,15 +101,19 @@ void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// GazeTracker public methods
 
-GazeTracker::GazeTracker() {
+GazeTracker::GazeTracker(std::string log_file_path) : SensorDevice(log_file_path) {
+
 	// creating tobii api object
 	tobii_error_t error = tobii_api_create(&m_tobii_api, NULL, NULL);
 	m_tobii_api_valid = (error == TOBII_ERROR_NO_ERROR);	
+
 }
 
 GazeTracker::~GazeTracker() {
+
 	disconnect_device();
 	tobii_api_destroy(m_tobii_api);
+
 }
 
 void GazeTracker::connect_device(void) {

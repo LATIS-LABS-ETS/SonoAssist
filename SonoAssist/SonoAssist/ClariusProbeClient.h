@@ -56,7 +56,10 @@ class ClariusProbeClient : public SensorDevice {
 
     Q_OBJECT
 
+
     public:
+
+		ClariusProbeClient(std::string log_file_path) : SensorDevice(log_file_path) {};
 
         // SensorDevice interface functions
         void stop_stream(void);

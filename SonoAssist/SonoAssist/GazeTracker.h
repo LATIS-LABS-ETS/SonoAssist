@@ -20,7 +20,7 @@ class GazeTracker : public SensorDevice {
 
 	public:
 
-		GazeTracker();
+		GazeTracker(std::string log_file_path);
 		~GazeTracker();
 
 		// SensorDevice interface functions

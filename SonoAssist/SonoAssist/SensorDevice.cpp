@@ -1,5 +1,23 @@
 #include "SensorDevice.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
+
+SensorDevice::SensorDevice(std::string log_file_path) {
+
+	// opening the log file
+	if (log_file_path != "") {
+		m_log_file.open(log_file_path, std::fstream::app);
+	}
+	
+}
+
+SensorDevice::~SensorDevice() {
+
+	// closing the log file
+	m_log_file.close();
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// getters and setters
 
 bool SensorDevice::get_sensor_used(void) const {
@@ -114,6 +132,13 @@ std::string SensorDevice::get_micro_timestamp(void) {
 * Writes debug output to QDebug (the debug console) and the debug output window
 */
 void SensorDevice::write_debug_output(QString debug_str) {
+
+	// sending msg to the application and vs debug windows
 	qDebug() << "\n" + debug_str;
 	emit debug_output(debug_str);
+
+	// logging the message
+	std::lock_guard<std::mutex> guard(m_log_mutex);
+	m_log_file << debug_str.toStdString() << std::endl;
+
 }

@@ -45,7 +45,7 @@ void RGBDCameraClient::start_stream() {
 		m_camera_cfg_p->enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGHT, RS2_FORMAT_Z16, DEPTH_FPS);
 
 		// preview mode does not record the camera images
-		if (!m_stream_preview || !m_pass_through) {
+		if (!m_stream_preview && !m_pass_through) {
 			m_camera_cfg_p->enable_record_to_file(m_output_file_str);
 			m_output_index_file.open(m_output_index_file_str, std::fstream::app);
 		} 

@@ -25,7 +25,7 @@ class ScreenRecorder : public SensorDevice {
 
 	public:
 		
-		ScreenRecorder();
+		ScreenRecorder(std::string log_file_path);
 
 		// SensorDevice interface functions
 		void stop_stream(void);

@@ -4,12 +4,15 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
     ui.setupUi(this);
 
+    // creating the log folder
+    std::string log_file_path = create_log_folder();
+
     // creating the sensor clients
-    m_gaze_tracker_client_p = std::make_shared<GazeTracker>();
-    m_camera_client_p = std::make_shared<RGBDCameraClient>();
-    m_screen_recorder_client_p = std::make_shared<ScreenRecorder>();
-    m_us_probe_client_p = std::make_shared<ClariusProbeClient>();
-    m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>();
+    m_gaze_tracker_client_p = std::make_shared<GazeTracker>(log_file_path);
+    m_camera_client_p = std::make_shared<RGBDCameraClient>(log_file_path);
+    m_screen_recorder_client_p = std::make_shared<ScreenRecorder>(log_file_path);
+    m_us_probe_client_p = std::make_shared<ClariusProbeClient>(log_file_path);
+    m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>(log_file_path);
 
     // lined up in this order : {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
     m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>({ m_metawear_client_p, m_gaze_tracker_client_p, m_camera_client_p, 
@@ -907,18 +910,52 @@ void SonoAssist::generate_eye_tracker_targets() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// input / output params
 
+/*
+Creates the logging directory according to DEFAULT_LOG_PATH
+Returns the path to the log file
+*/
+std::string SonoAssist::create_log_folder(void) {
+
+    std::string log_file_path = "";
+
+    // getting current user name
+    // https://stackoverflow.com/questions/11587426/get-current-username-in-c-on-windows
+    TCHAR username[UNLEN + 1];
+    DWORD size = UNLEN + 1;
+    GetUserName((TCHAR*)username, &size);
+    std::wstring temp1(&username[0]);
+    
+    // building the path to the log folder
+    std::string log_folder_path(DEFAULT_LOG_PATH);
+    log_folder_path.replace(log_folder_path.find("<username>"), 10, std::string(temp1.begin(), temp1.end()).c_str());
+
+    // converting str to proper windows format
+    // creating the output folder and updating the clients
+    std::wstring temp2 = std::wstring(log_folder_path.begin(), log_folder_path.end());
+    if (CreateDirectory(temp2.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
+
+       // creating the log file
+        log_file_path = log_folder_path + "/acquisition_log.log";
+        std::ofstream log_file;
+        log_file.open(log_file_path);
+        log_file.close();
+
+    }
+
+    return log_file_path; 
+   
+}
+
 bool SonoAssist::create_output_folder() {
 
     bool valid_output_folder = false;
     std::string output_folder_path = ui.output_folder_input->text().toStdString();
 
     // converting str to proper windows format
+    // creating the output folder and updating the clients
     // https://stackoverflow.com/questions/27220/how-to-convert-stdstring-to-lpcwstr-in-c-unicode
     std::wstring stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
-
-    // creating the output folder and updating the clients
-    if (CreateDirectory(stemp.c_str(), NULL) ||
-        ERROR_ALREADY_EXISTS == GetLastError()) {
+    if (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
 
         valid_output_folder = true;
         m_output_folder_path = output_folder_path;
