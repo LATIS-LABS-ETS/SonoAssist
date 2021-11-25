@@ -17,6 +17,9 @@
 #include <QGraphicsPixmapItem>
 #include <QtWidgets/QMainWindow>
 
+/* STEP #2: Include your custom sensor's .h file. */
+#include "SensorExample.h"
+
 #include "GazeTracker.h"
 #include "ScreenRecorder.h"
 #include "ui_SonoAssist.h"
@@ -142,7 +145,7 @@ class SonoAssist : public QMainWindow {
 		QJsonArray m_time_markers_json;
 
 		// sensor devices
-
+		std::shared_ptr<SensorExample> m_example_client_p;
 		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
 		std::shared_ptr<GazeTracker> m_gaze_tracker_client_p;
 		std::shared_ptr<ClariusProbeClient> m_us_probe_client_p;

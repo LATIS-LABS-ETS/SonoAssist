@@ -102,6 +102,7 @@
     <ClCompile Include="ClariusProbeClient.cpp" />
     <ClCompile Include="RGBDCameraClient.cpp" />
     <ClCompile Include="SensorDevice.cpp" />
+    <ClCompile Include="SensorExample.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
     <ClCompile Include="ScreenRecorder.cpp" />
     <ClCompile Include="process_management.cpp" />
@@ -120,6 +121,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="MetaWearBluetoothClient.h" />
     <ClInclude Include="resource.h" />
+    <QtMoc Include="SensorExample.h" />
     <QtMoc Include="ClariusProbeClient.h" />
     <QtMoc Include="ScreenRecorder.h" />
   </ItemGroup>

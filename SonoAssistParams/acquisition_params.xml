@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <params>
 
+	<!-- STEP #4: Define the proper configuration params for your sensor -->
 	<example_to_redis>false</example_to_redis>
 	<example_redis_rate_div>2</example_redis_rate_div>
 	<example_redis_entry>example_data</example_redis_entry>

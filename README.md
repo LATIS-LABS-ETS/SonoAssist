@@ -1,3 +1,15 @@
+# Welcome to the add-sensor-example branch!
+
+**In this branch, we cover the 5 required steps (in the code) to add support for a new sensor.**
+
+This version of SonoAssist supports an additional sensor called "Example Sensor" for which we highlighted the required development steps via comments of the form: "STEP#N".
+The relevant files are the following : 
+* [SensorExample.h](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist/SensorExample.h)
+* [SensorExample.cpp](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist/SensorExample.cpp)
+* [SonoAssist.h](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist/SonoAssist.h)
+* [SonoAssist.cpp](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist/SonoAssist.cpp)
+* [acquisition_params.xml](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssistParams/acquisition_params.xml)
+
 # SonoAssist
 
 **SonoAssist is an open-source project for the acquisition, processing, and visualization of data relevant to the study of sonographer expertise in POCUS (Point of Care Ultrasound) exams. Furthermore, the “SonoAssist” acquisition software was presented at the CMBEC44 conference, and the related [paper](Media/paper.pdf) “SonoAssist: Open source acquisition software for ultrasound imaging studies” presenting the software can be found in the "Media" folder.**

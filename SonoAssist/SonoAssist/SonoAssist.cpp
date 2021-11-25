@@ -5,6 +5,20 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
+
+        /*
+        * STEP #3: Define the proper configuration entries for your sensor
+        *
+        *   You will need to define the following entries to support a Redis connection
+        *       - (sensor name)_to_redis
+        *       - (sensor name)_redis_entry
+        *       - (sensor name)_redis_rate_div
+        *       Other Redis related entries might need to be defied depending on your implementation
+        *
+        *   Any other configuration entries related to your sensor should be defined here.
+        */
+        {"example_to_redis", ""}, {"example_redis_entry", ""}, {"example_redis_rate_div", ""},
+        
         {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
         {"sc_to_redis", ""}, {"sc_img_redis_entry", ""}, {"sc_redis_rate_div", ""},
@@ -40,6 +54,10 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_screen_recorder_client_p = std::make_shared<ScreenRecorder>(m_sensor_devices.size(), "Screen Recorder", "sc_to_redis", log_file_path);
     connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture, this, &SonoAssist::on_new_us_screen_capture);
     m_sensor_devices.push_back(m_screen_recorder_client_p);
+
+    /* STEP #5: Instantiate your sensor (via a shared pointer) and add it to the "m_sensor_devices" list */
+    m_example_client_p = std::make_shared<SensorExample>(m_sensor_devices.size(), "Example Sensor", "example_to_redis", log_file_path);
+    m_sensor_devices.push_back(m_example_client_p);
 
     // creating the sensor devices ... end
 

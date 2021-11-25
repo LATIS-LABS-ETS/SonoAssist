@@ -52,6 +52,9 @@
     <ClCompile Include="process_management.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SensorExample.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="SonoAssist.h">
@@ -70,6 +73,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ClariusProbeClient.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="SensorExample.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
