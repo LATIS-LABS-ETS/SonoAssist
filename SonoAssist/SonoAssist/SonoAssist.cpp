@@ -661,7 +661,7 @@ void SonoAssist::build_sensor_panel(void) {
 
     // defining table dimensions and headers
    
-    ui.sensor_status_table->setRowCount(5);
+    ui.sensor_status_table->setRowCount(m_sensor_devices.size());
     ui.sensor_status_table->setColumnCount(1);
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
     

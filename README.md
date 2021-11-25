@@ -10,7 +10,7 @@ This project is composed of two types of software components
 
 The SonoAssist acquisition software is compatible with Windows 10 and can the installer can be found in the releases. 
 
-Note that the configuration parameters for the acquisition software are detailed in the [wiki](https://github.com/OneWizzardBoi/SonoAsist/wiki/Acquisition-software-configuration). Also, the acquisition of data from the Clarius ultrasound probe requires all inbound UDP ports to be open.
+Note that the configuration parameters for the acquisition software are detailed in the [wiki](https://github.com/OneWizzardBoi/SonoAsist/wiki/Acquisition-software-configuration).
 
 Supported sensors
 |Sensor type|Manufacturer|Model|Output format|

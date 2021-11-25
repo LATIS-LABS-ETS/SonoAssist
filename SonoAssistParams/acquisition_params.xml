@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <params>
-	
-	<us_image_main_display_width>1260</us_image_main_display_width>
-	<us_image_main_display_height>720</us_image_main_display_height>
+
+	<example_to_redis>false</example_to_redis>
+	<example_redis_rate_div>2</example_redis_rate_div>
+	<example_redis_entry>example_data</example_redis_entry>
 
 	<us_probe_to_redis>false</us_probe_to_redis>
 	<us_probe_redis_rate_div>2</us_probe_redis_rate_div>
@@ -10,7 +11,7 @@
 	<us_probe_img_redis_entry>us_probe_img_data</us_probe_img_redis_entry>
 
 	<sc_to_redis>false</sc_to_redis>
-	<sc_redis_rate_div>1</sc_redis_rate_div>
+	<sc_redis_rate_div>2</sc_redis_rate_div>
 	<sc_img_redis_entry>us_probe_img_data</sc_img_redis_entry>
 
 	<eye_tracker_to_redis>false</eye_tracker_to_redis>
@@ -20,12 +21,15 @@
 	<ext_imu_to_redis>false</ext_imu_to_redis>
 	<ext_imu_redis_rate_div>10</ext_imu_redis_rate_div>
 	<ext_imu_redis_entry>ext_imu_data</ext_imu_redis_entry>
-	
+
+	<us_image_main_display_width>1260</us_image_main_display_width>
+	<us_image_main_display_height>720</us_image_main_display_height>
+
 	<redis_server_path>C:/Program Files (x86)/SonoAssist/redis-server.exe</redis_server_path>
 
 	<us_probe_ip_address>192.168.1.1</us_probe_ip_address>
 	<ext_imu_ble_address>F3:AC:8B:CE:E1:10</ext_imu_ble_address>
-	
+
 	<eye_tracker_target_path>C:/Program Files (x86)/SonoAssist/resources/tracker_target.svg</eye_tracker_target_path>
 	<eye_tracker_crosshairs_path>C:/Program Files (x86)/SonoAssist/resources/tracker_crosshair.png</eye_tracker_crosshairs_path>
 
