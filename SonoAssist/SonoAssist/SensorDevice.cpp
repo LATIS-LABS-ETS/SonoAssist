@@ -2,7 +2,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
 
-SensorDevice::SensorDevice(std::string log_file_path) {
+SensorDevice::SensorDevice(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+	: m_device_id(device_id), m_device_description(device_description), m_redis_state_entry(redis_state_entry)
+{
 
 	// opening the log file
 	if (log_file_path != "") {
@@ -19,6 +21,14 @@ SensorDevice::~SensorDevice() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// getters and setters
+
+int SensorDevice::get_device_id(void) const {
+	return m_device_id;
+}
+
+std::string SensorDevice::get_device_description(void) const {
+	return m_device_description;
+}
 
 bool SensorDevice::get_sensor_used(void) const {
 	return m_sensor_used;
@@ -62,9 +72,24 @@ void SensorDevice::set_stream_preview_status(bool state) {
 	}
 }
 
+bool SensorDevice::get_redis_state(void) const {
+	return m_redis_state;
+}
+
 void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
+
+	// keeping a pointer to the config map
 	m_config_ptr = config_ptr;
+	
+	// getting the redis status (is the device expected to connect to redis)
+	if ((*m_config_ptr)[m_redis_state_entry] == "true") {
+		m_redis_state = true;
+	} else {
+		m_redis_state = false;
+	}
+
 	m_config_loaded = true;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods
@@ -138,7 +163,6 @@ void SensorDevice::write_debug_output(QString debug_str) {
 	emit debug_output(debug_str);
 
 	// logging the message
-	std::lock_guard<std::mutex> guard(m_log_mutex);
 	m_log_file << debug_str.toStdString() << std::endl;
 
 }

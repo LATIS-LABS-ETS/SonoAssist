@@ -33,7 +33,8 @@ class RGBDCameraClient : public SensorDevice {
 
 	public:
 
-		RGBDCameraClient(std::string log_file_path) : SensorDevice(log_file_path) {};
+		RGBDCameraClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path) 
+			: SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 		~RGBDCameraClient();
 
 		// SensorDevice interface functions

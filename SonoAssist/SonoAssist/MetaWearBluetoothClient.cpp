@@ -140,7 +140,9 @@ void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidP
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// MetaWearBluetoothClient public methods
 
-MetaWearBluetoothClient::MetaWearBluetoothClient(std::string log_file_path) : SensorDevice(log_file_path){
+MetaWearBluetoothClient::MetaWearBluetoothClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+	: SensorDevice(device_id, device_description, redis_state_entry, log_file_path)
+{
 
 	// configuring the discovery agent
 	m_discovery_agent.setLowEnergyDiscoveryTimeout(DISCOVERY_TIMEOUT);
@@ -188,7 +190,7 @@ void MetaWearBluetoothClient::disconnect_device() {
 	
 	// changing the device state
 	m_device_connected = false;
-	emit device_status_change(false);
+	emit device_status_change(m_device_id, false);
 
 	write_debug_output("MetaWearBluetoothClient - client state change to disconnected\n");
 
@@ -508,7 +510,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 
 			// updating the connection status + notifying the main window
 			bluetooth_client->set_connection_status(connection_status);
-			emit bluetooth_client->device_status_change(connection_status);
+			emit bluetooth_client->device_status_change(bluetooth_client->get_device_id(), connection_status);
 
 			if (connection_status) bluetooth_client->write_debug_output("MetaWearBluetoothClient - MetaBoard initialization succeded");
 			else bluetooth_client->write_debug_output("MetaWearBluetoothClient - MetaBoard initialization failed");

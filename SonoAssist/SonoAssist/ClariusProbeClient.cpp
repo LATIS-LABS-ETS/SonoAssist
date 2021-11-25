@@ -84,7 +84,7 @@ void ClariusProbeClient::connect_device() {
 
     }
 
-    emit device_status_change(m_device_connected);
+    emit device_status_change(m_device_id, m_device_connected);
 
 }
 
@@ -97,7 +97,7 @@ void ClariusProbeClient::disconnect_device() {
     }
                 
     m_device_connected = false;
-    emit device_status_change(false);
+    emit device_status_change(m_device_id, false);
    
 }
 

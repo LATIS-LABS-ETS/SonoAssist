@@ -59,7 +59,8 @@ class ClariusProbeClient : public SensorDevice {
 
     public:
 
-		ClariusProbeClient(std::string log_file_path) : SensorDevice(log_file_path) {};
+		ClariusProbeClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+			: SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 
         // SensorDevice interface functions
         void stop_stream(void);

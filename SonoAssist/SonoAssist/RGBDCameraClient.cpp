@@ -11,6 +11,8 @@ void RGBDCameraClient::connect_device(void) {
 	// making sure requirements are filled
 	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
 	
+		write_debug_output("RGBDCameraClient - testing the connection to the camera");
+
 		// testing connection with the camera
 		try {
 			rs2::pipeline p;
@@ -19,9 +21,11 @@ void RGBDCameraClient::connect_device(void) {
 			m_device_connected = true;
 		} catch (...) {
 			m_device_connected = false;
+			write_debug_output("RGBDCameraClient - failed to connect to the camera");
 		}
 
-		emit device_status_change(m_device_connected);
+		write_debug_output("RGBDCameraClient - successfully connected to the camera");
+		emit device_status_change(m_device_id, m_device_connected);
 	
 	}
 
@@ -30,7 +34,7 @@ void RGBDCameraClient::connect_device(void) {
 void RGBDCameraClient::disconnect_device(void) {
 
 	m_device_connected = false;
-	emit device_status_change(false);	
+	emit device_status_change(m_device_id, false);	
 
 }
 

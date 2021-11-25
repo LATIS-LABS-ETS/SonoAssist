@@ -56,10 +56,9 @@
 #define EYETRACKER_CROSSHAIRS_HEIGHT 50
 
 // defining default config file path
-#define DEFAULT_CONFIG_PATH "C:/Program Files (x86)/SonoAssist/resources/params.xml"
 #define DEFAULT_LOG_PATH "C:/Users/<username>/AppData/SonoAssist/"
+#define DEFAULT_CONFIG_PATH "C:/Program Files (x86)/SonoAssist/resources/params.xml"
 
-enum sensor_device_t {EXT_IMU=0, EYE_TRACKER=1, RGBD_CAMERA=2, US_PROBE=3, SCREEN_RECORDER=4};
 typedef std::map<std::string, std::string> config_map;
 
 class SonoAssist : public QMainWindow {
@@ -75,11 +74,7 @@ class SonoAssist : public QMainWindow {
 		
 		// device connection
 		void on_sensor_connect_button_clicked(void);
-		void on_rgbd_camera_status_change(bool status);
-		void on_ext_imu_status_change(bool device_status);
-		void on_us_probe_status_change(bool device_status);
-		void on_eye_tracker_status_change(bool device_status);
-		void on_screen_recorder_status_change(bool device_status);
+		void set_device_status(int device_id, bool device_status);
 
 		// data streaming
 		void on_pass_through_box_clicked(void);
@@ -105,6 +100,7 @@ class SonoAssist : public QMainWindow {
 		void sensor_panel_selection_handler(int row, int column);
 
 	protected:
+
 		void keyPressEvent(QKeyEvent* event);
 
 	private:
@@ -163,7 +159,6 @@ class SonoAssist : public QMainWindow {
 		void add_debug_text(QString);
 		void build_sensor_panel(void);
 		void set_acquisition_label(bool active);
-		void set_device_status(bool device_status, sensor_device_t device);
 		void display_warning_message(QString title, QString message);
 
 		// graphics scene functions

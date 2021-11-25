@@ -2,7 +2,9 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
-ScreenRecorder::ScreenRecorder(std::string log_file_path) : SensorDevice(log_file_path) {
+ScreenRecorder::ScreenRecorder(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+    : SensorDevice(device_id, device_description, redis_state_entry, log_file_path) 
+{
 
     // getting the target window handle and bounding rectangle
     m_window_handle = GetDesktopWindow();
@@ -33,14 +35,14 @@ void ScreenRecorder::connect_device() {
         m_device_connected = true;
 	}
 
-	emit device_status_change(m_device_connected);
+	emit device_status_change(m_device_id, m_device_connected);
 
 }
 
 void ScreenRecorder::disconnect_device() {
 
 	m_device_connected = false;
-	emit device_status_change(false);
+	emit device_status_change(m_device_id, false);
 
 }
 

@@ -101,7 +101,9 @@ void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// GazeTracker public methods
 
-GazeTracker::GazeTracker(std::string log_file_path) : SensorDevice(log_file_path) {
+GazeTracker::GazeTracker(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path) : 
+	SensorDevice(device_id, device_description, redis_state_entry, log_file_path)
+{
 
 	// creating tobii api object
 	tobii_error_t error = tobii_api_create(&m_tobii_api, NULL, NULL);
@@ -144,7 +146,7 @@ void GazeTracker::connect_device(void) {
 		
 		} catch (...) { }
 		
-		emit device_status_change(m_device_connected);
+		emit device_status_change(m_device_id, m_device_connected);
 
 	}
 }
@@ -160,7 +162,7 @@ void GazeTracker::disconnect_device(void) {
 	}
 
 	m_device_connected = false;
-	emit device_status_change(false);
+	emit device_status_change(m_device_id, false);
 
 }
 
