@@ -10,6 +10,9 @@ The relevant files are the following :
 * [SonoAssist.cpp](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist/SonoAssist.cpp)
 * [acquisition_params.xml](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssistParams/acquisition_params.xml)
 
+Example sensor on the side panel
+![](Media/add_sensor_example.png)
+
 # SonoAssist
 
 **SonoAssist is an open-source project for the acquisition, processing, and visualization of data relevant to the study of sonographer expertise in POCUS (Point of Care Ultrasound) exams. Furthermore, the “SonoAssist” acquisition software was presented at the CMBEC44 conference, and the related [paper](Media/paper.pdf) “SonoAssist: Open source acquisition software for ultrasound imaging studies” presenting the software can be found in the "Media" folder.**
