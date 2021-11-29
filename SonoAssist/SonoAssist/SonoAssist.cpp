@@ -547,7 +547,7 @@ void SonoAssist::sensor_panel_selection_handler(int row, int column) {
             ui.sensor_status_table->item(m_screen_recorder_client_p->get_device_id(), 0)->setBackground(QBrush(INACTIVE_SENSOR_FIELD_COLOR));
 
             QString title = "Too many US image sources";
-            QString message = "The screen recorder has been deactivated because there can be only on US image source.";
+            QString message = "The screen recorder has been deactivated because there can be only one US image source.";
             display_warning_message(title, message);
 
         }
@@ -661,7 +661,7 @@ void SonoAssist::build_sensor_panel(void) {
 
     // defining table dimensions and headers
    
-    ui.sensor_status_table->setRowCount(5);
+    ui.sensor_status_table->setRowCount(m_sensor_devices.size());
     ui.sensor_status_table->setColumnCount(1);
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
     

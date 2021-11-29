@@ -82,12 +82,17 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 	m_config_ptr = config_ptr;
 	
 	// getting the redis status (is the device expected to connect to redis)
-	if ((*m_config_ptr)[m_redis_state_entry] == "true") {
-		m_redis_state = true;
-	} else {
+	try {
+		if ((*m_config_ptr)[m_redis_state_entry] == "true") {
+			m_redis_state = true;
+		}
+		else {
+			m_redis_state = false;
+		}
+	} catch (...) {
 		m_redis_state = false;
 	}
-
+	
 	m_config_loaded = true;
 
 }
