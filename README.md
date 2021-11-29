@@ -46,7 +46,7 @@ Interface used when setting up the sensors.
 
 ## Processing scripts
 
-The python processing scripts were developed and tested in the Ubuntu operating system and require python3 and pip.
+The python processing scripts were developed and tested in the Windows and Ubuntu operating systems and require python3 and pip.
 Note that the configuration parameters for the processing scripts are detailed in the [wiki](https://github.com/OneWizzardBoi/SonoAsist/wiki/Processing-scripts-configuration).
 
 ### Installing the sonopy package
@@ -65,3 +65,7 @@ Note that the configuration parameters for the processing scripts are detailed i
     **Note 1 :** Ensure the Qt Installation version is a valid version number in the project settings.
 
     **Note 2 :** Ensure the project's Character Set is Unicode.
+
+## Extensibility
+
+The [add-sensor-example](https://github.com/LATIS-ETS/SonoAssist/tree/add-sensor-example) branch covers the development steps required to add support for additional sensors. 

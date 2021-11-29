@@ -1,11 +1,9 @@
 '''
-Example script for streaming SonoAssist acquisition data from Redis DB.
-
-This script should be executed on Windows with a running Redis server while the SonoAssist tool is acquiring data.
+This script displays the images from the US probe and prints the accompanying IMU data (in real time) as recorded in a SonoAssit tool acquiition
 
 Usage
 -----
-python3 stream_from_redis_example.py
+python3 display_live_probe.py
 '''
 
 import cv2
@@ -96,10 +94,15 @@ if __name__ == "__main__":
 
         if us_model.data_available():
 
+            # pulling probe data
             times, imu_readings = us_model.get_imu_data()
             probe_image = us_model.get_img_data()
 
+            # displaying the pulled data
             print(times)
+            cv2.imshow("test", probe_image)
+            cv2.waitKey(100)
+
             print(f"queue size : {us_model.r_connection.llen(us_model.imu_data_key)}")
 
         time.sleep(0.01)
