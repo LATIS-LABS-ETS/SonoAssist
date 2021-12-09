@@ -149,7 +149,7 @@ class SonoAssist : public QMainWindow {
 		std::shared_ptr<ClariusProbeClient> m_us_probe_client_p;
 		std::shared_ptr<ScreenRecorder> m_screen_recorder_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;
-		std::shared_ptr<MetaWearArray> m_metawear_array_p
+		std::shared_ptr<MetaWearArray> m_metawear_array_p;
 		
 		std::vector<int> m_sensor_conn_updates;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;

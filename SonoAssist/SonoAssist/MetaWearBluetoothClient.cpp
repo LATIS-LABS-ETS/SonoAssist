@@ -338,7 +338,6 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 	
 	// getting the MAC adresses for comparison
 	QString incoming_adress_str = device.address().toString();
-	QString target_device_adress((*m_config_ptr)["ext_imu_ble_address"].c_str());
 
 	QString target_device_adress;
 	if (m_device_id == 0) {

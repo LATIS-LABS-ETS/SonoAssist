@@ -98,6 +98,7 @@
   <ItemGroup>
     <ClCompile Include="GazeTracker.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MetaWearArray.cpp" />
     <ClCompile Include="MetaWearBluetoothClient.cpp" />
     <ClCompile Include="ClariusProbeClient.cpp" />
     <ClCompile Include="RGBDCameraClient.cpp" />
@@ -116,6 +117,7 @@
     <QtRcc Include="SonoAssist.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="MetaWearArray.h" />
     <ClInclude Include="process_management.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="MetaWearBluetoothClient.h" />
