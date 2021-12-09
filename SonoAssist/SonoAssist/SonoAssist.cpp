@@ -5,6 +5,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
+
         {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
         {"sc_to_redis", ""}, {"sc_img_redis_entry", ""}, {"sc_redis_rate_div", ""},
@@ -31,6 +32,10 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     
     m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>(m_sensor_devices.size(), "External IMU", "ext_imu_to_redis", log_file_path);
     m_sensor_devices.push_back(m_metawear_client_p);
+
+    m_metawear_array_p = std::make_shared<MetaWearArray>(m_sensor_devices.size(), "MetaWear Array", "", log_file_path);
+    m_sensor_devices.push_back(m_metawear_array_p);
+    MetaWearArray
     
     m_us_probe_client_p = std::make_shared<ClariusProbeClient>(m_sensor_devices.size(), "Clarius Probe", "us_probe_to_redis", log_file_path);
     connect(m_us_probe_client_p.get(), &ClariusProbeClient::new_us_image, this, &SonoAssist::on_new_clarius_image);

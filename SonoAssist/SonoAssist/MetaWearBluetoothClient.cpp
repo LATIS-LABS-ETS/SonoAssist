@@ -340,6 +340,13 @@ void MetaWearBluetoothClient::device_discovered(const QBluetoothDeviceInfo& devi
 	QString incoming_adress_str = device.address().toString();
 	QString target_device_adress((*m_config_ptr)["ext_imu_ble_address"].c_str());
 
+	QString target_device_adress;
+	if (m_device_id == 0) {
+		target_device_adress = (*m_config_ptr)["ext_imu_ble_address"].c_str();
+	} else if (m_device_id == 1){
+		target_device_adress = (*m_config_ptr)["ext2_imu_ble_address"].c_str();
+	}
+
 	// only interested in the target device
 	if ((incoming_adress_str == target_device_adress) && !m_metawear_device_controller_p) {	
 		m_metawear_device_controller_p = std::shared_ptr<QLowEnergyController>(QLowEnergyController::createCentral(device));

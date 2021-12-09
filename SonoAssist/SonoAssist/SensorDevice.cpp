@@ -163,6 +163,8 @@ std::string SensorDevice::get_micro_timestamp(void) {
 */
 void SensorDevice::write_debug_output(QString debug_str) {
 
+	debug_str = QString::fromUtf8(m_device_description.c_str()) + debug_str;
+
 	// sending msg to the application and vs debug windows
 	qDebug() << "\n" + debug_str;
 	emit debug_output(debug_str);
