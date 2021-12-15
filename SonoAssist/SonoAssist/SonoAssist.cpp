@@ -5,6 +5,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
+        {"test_list", ""},
         {"ext_imu_ble_address", ""}, {"ext_imu_to_redis", ""}, {"ext_imu_redis_entry", ""}, {"ext_imu_redis_rate_div", ""},
         {"eye_tracker_to_redis", ""}, {"eye_tracker_redis_entry", ""}, {"eye_tracker_redis_rate_div", ""},
         {"sc_to_redis", ""}, {"sc_img_redis_entry", ""}, {"sc_redis_rate_div", ""},
@@ -994,7 +995,25 @@ bool SonoAssist::load_config_file(QString param_file_path) {
     for (auto& parameter : *m_app_params) {
         children = docElem.elementsByTagName(QString(parameter.first.c_str()));
         if (children.count() == 1) {
-            parameter.second = children.at(0).firstChild().nodeValue().toStdString();
+
+            // handling single elements
+            if (children.at(0).childNodes().length() == 1) {
+                parameter.second = children.at(0).firstChild().nodeValue().toStdString();
+            }
+            
+            // handling 2 levels of elements
+            else {
+                
+                std::string param_value = "";
+                for (auto i(0); i < children.at(0).childNodes().length(); i++) {
+                    param_value += children.at(0).childNodes().at(i).firstChild().nodeValue().toStdString();
+                    if (i != children.at(0).childNodes().length() - 1) param_value += ", ";
+                }
+
+                parameter.second = param_value;
+         
+            }
+            
         }
     }
 
