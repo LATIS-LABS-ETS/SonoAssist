@@ -17,9 +17,11 @@
 #include <QGraphicsPixmapItem>
 #include <QtWidgets/QMainWindow>
 
-#include "GazeTracker.h"
-#include "ScreenRecorder.h"
 #include "ui_SonoAssist.h"
+
+#include "GazeTracker.h"
+#include "OSKeyDetector.h"
+#include "ScreenRecorder.h"
 #include "RGBDCameraClient.h"
 #include "ClariusProbeClient.h"
 #include "MetaWearBluetoothClient.h"
@@ -89,6 +91,7 @@ class SonoAssist : public QMainWindow {
 		void on_clarius_no_imu_data(void);
 		void on_new_gaze_point(float, float);
 		void on_new_us_screen_capture(QImage);
+		void on_new_os_key_detected(int);
 
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
@@ -98,10 +101,6 @@ class SonoAssist : public QMainWindow {
 		// other slots
 		void on_udp_port_input_editingFinished(void);
 		void sensor_panel_selection_handler(int row, int column);
-
-	protected:
-
-		void keyPressEvent(QKeyEvent* event);
 
 	private:
 
@@ -145,6 +144,7 @@ class SonoAssist : public QMainWindow {
 
 		std::shared_ptr<RGBDCameraClient> m_camera_client_p;
 		std::shared_ptr<GazeTracker> m_gaze_tracker_client_p;
+		std::shared_ptr<OSKeyDetector> m_key_detector_client_p;
 		std::shared_ptr<ClariusProbeClient> m_us_probe_client_p;
 		std::shared_ptr<ScreenRecorder> m_screen_recorder_client_p;
 		std::shared_ptr<MetaWearBluetoothClient> m_metawear_client_p;

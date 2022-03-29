@@ -100,6 +100,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MetaWearBluetoothClient.cpp" />
     <ClCompile Include="ClariusProbeClient.cpp" />
+    <ClCompile Include="OSKeyDetector.cpp" />
     <ClCompile Include="RGBDCameraClient.cpp" />
     <ClCompile Include="SensorDevice.cpp" />
     <ClCompile Include="SonoAssist.cpp" />
@@ -116,6 +117,7 @@
     <QtRcc Include="SonoAssist.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="OSKeyDetector.h" />
     <ClInclude Include="process_management.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="MetaWearBluetoothClient.h" />

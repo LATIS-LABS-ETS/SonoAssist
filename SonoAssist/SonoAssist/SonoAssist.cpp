@@ -42,6 +42,10 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture, this, &SonoAssist::on_new_us_screen_capture);
     m_sensor_devices.push_back(m_screen_recorder_client_p);
 
+    m_key_detector_client_p = std::make_shared<OSKeyDetector>(m_sensor_devices.size(), "OS key detector", "", log_file_path);
+    connect(m_key_detector_client_p.get(), &OSKeyDetector::key_detected, this, &SonoAssist::on_new_os_key_detected);
+    m_sensor_devices.push_back(m_key_detector_client_p);
+
     // creating the sensor devices ... end
 
     // filling the connection state update counter list
@@ -613,12 +617,12 @@ void SonoAssist::add_debug_text(QString debug_str) {
 /*
 Using the key press handler to detect "a" and "d" presses for the creation and deletion of time markers
 */
-void SonoAssist::keyPressEvent(QKeyEvent* event) {
+void SonoAssist::on_new_os_key_detected(int key) {
 
     if (m_stream_is_active) {
 
-        // adding a time marker
-        if (event->key() == Qt::Key_A) {
+        // adding a time marker7
+        if (key == OS_A_KEY) {
 
             // adding the marker to the display list + json time marker list
             QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) + " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
@@ -631,7 +635,7 @@ void SonoAssist::keyPressEvent(QKeyEvent* event) {
         }
 
         // removing a time marker
-        else if (event->key() == Qt::Key_D) {
+        else if (key == OS_D_KEY) {
 
             // removing the latest time marker
             if (ui.time_marker_list->count() > 0) {
