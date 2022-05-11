@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from skinematics.imus import analytical
 
-from sonopy.video import VideoManager, VideoSource
+from sonopy.video import VideoManager
 from sonopy.file_management import SonoFolderManager
 
 
@@ -13,22 +13,21 @@ class ClariusDataManager():
     gravity = 9.81
     df_time_fields = ["Reception OS time", "Display OS time", "Onboard time"]
 
-    def __init__(self, acquisition_dir_path, avg_data=True, process_data=True):
+    def __init__(self, acquisition_dir_path, imu_available=True):
 
         ''' 
         Parameters
         ----------
         acquisition_dir_path (str) : path to the acquisition directory
-        process_data (bool) : when True, default data processing in the constructor
+        imu_available (bool) : when True, collected IMU data along side the probe images will be processed
         '''
 
         # loading clarius data from the acquisition folder
-        self.process_data = process_data
+        self.imu_available = imu_available
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
         self.clarius_df = self.folder_manager.load_clarius_data()
         self.clarius_video = VideoManager(self.folder_manager["clarius_video"])
 
-        # acquisition count
         self.n_acquisitions = len(self.clarius_df.index)
 
         # converting timestamps from str to numeric (clarius csv data)
@@ -42,13 +41,11 @@ class ClariusDataManager():
         self.linear_accelerations = []
         self.acquisition_rate = None
 
-        # averaging out extra IMU acquisitions
-        self.avg_imu_data()
-
-        if self.process_data :
-
-            # conversions and data collection
-            self.process_imu_data()
+        # averaging and processing the acquired IMU data (if required)
+        if self.imu_available :
+            
+            self._avg_imu_data()
+            self._process_imu_data()
             
             # reconstructing the position with an analytical solution (ignoring orientation)
             # assumes a start in a stationary position and no compensation for drift
@@ -56,7 +53,7 @@ class ClariusDataManager():
                                                   rate=self.acquisition_rate)
 
             
-    def avg_imu_data(self):
+    def _avg_imu_data(self):
 
         ''' Averages IMU acquisitions to get one per US image '''
 
@@ -93,7 +90,7 @@ class ClariusDataManager():
         self.n_acquisitions = len(self.clarius_df.index)
 
 
-    def process_imu_data(self):
+    def _process_imu_data(self):
 
         ''' Applies conversions to IMU data and fills containers '''
 
@@ -177,8 +174,8 @@ class ClariusDataManager():
 
         ''' 
         Returns the US frame and the probe motion for the specified index
-        Acquisition data must be processed in constructor for this to work (process_data = True)
-        time_span = 100000 ~ 2 frames into the future
+        IMU data must be available for this to work (imu_available = True)
+        *time_span = 100000 ~ 2 frames into the future
 
         Parameters
         ----------
@@ -187,7 +184,8 @@ class ClariusDataManager():
 
         Returns
         -------
-        tuple or None: 
+        when imu_available = True, (np.array) : US frame
+        when imu_available = False, tuple or None: 
             0 : (np.array) : US frame
             1 : (tuple) : (dx, dy, dz) position variation (m)
             2 : (tuple) : (droll, dpitch, dyaw) angular variation (degrees)
@@ -198,29 +196,33 @@ class ClariusDataManager():
 
         try:
 
-            # getting data for the provided index
-            us_frame = self.clarius_video[index]
-            cur_pos_data = self.imu_positions[index]
-            cur_acq_data = self.clarius_df.iloc[index]
+            clarius_data = [self.clarius_video[index]]
             
-            # getting data further in time for probe motion calculation
-            fut_index = self.get_nearest_index(cur_acq_data["Display OS time"] + time_span)
-            fut_pos_data = self.imu_positions[fut_index] 
-            fut_acq_data = self.clarius_df.iloc[fut_index]
+            if self.imu_available:
+                
+                # getting current imu data (at index)
+                cur_pos_data = self.imu_positions[index]
+                cur_acq_data = self.clarius_df.iloc[index]
+                
+                # getting imu data further in time for probe motion calculation
+                fut_index = self.get_nearest_index(cur_acq_data["Display OS time"] + time_span)
+                fut_pos_data = self.imu_positions[fut_index] 
+                fut_acq_data = self.clarius_df.iloc[fut_index]
 
-            # calculating the probe motion
-            dx = fut_pos_data[0] - cur_pos_data[0]
-            dy = fut_pos_data[1] - cur_pos_data[1]
-            dz = fut_pos_data[2] - cur_pos_data[2]
-            dyaw = fut_acq_data["yaw"] - cur_acq_data["yaw"]
-            droll = fut_acq_data["roll"] - cur_acq_data["roll"]
-            dpitch = fut_acq_data["pitch"] - cur_acq_data["pitch"]
-        
-            clarius_data = (us_frame, (dx, dy, dz), (droll, dpitch, dyaw))
-
+                # calculating the probe motion
+                dx = fut_pos_data[0] - cur_pos_data[0]
+                dy = fut_pos_data[1] - cur_pos_data[1]
+                dz = fut_pos_data[2] - cur_pos_data[2]
+                dyaw = fut_acq_data["yaw"] - cur_acq_data["yaw"]
+                droll = fut_acq_data["roll"] - cur_acq_data["roll"]
+                dpitch = fut_acq_data["pitch"] - cur_acq_data["pitch"]
+            
+                clarius_data.append((dx, dy, dz))
+                clarius_data.append((droll, dpitch, dyaw))
+              
         except : pass
 
-        return clarius_data
+        return tuple(clarius_data)
 
     
     @staticmethod
@@ -248,4 +250,4 @@ class ClariusDataManager():
         t4 = +1.0 - 2.0 * (ysqr + z * z)
         Z = np.degrees(np.arctan2(t3, t4))
 
-        return X, Y, Z 
+        return X, Y, Z

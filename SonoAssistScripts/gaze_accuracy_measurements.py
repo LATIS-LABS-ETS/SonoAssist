@@ -1,10 +1,9 @@
 '''
 Measures the accuracy of the eye tracker by analyzing the gaze data
 
-
-Usage : 
-
-    python3 gaze_accuracy_measurements.py (path to the acquisition folder)
+Usage
+-----
+python3 gaze_accuracy_measurements.py (path to the acquisition folder)
 '''
 
 import cv2
@@ -13,9 +12,8 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sonopy.gaze import GazeDataManager
 from sonopy.video import VideoManager
-from sonopy.file_management import SonoFolderManager
+from sonopy.gaze import GazeDataManager
 
 
 if __name__ == "__main__":

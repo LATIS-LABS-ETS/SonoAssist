@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.spatial.transform import Rotation as R
 from mpl_toolkits.mplot3d.axes3d import Axes3D
+from scipy.spatial.transform import Rotation as R
 
 from sonopy.file_management import SonoFolderManager
 
@@ -16,18 +16,24 @@ class IMUDataManager:
     # Onboard time : number of milliseconds since epoch (according to the board clock)
     # Reception OS Timer: number of microseconds since epoch 
     df_time_fields = ["Reception OS time", "Onboard time"]
+    
+    quaternion_axes = ["qx", "qy", "qz", "qw"]
+    df_orientation_fields = {"X" : "Pitch", "Y" : "Roll", "Z" : "Yaw"}
 
-    def __init__(self, acquisition_dir_path, avg_data=True, avg_window=0.5):
+
+    def __init__(self, acquisition_dir_path, quaternions=False, avg_data=True, avg_window=0.5):
 
         ''' 
         Parameters
         ----------
         acquisition_dir_path (str) : path to the acquisition directory
-        process_data (bool) : when True, imu data is averaged in (avg_window) intervals
-        acg_window (float): time window in seconds for the averaging
+        quaternions (bool) : when True, entries to express the sensor's orientation in quaternions are added to every sample
+        avg_data (bool) : when True, imu data is averaged in (avg_window) intervals
+        avg_window (float): time window in seconds for the averaging
         '''
 
         self.avg_window = avg_window
+        self.quaternions = quaternions
 
         # loading IMU data
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
@@ -40,10 +46,10 @@ class IMUDataManager:
         # droping initial empty acquisitions
         self.n_acquisitions = len(self.ori_df.index)
 
-        if avg_data: self.avg_imu_data()
+        if avg_data: self._avg_imu_data()
 
 
-    def get_nearest_index(self, target_time, time_col_name="Reception OS time"):
+    def _get_nearest_index(self, target_time, time_col_name="Reception OS time"):
 
         ''' 
         Returns the index associated to the acquisition closest to the provided timestamp
@@ -96,7 +102,7 @@ class IMUDataManager:
         return nearest_index
 
 
-    def avg_imu_data(self, time_col_name="Reception OS time"):
+    def _avg_imu_data(self, time_col_name="Reception OS time"):
 
         ''' Averages the IMU acquisitions over windows of (self.avg_window) seconds in length '''
 
@@ -116,7 +122,7 @@ class IMUDataManager:
             # getting the start and end indexes for the averaging
             ori_start_time += window_size_us
             ori_seg_start_i = ori_seg_end_i
-            ori_seg_end_i = self.get_nearest_index(ori_start_time, time_col_name=time_col_name)
+            ori_seg_end_i = self._get_nearest_index(ori_start_time, time_col_name=time_col_name)
 
             # checking if the end of data was reached
             if ori_seg_end_i >= (self.n_acquisitions - 1):
@@ -150,6 +156,7 @@ class IMUDataManager:
 
 
     def __len__(self):
+        
         return self.n_acquisitions
 
 
@@ -164,25 +171,43 @@ class IMUDataManager:
 
         Returns
         -------
-        (dict) : IMU orientation data
+        (dict) : IMU orientation data (angles are in degrees)
         '''
 
-        indexed_data = None
-
-        if isinstance(key, int):
-
-            if key < self.n_acquisitions and key >= 0 :
-                indexed_data = dict(self.ori_df.iloc[key])
-
-            # index out of range
-            else:
-                raise ValueError("Index is out of range")    
-
-        # making sure the key is a num
-        else:
+        if not isinstance(key, int):
             raise ValueError("Index key has to be an int")
 
+        if not (key < self.n_acquisitions and key >= 0) :
+            raise ValueError("Index is out of range")
+        
+        indexed_data = dict(self.ori_df.iloc[key])
+        
+        # converting orientation fields to quaternions if required
+        if self.quaternions:
+            euler_orientation = [indexed_data[self.df_orientation_fields[axis]] for axis in "XYZ"]
+            quaternion_orientation = R.from_euler('xyz', euler_orientation, degrees=True).as_quat()
+            for i, axis in enumerate(self.quaternion_axes):
+                indexed_data[axis] = quaternion_orientation[i]
+
         return indexed_data
+
+
+    def get_data_at_time(self, target_time):
+        
+        ''' 
+        Returns the orientation data from the closest acquisition from the provided timestamp
+
+        Parameters
+        ----------
+        target_time (int) : timestamp (us)
+
+        Returns
+        -------
+        (dict) : IMU orientation data
+        '''
+        
+        return self[self._get_nearest_index(target_time)]
+
 
 
 class OrientationScene:
@@ -216,10 +241,13 @@ class OrientationScene:
 
 
     def update_dynamic_arrow(self, roll, pitch, yaw):
+        
         self.dynamic_arrow = self.update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
         self.dynamic_arrow_2 = self.update_arrow(self.support_starting_pos, roll, pitch, yaw)
 
+
     def update_static_arrow(self, roll, pitch, yaw):
+        
         self.static_arrow = self.update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
         self.static_arrow_2 = self.update_arrow(self.support_starting_pos, roll, pitch, yaw)
 
@@ -260,9 +288,9 @@ class OrientationScene:
             self.ax.plot([0, self.static_arrow_2[0]],[0, self.static_arrow_2[1]], [0, self.static_arrow_2[2]], '-o', color="blue", ms=4, mew=0.5)
             self.ax.plot([0, static_third_point[0]],[0, static_third_point[1]], [0, static_third_point[2]], '-o', color="blue", ms=4, mew=0.5)
         
-            self.ax.set_xlim(-1, 1)
-            self.ax.set_ylim(-1, 1)
-            self.ax.set_zlim(-1, 1)
+        self.ax.set_xlim(-1, 1)
+        self.ax.set_ylim(-1, 1)
+        self.ax.set_zlim(-1, 1)
 
         plt.draw()
         plt.pause(self.update_pause_time)
