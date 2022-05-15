@@ -4,6 +4,7 @@ import copy
 import os.path
 import pandas as pd
 
+
 class SonoFolderManager:
 
     ''' Allows acces to the different data/files in a SonoAssit recording folder '''

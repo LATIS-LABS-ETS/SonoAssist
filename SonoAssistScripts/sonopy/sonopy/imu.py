@@ -64,9 +64,8 @@ class IMUDataManager:
         (int) : index for the nearest video frame and IMU acquisitions
         '''
 
-        after_index = -1
-        before_index = -1
-        nearest_index = None
+       nearest_index = None
+        after_index, before_index = -1, -1
 
         # getting the before and after indexes
         for i in range(self.n_acquisitions):
@@ -75,29 +74,23 @@ class IMUDataManager:
                 before_index = i-1
                 break
         
-        # specified time is before acquisition start
-        if (before_index == -1) and (after_index == 0) : 
-            nearest_index = 0
-        # specified time is after acquisition stop
-        elif (before_index == -1) and (after_index == -1):
-            nearest_index = self.n_acquisitions - 1
+        # handling the edge cases
+        if (before_index == -1) and (after_index == 0): nearest_index = 0
+        elif (before_index == -1) and (after_index == -1): nearest_index = self.n_acquisitions - 1
 
         # specified time is during acquisition
+        # choosing between the valid indexes before and after the specified time
         else:
 
             after_time = self.ori_df.loc[after_index, time_col_name]
             before_time = self.ori_df.loc[before_index, time_col_name]
-    
-            # choosing between the valid indexes before and after the specified time
-            if before_time == target_time:
-                nearest_index = before_index 
-            else :
-                after_index = before_index + 1
-                after_time = self.ori_df.loc[after_index, time_col_name]
-                if (target_time - before_time) <= (after_time - target_time):
-                    nearest_index = before_index
-                else:
-                    nearest_index = after_index
+
+            if before_time == target_time: nearest_index = before_index
+
+            elif (target_time - before_time) <= (after_time - target_time):
+                nearest_index = before_index
+
+            else: nearest_index = after_index
         
         return nearest_index
 
