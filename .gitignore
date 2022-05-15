@@ -12,6 +12,9 @@
 /Deploy/
 /Dependencies/
 
+# python env
+/SonoAssistScripts/env/
+
 ##################################################################################################################### C++ related files
 
 # Prerequisites

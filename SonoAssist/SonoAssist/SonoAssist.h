@@ -26,6 +26,7 @@
 #include "ClariusProbeClient.h"
 #include "MetaWearBluetoothClient.h"
 
+#include "SensorDevice.h"
 #include "process_management.h"
 
 #define RED_TEXT "#cc0000"

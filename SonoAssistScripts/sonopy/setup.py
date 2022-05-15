@@ -10,6 +10,7 @@ setuptools.setup(
     content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
+        'redis',
         'numpy',
         'pandas',
         'imutils',

@@ -62,17 +62,17 @@ class GazeDataManager():
         self.gaze_point_gaussians = []
         
         # data processing steps
-        self.calculate_os_acquisition_time()
-        self.calculate_avg_position_stats()
-        self.correct_gaze_drift()
+        self._calculate_os_acquisition_time()
+        self._calculate_avg_position_stats()
+        self._correct_gaze_drift()
 
         # filtering gaze data according to speed and position
         if self.filter_gaze_data:
-            self.filter_gaze_position()
-            self.filter_gaze_speed()
+            self._filter_gaze_position()
+            self._filter_gaze_speed()
 
 
-    def calculate_os_acquisition_time(self):
+    def _calculate_os_acquisition_time(self):
 
         ''' Computes the timestamp at which the data (head and gaze) was acquired for the OS domain '''
         
@@ -85,7 +85,7 @@ class GazeDataManager():
                 (self.head_pos_data.loc[head_i, "Reception tobii time"] - self.head_pos_data.loc[head_i, "Onboard time"]))
 
 
-    def correct_gaze_drift(self):
+    def _correct_gaze_drift(self):
 
         ''' Applying x and y offset values for gaze drift correction '''
             
@@ -110,14 +110,14 @@ class GazeDataManager():
                 self.gaze_data.loc[gaze_i ,"Y"] = corrected_y_rel
 
 
-    def calculate_avg_position_stats(self):
+    def _calculate_avg_position_stats(self):
 
         ''' 
         Calculates : 
             - user's average head position (m)
             - distance (m) associated with 1 degree of visual angle for each head position
             - 2D gaussian distribution representing a gaze point for each head position
-            * head position averages are calculated for every 10% slice of data 
+            * head position averages are calculated for every 10% slice of data
         '''
 
         # calculating the size of the slices for averaging
@@ -171,7 +171,7 @@ class GazeDataManager():
             self.gaze_point_gaussians.append(gaussian_data)
 
 
-    def filter_gaze_speed(self):
+    def _filter_gaze_speed(self):
 
         ''' Removes gaze points associated with a gaze speed higher than (config -> max_gaze_speed) '''
 
@@ -213,7 +213,7 @@ class GazeDataManager():
         self.n_gaze_acquisitions = len(self.gaze_data.index)
 
 
-    def filter_gaze_position(self):
+    def _filter_gaze_position(self):
 
         ''' Removing gaze points out of bounds of the US image display '''
 
@@ -244,10 +244,36 @@ class GazeDataManager():
         self.n_gaze_acquisitions = len(self.gaze_data.index)
 
 
+    def get_gaze_at_time(self, timestamp, time_span=100000):
+            
+        ''' 
+        Returns the collected gaze data around the provided timestamp
+
+        Parameters
+        ----------
+        target_time (int) : timestamp (us)
+
+        Returns
+        -------
+        list((dict)) : gaze data for the relevant samples
+        '''
+
+        gaze_data = []
+        lower_bound_time = timestamp + time_span
+        upper_bound_time = timestamp - time_span
+        gaze_point_indexes = self.gaze_data.index[(self.gaze_data[self.os_acquisition_time] <= lower_bound_time) & 
+                                                  (self.gaze_data[self.os_acquisition_time] >= upper_bound_time)]
+
+        for gaze_i in gaze_point_indexes:
+            gaze_data.append(dict(self.gaze_data.iloc[gaze_i]))
+        
+        return gaze_data
+
+
     def generate_saliency_map(self, timestamp, time_span=100000):
 
         ''' 
-        Generates a saliency map with the gaze data arround the provided timestamp.
+        Generates a saliency map with the gaze data around the provided timestamp.
         This function should only be called if gaze data was filtered beforehand.
         A saliency map requires a minimum of (config -> saliency_map_min_points) gaze points.
 
@@ -276,7 +302,7 @@ class GazeDataManager():
         # making sure valid gaze data is available
         if len(gaze_point_indexes) > self.config_manager["saliency_map_min_points"]:
 
-            # getting the proper gaussian template
+            # getting the proper gaussian template (first one to come after the target time)
             gaussian_point = self.gaze_point_gaussians[-1][0]
             for gaussian_data in self.gaze_point_gaussians:
                 if timestamp <= gaussian_data[1]:

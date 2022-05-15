@@ -234,7 +234,7 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
 
 void SonoAssist::on_sensor_connect_button_clicked(){
     
-    if (!m_stream_is_active && m_config_is_loaded && create_output_folder()) {
+    if (!m_stream_is_active && m_config_is_loaded) {
 
         // making sure all devices are disconnected (for proper state update check)
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
@@ -350,7 +350,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     int n_used_sensors = 0;
 
     // making sure the device isnt already streaming
-    if (!m_stream_is_active) {
+    if (!m_stream_is_active && create_output_folder()) {
 
         // if all used devices are ready, start the acquisition
         if (check_device_connections()) {
@@ -949,24 +949,31 @@ std::string SonoAssist::create_log_folder(void) {
 
 bool SonoAssist::create_output_folder() {
 
+    std::wstring stemp;
     bool valid_output_folder = false;
-    std::string output_folder_path = ui.output_folder_input->text().toStdString();
 
-    // converting str to proper windows format
-    // creating the output folder and updating the clients
+    std::string parent_folder_path = ui.output_folder_input->text().toStdString();
+    std::string output_folder_path = parent_folder_path + "/acquisition_" + SensorDevice::get_micro_timestamp();
+
+    // making sure the parent folder is created
     // https://stackoverflow.com/questions/27220/how-to-convert-stdstring-to-lpcwstr-in-c-unicode
-    std::wstring stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
-    if (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
+    stemp = std::wstring(parent_folder_path.begin(), parent_folder_path.end());
+    valid_output_folder = CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError(); 
 
-        valid_output_folder = true;
+    // creating the output folder (in the parent folder)
+    stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
+    valid_output_folder *= (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError());
+    
+    // updating the devices
+    if (valid_output_folder) {
+        
         m_output_folder_path = output_folder_path;
 
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             m_sensor_devices[i]->set_output_file(output_folder_path);
         }
 
-    }
-    else {
+    } else {
         valid_output_folder = false;
         QString title = "Unable to create output folder";
         QString message = "The application failed to create the output folder for data files.";
