@@ -14,7 +14,7 @@ ScreenRecorder::ScreenRecorder(int device_id, std::string device_description, st
 
 void ScreenRecorder::connect_device() {
 
-	if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
+	if (m_config_loaded && m_sensor_used) {
 
         // defining the display dimensions
         int preview_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
@@ -48,7 +48,7 @@ void ScreenRecorder::disconnect_device() {
 
 void ScreenRecorder::start_stream() {
 
-    if (m_device_connected && !m_device_streaming) {
+    if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 
         // opening output files
         m_output_index_file.open(m_output_index_file_str, std::fstream::app);

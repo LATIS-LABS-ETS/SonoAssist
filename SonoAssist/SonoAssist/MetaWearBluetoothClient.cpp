@@ -173,7 +173,7 @@ MetaWearBluetoothClient::~MetaWearBluetoothClient() {
 void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
-	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
+	if (m_config_loaded && m_sensor_used) {
 		
 		clear_metawear_connection();
 
@@ -199,7 +199,7 @@ void MetaWearBluetoothClient::disconnect_device() {
 void MetaWearBluetoothClient::start_stream() {
 
 	// making sure device is ready to stream
-	if (m_device_connected && !m_device_streaming) {
+	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 
 		// opening the output files
 		set_output_file(m_output_folder_path);

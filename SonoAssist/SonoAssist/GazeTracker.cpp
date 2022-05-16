@@ -124,7 +124,7 @@ void GazeTracker::connect_device(void) {
 	char url[256] = { 0 };
 
 	// making sure requirements are filled
-	if (m_tobii_api_valid && m_config_loaded && m_output_file_loaded && m_sensor_used) {
+	if (m_tobii_api_valid && m_config_loaded && m_sensor_used) {
 
 		// making sure device is disconnected
 		tobii_head_pose_unsubscribe(m_tobii_device);
@@ -169,7 +169,7 @@ void GazeTracker::disconnect_device(void) {
 void GazeTracker::start_stream() {
 
 	// making sure requirements are filled
-	if (m_device_connected && !m_device_streaming) {
+	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
 		// opening the output files
 		set_output_file(m_output_folder_path);

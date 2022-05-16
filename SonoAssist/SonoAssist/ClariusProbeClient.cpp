@@ -60,7 +60,7 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 void ClariusProbeClient::connect_device() {
 
     // making sure requirements are filled
-    if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
+    if (m_config_loaded && m_sensor_used) {
 
         clariusDestroyListener();
 
@@ -104,7 +104,7 @@ void ClariusProbeClient::disconnect_device() {
 void ClariusProbeClient::start_stream() {
     
     // making sure requirements are filled
-    if (m_device_connected && !m_device_streaming) {
+    if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
         
         // preparing the US image callback
         m_imu_missing = false;
