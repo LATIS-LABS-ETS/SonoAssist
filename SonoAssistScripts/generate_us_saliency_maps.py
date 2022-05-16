@@ -21,11 +21,11 @@ if __name__ == "__main__":
     config_file_path = ""
     output_video_path = ""
     '''
-    ex :  
+    ex : 
     config_file_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAssist/SonoAssistScripts/config.json"
     output_video_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAssist/SonoAssistScripts/us_video.avi"
     '''
-
+    
     # parsing script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("acquisition_dir", help="Directory containing the acquisition files")
