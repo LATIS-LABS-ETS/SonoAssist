@@ -8,7 +8,7 @@ This project is composed of two types of software components
 
 ## Acquisition software
 
-The SonoAssist acquisition software is compatible with Windows 10 and can the installer can be found in the releases. 
+The SonoAssist acquisition software is compatible with Windows 10 and 11, and the installer can be found in the releases. 
 
 Note that the configuration parameters for the acquisition software are detailed in the [wiki](https://github.com/OneWizzardBoi/SonoAsist/wiki/Acquisition-software-configuration).
 
