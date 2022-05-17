@@ -18,7 +18,7 @@ class GazeDataManager():
     os_acquisition_time = "OS acquisition time"
 
 
-    def __init__(self, acquisition_dir_path, config_file_path, filter_gaze_data=True):
+    def __init__(self, acquisition_dir_path, config_file_path="", config_manager=None, filter_gaze_data=True):
 
         ''' 
         Parameters
@@ -26,35 +26,41 @@ class GazeDataManager():
         acquisition_dir_path (str) : path to the acquisition directory
         config_file_path (str) : path to the configuration (.json) file
         filter_gaze_data (bool) : when true, the loaded gaze data is filtered in the constructor (speed and position)
+        config_manager (sonopy.Configuration Manager) : predefine config manager for the class to handle, instead of loading from the files
         '''
 
         self.filter_gaze_data = filter_gaze_data
 
         # loading configurations
-        self.config_manager = ConfigurationManager(config_file_path, acquisition_dir_path)
+        if not config_manager is None:
+            self.config_manager = config_manager
+        else:
+            self.config_manager = ConfigurationManager(config_file_path, acquisition_dir_path)
+        
         self.saliency_map_width = self.config_manager["saliency_map_width"]
         self.saliency_point_max_reach = self.config_manager["saliency_point_max_reach"]
 
         # loading data from the acquisition folder
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
         (self.gaze_data, self.head_pos_data) = self.folder_manager.load_eye_tracker_data()
-
+        
         # calulating saliency map generation params
         self.saliency_size_factor = self.saliency_map_width / self.config_manager["display_width"]
         self.saliency_map_height = int(self.config_manager["display_height"] * self.saliency_size_factor)
         self.saliency_point_px_range = int(self.saliency_point_max_reach / self.saliency_size_factor)
 
         # converting timestamps from str to numeric
+        if not self.head_pos_data is None:
+            self.head_pos_data["Reception OS time"] = pd.to_numeric(self.head_pos_data["Reception OS time"], errors="coerce")
+            self.head_pos_data["Reception tobii time"] = pd.to_numeric(self.head_pos_data["Reception tobii time"], errors="coerce")
+            self.head_pos_data["Onboard time"] = pd.to_numeric(self.head_pos_data["Onboard time"], errors="coerce")
         self.gaze_data["Reception OS time"] = pd.to_numeric(self.gaze_data["Reception OS time"], errors="coerce")
         self.gaze_data["Reception tobii time"] = pd.to_numeric(self.gaze_data["Reception tobii time"], errors="coerce")
         self.gaze_data["Onboard time"] = pd.to_numeric(self.gaze_data["Onboard time"], errors="coerce")
-        self.head_pos_data["Reception OS time"] = pd.to_numeric(self.head_pos_data["Reception OS time"], errors="coerce")
-        self.head_pos_data["Reception tobii time"] = pd.to_numeric(self.head_pos_data["Reception tobii time"], errors="coerce")
-        self.head_pos_data["Onboard time"] = pd.to_numeric(self.head_pos_data["Onboard time"], errors="coerce")
 
         # getting length of data
         self.n_gaze_acquisitions = len(self.gaze_data.index)
-        self.n_head_acquisitions = len(self.head_pos_data.index)
+        self.n_head_acquisitions = len(self.head_pos_data.index) if not (self.head_pos_data is None) else 0
 
         # defining data containers
         self.avg_head_positions = []
@@ -80,9 +86,10 @@ class GazeDataManager():
             self.gaze_data.loc[gaze_i ,self.os_acquisition_time] = (self.gaze_data.loc[gaze_i, "Reception OS time"] - 
                 (self.gaze_data.loc[gaze_i, "Reception tobii time"] - self.gaze_data.loc[gaze_i, "Onboard time"]))
 
-        for head_i in range(self.n_head_acquisitions):
-            self.head_pos_data.loc[head_i, self.os_acquisition_time] = (self.head_pos_data.loc[head_i, "Reception OS time"] - 
-                (self.head_pos_data.loc[head_i, "Reception tobii time"] - self.head_pos_data.loc[head_i, "Onboard time"]))
+        if not self.head_pos_data is None:
+            for head_i in range(self.n_head_acquisitions):
+                self.head_pos_data.loc[head_i, self.os_acquisition_time] = (self.head_pos_data.loc[head_i, "Reception OS time"] - 
+                    (self.head_pos_data.loc[head_i, "Reception tobii time"] - self.head_pos_data.loc[head_i, "Onboard time"]))
 
 
     def _correct_gaze_drift(self):
@@ -118,11 +125,16 @@ class GazeDataManager():
             - distance (m) associated with 1 degree of visual angle for each head position
             - 2D gaussian distribution representing a gaze point for each head position
             * head position averages are calculated for every 10% slice of data
+            * when no head position data is available, the avgs are set to "default_head_position" for 10% slices of
+              the gaze data.
         '''
 
         # calculating the size of the slices for averaging
         n_slices = 100 // self.config_manager["head_data_slice_percentage"]
-        slice_size = self.n_head_acquisitions // n_slices
+        if not self.head_pos_data is None:
+            slice_size = self.n_head_acquisitions // n_slices
+        else:
+            slice_size = self.n_gaze_acquisitions // n_slices
 
         # calulating avg head positions
         for slice_i in range(n_slices):
@@ -130,13 +142,27 @@ class GazeDataManager():
             avg_data = [None, None]
             start_index = slice_i * slice_size
 
+            # handling the last slice
             if slice_i == n_slices-1:
-                avg_data[0] = np.mean(self.head_pos_data.loc[start_index : , "Z"]) / 1000
-                avg_data[1] = self.head_pos_data.loc[self.n_head_acquisitions-1, self.os_acquisition_time]
+                
+                if not self.head_pos_data is None:
+                    avg_data[0] = np.mean(self.head_pos_data.loc[start_index : , "Z"]) / 1000
+                    avg_data[1] = self.head_pos_data.loc[self.n_head_acquisitions-1, self.os_acquisition_time]
+                else:
+                    avg_data[0] = self.config_manager["default_head_position"]
+                    avg_data[1] = self.gaze_data.loc[self.n_gaze_acquisitions-1, self.os_acquisition_time]
+            
+            # handling regular slices
             else :
-                end_index = start_index + slice_size
-                avg_data[0] = np.mean(self.head_pos_data.loc[start_index : end_index, "Z"]) / 1000
-                avg_data[1] = self.head_pos_data.loc[end_index, self.os_acquisition_time]
+                
+                if not self.head_pos_data is None:
+                    end_index = start_index + slice_size
+                    avg_data[0] = np.mean(self.head_pos_data.loc[start_index : end_index, "Z"]) / 1000
+                    avg_data[1] = self.head_pos_data.loc[end_index, self.os_acquisition_time]
+                else:
+                    end_index = start_index + slice_size
+                    avg_data[0] = self.config_manager["default_head_position"]
+                    avg_data[1] = self.gaze_data.loc[end_index, self.os_acquisition_time]
 
             self.avg_head_positions.append(tuple(avg_data))
 
@@ -275,7 +301,6 @@ class GazeDataManager():
         ''' 
         Generates a saliency map with the gaze data around the provided timestamp.
         This function should only be called if gaze data was filtered beforehand.
-        A saliency map requires a minimum of (config -> saliency_map_min_points) gaze points.
 
         Parameters
         ----------
@@ -284,10 +309,8 @@ class GazeDataManager():
 
         Returns
         -------
-        (np.array or None) : saliency map or None if no gaze data is near the provided timestamp
+        (np.array) : saliency map
         '''
-
-        saliency_map = None
 
         # making sure gaze data was filtered
         if not self.filter_gaze_data:
@@ -300,7 +323,8 @@ class GazeDataManager():
                                                   (self.gaze_data[self.os_acquisition_time] >= upper_bound_time)]
 
         # making sure valid gaze data is available
-        if len(gaze_point_indexes) > self.config_manager["saliency_map_min_points"]:
+        saliency_map = np.zeros((self.saliency_map_height, self.saliency_map_width))
+        if len(gaze_point_indexes) > 0:
 
             # getting the proper gaussian template (first one to come after the target time)
             gaussian_point = self.gaze_point_gaussians[-1][0]
@@ -310,7 +334,6 @@ class GazeDataManager():
                     break
             
             # generating the saliency map
-            saliency_map = np.zeros((self.saliency_map_height, self.saliency_map_width))
             for gaze_i in gaze_point_indexes:
 
                 # getting the top left corner of the gaussian in saliency map coordinates

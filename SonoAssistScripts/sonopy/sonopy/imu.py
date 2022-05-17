@@ -64,7 +64,7 @@ class IMUDataManager:
         (int) : index for the nearest video frame and IMU acquisitions
         '''
 
-       nearest_index = None
+        nearest_index = None
         after_index, before_index = -1, -1
 
         # getting the before and after indexes

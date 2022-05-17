@@ -22,7 +22,7 @@ class ConfigurationManager():
 
         self.config_data = None
 
-        # laoding config from sources
+        # loading config from sources
         self.load_config_file()
         if acquisition_dir_path is not None: 
             self.load_acquisition_output_file()
@@ -47,7 +47,7 @@ class ConfigurationManager():
 
     def __getitem__(self, key):
 
-        ''' Short cut for reading config params '''
+        ''' Shortcut for reading config params '''
 
         if isinstance(key, str):
             return self.config_data[key]
@@ -57,7 +57,7 @@ class ConfigurationManager():
 
     def __setitem__(self, key, value):
 
-        ''' Short cut for writting config params '''
+        ''' Shortcut for writting config params '''
 
         if isinstance(key, str):
             self.config_data[key] = value
@@ -67,7 +67,7 @@ class ConfigurationManager():
 
     def __contains__(self, key):
 
-        ''' Short cut for membership check ''' 
+        ''' Shortcut for membership check ''' 
         
         if isinstance(key, str):
             return key in self.config_data

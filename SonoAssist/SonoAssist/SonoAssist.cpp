@@ -1034,20 +1034,18 @@ bool SonoAssist::load_config_file(QString param_file_path) {
 
 void SonoAssist::write_output_params(void) {
 
-    // making sure there is data to save
-    if (!m_output_params.isEmpty()) {
-    
-        // opening the output file
-        QString output_file_path = QString(m_output_folder_path.c_str()) + "/sono_assist_output_params.json";
-        QFile output_file(output_file_path);
+    // opening the output file
+    QString output_file_path = QString(m_output_folder_path.c_str()) + "/sono_assist_output_params.json";
+    QFile output_file(output_file_path);
 
-        // writing the output params
-        if (output_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate))
-            output_file.write(QJsonDocument(m_output_params).toJson());
+    // writing the output params
+    if (output_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate))
+        output_file.write(QJsonDocument(m_output_params).toJson());
+    output_file.close();
 
-        output_file.close();
-
-    }
+    // clearing the time markers
+    m_time_markers_json = QJsonArray();
+    m_output_params["time_markers"] = m_time_markers_json;
 
 }
 

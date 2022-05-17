@@ -2,7 +2,6 @@ import time
 from enum import Enum
 
 import cv2
-import imutils
 import numpy as np
 import pyrealsense2 as rs
 
