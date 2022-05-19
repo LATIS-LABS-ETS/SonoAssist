@@ -207,19 +207,24 @@ class OrientationScene:
 
     ''' Manages the display of an IMU's orientation '''
 
-    def __init__(self, update_pause_time=0.05, display_triangles=False):
+    # us plane position when the probe is clipped to the mount
+    arrow_starting_pos = [-1 ,0 , 0]
+    support_starting_pos = [-1, 0.25, 0]
+
+    def __init__(self, update_pause_time=0.05, display_triangles=False, fig_title="IMU orientation"):
 
         '''
+        Parameters
+        ----------
         update_pause_time (float) : time (in seconds) between graphic updates
+        display_triangles (bool) : when True, a plane (3 arrows) is displayed instead of an axis (1 arrow)
+        fig_title (string) : title to be set for the animated figure
         '''
 
         self.display_triangles = display_triangles
         self.update_pause_time = update_pause_time
 
         # defining the initial state of the display arrows
-        # the base of the arrows / vectors are at the [0,0,0] point
-        self.arrow_starting_pos = [0 ,0 , 1]
-        self.support_starting_pos = [0.25, 0, 1]
         self.static_arrow = self.arrow_starting_pos
         self.dynamic_arrow = self.arrow_starting_pos
 
@@ -229,23 +234,12 @@ class OrientationScene:
 
         # setting up the display and first display
         self.fig = plt.figure()
+        self.fig.suptitle(fig_title, fontsize=16)
         self.ax = Axes3D(self.fig)
         self.fig.show()
 
 
-    def update_dynamic_arrow(self, roll, pitch, yaw):
-        
-        self.dynamic_arrow = self.update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
-        self.dynamic_arrow_2 = self.update_arrow(self.support_starting_pos, roll, pitch, yaw)
-
-
-    def update_static_arrow(self, roll, pitch, yaw):
-        
-        self.static_arrow = self.update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
-        self.static_arrow_2 = self.update_arrow(self.support_starting_pos, roll, pitch, yaw)
-
-
-    def update_arrow(self, starting_pos, roll, pitch, yaw):
+    def _update_arrow(self, starting_pos, roll, pitch, yaw):
 
         ''' 
         Applying a (roll, pitch, yaw) rotation to the provided vector 
@@ -254,11 +248,27 @@ class OrientationScene:
 
         r_mat = R.from_euler('XYZ', [roll, pitch, yaw], degrees=True)
         return r_mat.apply(starting_pos)
-            
+
+
+    def update_dynamic_arrow(self, roll, pitch, yaw):
+        
+        ''' Provided angles must be in degrees '''
+
+        self.dynamic_arrow = self._update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
+        self.dynamic_arrow_2 = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)
+
+
+    def update_static_arrow(self, roll, pitch, yaw):
+        
+        ''' Provided angles must be in degrees '''
+
+        self.static_arrow = self._update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
+        self.static_arrow_2 = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)
+
 
     def update_display(self):
 
-        ''' Updating the position of the arrows on the display '''
+        ''' Updates the position of the arrows on the display '''
 
         plt.cla()
 
