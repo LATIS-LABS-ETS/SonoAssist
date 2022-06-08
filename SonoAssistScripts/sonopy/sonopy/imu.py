@@ -202,6 +202,19 @@ class IMUDataManager:
         return self[self._get_nearest_index(target_time)]
 
 
+    @staticmethod        
+    def quaternion_multiply(quaternion1, quaternion0):
+    
+        ''' Utility function for multiplying quaternions '''
+    
+        # https://stackoverflow.com/questions/39000758/how-to-multiply-two-quaternions-by-python-or-numpy
+        x0, y0, z0, w0 = quaternion0
+        x1, y1, z1, w1 = quaternion1
+        return np.array([x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
+                        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
+                         x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0, 
+                        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0], dtype=np.float64)
+
 
 class OrientationScene:
 
