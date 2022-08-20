@@ -224,29 +224,37 @@ class OrientationScene:
     arrow_starting_pos = [-1 ,0 , 0]
     support_starting_pos = [-1, 0.25, 0]
 
-    def __init__(self, update_pause_time=0.05, display_triangles=False, fig_title="IMU orientation"):
+    # defining arrow color (up to 3 ... then requires override)
+    arrow_colors = ["#a83232", "#71a832", "#8e32a8"]
+
+    def __init__(self, n_dynamic_arrows=1, update_pause_time=0.05, display_triangles=False, fig_title="IMU orientation"):
 
         '''
         Parameters
         ----------
+        n_dynamic_arrows (int) : number of dynamic arrows drawn in the scene
         update_pause_time (float) : time (in seconds) between graphic updates
         display_triangles (bool) : when True, a plane (3 arrows) is displayed instead of an axis (1 arrow)
         fig_title (string) : title to be set for the animated figure
         '''
 
+        self.n_dynamic_arrows = n_dynamic_arrows
         self.display_triangles = display_triangles
         self.update_pause_time = update_pause_time
 
-        # defining the initial state of the display arrows
-        self.static_arrow = self.arrow_starting_pos
-        self.dynamic_arrow = self.arrow_starting_pos
+        # defining the dynamic and static arrows
+        # the main arrows are the center arrows and the support arrows are slanted (they help define a plain)
 
-        # defining arrows parallel to the display ones (to define a plane)
-        self.static_arrow_2 = self.support_starting_pos
-        self.dynamic_arrow_2 = self.support_starting_pos
+        self.static_arrow = self.arrow_starting_pos.copy()
+        self.static_support_arrow = self.support_starting_pos.copy()
 
+        self.dynamic_arrows, self.dynamic_support_arrows = [], []
+        for _ in range(self.n_dynamic_arrows):
+            self.dynamic_arrows.append(self.arrow_starting_pos.copy())
+            self.dynamic_support_arrows.append(self.support_starting_pos.copy())            
+        
         # setting up the display and first display
-        self.fig = plt.figure()
+        self.fig = plt.figure(figsize=(8, 8))
         self.fig.suptitle(fig_title, fontsize=16)
         self.ax = Axes3D(self.fig)
         self.fig.show()
@@ -263,12 +271,15 @@ class OrientationScene:
         return r_mat.apply(starting_pos)
 
 
-    def update_dynamic_arrow(self, roll, pitch, yaw):
+    def update_dynamic_arrow(self, roll, pitch, yaw, index=0):
         
         ''' Provided angles must be in degrees '''
 
-        self.dynamic_arrow = self._update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
-        self.dynamic_arrow_2 = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)
+        if index < 0 or index >= self.n_dynamic_arrows:
+            raise ValueError("Invalid arrow index provided.")
+
+        self.dynamic_arrows[index] = self._update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
+        self.dynamic_support_arrows[index] = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)
 
 
     def update_static_arrow(self, roll, pitch, yaw):
@@ -276,7 +287,7 @@ class OrientationScene:
         ''' Provided angles must be in degrees '''
 
         self.static_arrow = self._update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
-        self.static_arrow_2 = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)
+        self.static_support_arrow = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)
 
 
     def update_display(self):
@@ -285,23 +296,30 @@ class OrientationScene:
 
         plt.cla()
 
-        # plotting arrows or triangles
+        # only plotting the cental arrows
         if not self.display_triangles:
-            self.ax.plot([0, self.dynamic_arrow[0]], [0, self.dynamic_arrow[1]], [0, self.dynamic_arrow[2]], "-o", color="#0331fc", ms=4, mew=0.5)
-            self.ax.plot([0, self.static_arrow[0]],[0, self.static_arrow[1]], [0, self.static_arrow[2]], '-o', color="#000000")
+            self.ax.plot([0, self.static_arrow[0]],[0, self.static_arrow[1]], [0, self.static_arrow[2]], '-o', color="blue")
+            for a_i in range(self.n_dynamic_arrows):
+                self.ax.plot([0, self.dynamic_arrows[a_i][0]], [0, self.dynamic_arrows[a_i][1]], [0, self.dynamic_arrows[a_i][2]],
+                             "-o", color=self.arrow_colors[a_i], ms=4, mew=0.5)
         
+        # plotting 3 arrows (triangles)
         else:
 
-            # plotting the dynamic arrows
-            dynamic_third_point = [2 * self.dynamic_arrow[i] - self.dynamic_arrow_2[i] for i in range(3)]
-            self.ax.plot([0, self.dynamic_arrow[0]], [0, self.dynamic_arrow[1]], [0, self.dynamic_arrow[2]], "-o", color="orange", ms=4, mew=0.5)
-            self.ax.plot([0, self.dynamic_arrow_2[0]],[0, self.dynamic_arrow_2[1]], [0, self.dynamic_arrow_2[2]], '-o', color="orange", ms=4, mew=0.5)
-            self.ax.plot([0, dynamic_third_point[0]],[0, dynamic_third_point[1]], [0, dynamic_third_point[2]], '-o', color="orange", ms=4, mew=0.5)
+            # plotting the dynamic triangles
+            for a_i in range(self.n_dynamic_arrows):
+                dynamic_third_point = [2 * self.dynamic_arrows[a_i][i] - self.dynamic_support_arrows[a_i][i] for i in range(3)]
+                self.ax.plot([0, self.dynamic_arrows[a_i][0]], [0, self.dynamic_arrows[a_i][1]], [0, self.dynamic_arrows[a_i][2]], 
+                             "-o", color=self.arrow_colors[a_i], ms=4, mew=0.5)
+                self.ax.plot([0, self.dynamic_support_arrows[a_i][0]],[0, self.dynamic_support_arrows[a_i][1]], [0, self.dynamic_support_arrows[a_i][2]],
+                             '-o', color=self.arrow_colors[a_i], ms=4, mew=0.5)
+                self.ax.plot([0, dynamic_third_point[0]],[0, dynamic_third_point[1]], [0, dynamic_third_point[2]],
+                             '-o', color=self.arrow_colors[a_i], ms=4, mew=0.5)
             
-            # plotting the static arrows
-            static_third_point = [2 * self.static_arrow[i] - self.static_arrow_2[i] for i in range(3)]
+            # plotting the static triangle
+            static_third_point = [2 * self.static_arrow[i] - self.static_support_arrow[i] for i in range(3)]
             self.ax.plot([0, self.static_arrow[0]], [0, self.static_arrow[1]], [0, self.static_arrow[2]], "-o", color="blue", ms=4, mew=0.5)
-            self.ax.plot([0, self.static_arrow_2[0]],[0, self.static_arrow_2[1]], [0, self.static_arrow_2[2]], '-o', color="blue", ms=4, mew=0.5)
+            self.ax.plot([0, self.static_support_arrow[0]],[0, self.static_support_arrow[1]], [0, self.static_support_arrow[2]], '-o', color="blue", ms=4, mew=0.5)
             self.ax.plot([0, static_third_point[0]],[0, static_third_point[1]], [0, static_third_point[2]], '-o', color="blue", ms=4, mew=0.5)
         
         self.ax.set_xlim(-1, 1)
