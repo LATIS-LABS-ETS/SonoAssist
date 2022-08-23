@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SENSORDEVICE_h
+#define SENSORDEVICE_h
 
 #include <map>
 #include <string>
@@ -9,14 +10,15 @@
 #include <QDebug>
 #include <QObject>
 
-#include <cpp_redis/cpp_redis>
+#include <opencv2/opencv.hpp>
+#include <sw/redis++/redis++.h>
 
-#define REDIS_TIMEOUT 500
+#define REDIS_TIMEOUT 200
 
 typedef std::map<std::string, std::string> config_map;
 
 /*
-* Interface class for the implementation of sensor devices
+* Interface for the implementation of sensor devices
 *
 * Classes which communicate with sesnors to pull data from them must implement this interface.
 * It provides practical functions and public functions which will allow simple integration to the UI.
@@ -52,9 +54,10 @@ class SensorDevice : public QObject {
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
 		// redis communication functions
-		void connect_to_redis(void);
+		void connect_to_redis(std::vector<std::string>&&);
 		void disconnect_from_redis(void);
-		void write_to_redis(std::string data_str);
+		void write_str_to_redis(std::string, std::string);
+		void write_img_to_redis(std::string, cv::Mat&);
 
 		// helper functions
 		void write_debug_output(QString);
@@ -92,13 +95,14 @@ class SensorDevice : public QObject {
 		// redis output attributes
 		bool m_redis_state = false;
 		std::string m_redis_state_entry;
-		std::string m_redis_entry;
-		cpp_redis::client m_redis_client;
-		int m_redis_rate_div = 2;
+		int m_redis_rate_div = 1;
 		int m_redis_data_count = 1;
-
+		std::unique_ptr<sw::redis::Redis> m_redis_client_p;
+	
 		// output writing vars
 		std::ofstream m_log_file;
 		std::string m_output_folder_path;
 
 };
+
+#endif

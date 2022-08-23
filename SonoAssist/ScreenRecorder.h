@@ -1,15 +1,15 @@
-#pragma once
+#ifndef SCREENRECORDER_H
+#define SCREENRECORDER_H
 
-#include "main.h"
 #include "SensorDevice.h"
 
 #include <string>
 #include <thread>
 #include <chrono>
 #include <fstream>
+#include <Windows.h>
 
 #include <QImage>
-
 #include <opencv2/opencv.hpp>
 
 // SR_PREVIEW_RESIZE_FACTOR : to fit a (360 x 640) px display
@@ -36,11 +36,6 @@ class ScreenRecorder : public SensorDevice {
 		
 		// threaded collection function
 		void collect_window_captures(void);
-
-		// custom functions to connect and write acquired data to redis
-		void connect_to_redis(void);
-		void write_to_redis(std::string) {};
-		void write_data_to_redis(cv::Mat&);
 
 		// utility functions
 		void hwnd2mat(void);
@@ -75,8 +70,9 @@ class ScreenRecorder : public SensorDevice {
 		// video output vars
 		std::unique_ptr<cv::VideoWriter> m_video;
 
-		// custom redis entry
+		// redis entry
 		std::string m_redis_img_entry;
 		
 };
 
+#endif
