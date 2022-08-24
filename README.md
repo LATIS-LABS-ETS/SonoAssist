@@ -9,7 +9,7 @@ The relevant files are the following :
 * [SonoAssist.h](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist.h)
 * [SonoAssist.cpp](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/SonoAssist.cpp)
 * [acquisition_params.xml](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssistParams/acquisition_params.xml)
-* [CMakeLists.txt](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/CMakeLists)
+* [CMakeLists.txt](https://github.com/LATIS-ETS/SonoAssist/blob/add-sensor-example/SonoAssist/CMakeLists.txt)
 
 Example sensor on the side panel
 ![](Media/add_sensor_example.png)
