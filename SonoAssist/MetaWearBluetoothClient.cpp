@@ -498,7 +498,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 
 			// configuring the board on succes
 			if (connection_status) {
-				mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_NDOF);
+				mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_IMU_PLUS);
 				mbl_mw_sensor_fusion_set_acc_range(board, MBL_MW_SENSOR_FUSION_ACC_RANGE_8G);
 				mbl_mw_sensor_fusion_write_config(board);
 			}  else {
