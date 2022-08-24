@@ -9,7 +9,7 @@ RGBDCameraClient::~RGBDCameraClient() {
 void RGBDCameraClient::connect_device(void) {
 
 	// making sure requirements are filled
-	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
+	if (m_config_loaded && m_sensor_used) {
 	
 		write_debug_output("RGBDCameraClient - testing the connection to the camera");
 
@@ -41,7 +41,7 @@ void RGBDCameraClient::disconnect_device(void) {
 void RGBDCameraClient::start_stream() {
 
 	// making sure requirements are filled
-	if (m_device_connected && !m_device_streaming) {
+	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
 		// defining the base recording configurations
 		m_camera_cfg_p = std::make_unique<rs2::config>();

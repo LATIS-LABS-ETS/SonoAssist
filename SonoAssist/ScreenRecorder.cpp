@@ -14,7 +14,7 @@ ScreenRecorder::ScreenRecorder(int device_id, std::string device_description, st
 
 void ScreenRecorder::connect_device() {
 
-	if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
+	if (m_config_loaded && m_sensor_used) {
 
         // defining the display dimensions
         int preview_img_width = m_window_rc.right / SR_PREVIEW_RESIZE_FACTOR;
@@ -48,7 +48,7 @@ void ScreenRecorder::disconnect_device() {
 
 void ScreenRecorder::start_stream() {
 
-    if (m_device_connected && !m_device_streaming) {
+    if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 
         // opening output files
         m_output_index_file.open(m_output_index_file_str, std::fstream::app);
@@ -56,12 +56,12 @@ void ScreenRecorder::start_stream() {
             SCREEN_CAPTURE_FPS, cv::Size(m_window_rc.right, m_window_rc.bottom));
 
         // connecting to redis (if redis enabled)
-        if ((*m_config_ptr)["sc_to_redis"] == "true") {
+        if (m_redis_state) {
             m_redis_img_entry = (*m_config_ptr)["sc_img_redis_entry"];
             m_redis_rate_div = std::atoi((*m_config_ptr)["sc_redis_rate_div"].c_str());
-            connect_to_redis();
+            connect_to_redis({ m_redis_img_entry });
         }
-
+        
         // launching the acquisition thread
         m_collect_data = true;
 		m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
@@ -141,10 +141,10 @@ void ScreenRecorder::collect_window_captures(void) {
         else {
 
             // write to redis
-            if (m_redis_client.is_connected()) {
+            if (m_redis_state) {
                 cv::resize(m_capture_cvt_mat, m_redis_img_mat, m_redis_img_mat.size(), 0, 0, cv::INTER_AREA);
                 cv::cvtColor(m_redis_img_mat, m_redis_img_mat, CV_BGRA2GRAY);
-                write_data_to_redis(m_redis_img_mat);
+                write_img_to_redis(m_redis_img_entry, m_redis_img_mat);
             }
            
             if (!m_pass_through) {
@@ -155,51 +155,6 @@ void ScreenRecorder::collect_window_captures(void) {
         }
 
 	}
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////// Redis related methods
-
-/**
-* Connects to redis and creates a list with a name specified by the (m_redis_entry) variable
-*/
-void ScreenRecorder::connect_to_redis(void) {
-
-    if (m_redis_img_entry != "") {
-
-        m_redis_client.connect("127.0.0.1", 6379, nullptr, REDIS_TIMEOUT);
-
-        // initializing the data list
-        if (m_redis_client.is_connected()) {
-            m_redis_client.del(std::vector<std::string>({ m_redis_img_entry }));
-            m_redis_client.set(m_redis_img_entry, "");
-            m_redis_client.sync_commit();
-        }
-
-    }
-
-}
-
-/**
-* Once every (m_redis_rate_div) function calls, the provided data (string and image) is written to redis
-*/
-void ScreenRecorder::write_data_to_redis(cv::Mat& img_mat) {
-
-    if (m_redis_client.is_connected()) {
-
-        if ((m_redis_data_count % m_redis_rate_div) == 0) {
-
-            size_t mat_byte_size = img_mat.step[0] * img_mat.rows;
-            m_redis_client.set(m_redis_img_entry, std::string((char*)img_mat.data, mat_byte_size));
-            m_redis_client.sync_commit();
-            m_redis_data_count = 1;
-
-        }
-        else {
-            m_redis_data_count++;
-        }
-
-    }
 
 }
 

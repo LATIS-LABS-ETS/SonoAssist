@@ -10,9 +10,9 @@
 *	   may have to be overridden depending on your specific needs.
 */
 
-#pragma once
+#ifndef SENSOREXAMPLE_H
+#define SENSOREXAMPLE_H
 
-#include "main.h"
 #include "SensorDevice.h"
 
 #include <string>
@@ -50,6 +50,10 @@ class SensorExample : public SensorDevice {
 		bool m_output_file_loaded = false;
 		std::ofstream m_output_data_file;
 		std::string m_output_data_file_str;
-		
+
+		// redis entry
+		std::string m_redis_entry;
+
 };
 
+#endif

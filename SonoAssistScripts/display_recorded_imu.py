@@ -23,7 +23,7 @@ if __name__ == "__main__":
     imu_data = IMUDataManager(args.acquisition_dir, avg_window=avg_window)
     
     # initializing the graphics display
-    scene = OrientationScene(avg_window)
+    scene = OrientationScene(avg_window, display_triangles=True)
     
     # updating the arrow display by feeding in IMU orientation data
     for i in range(len(imu_data)):

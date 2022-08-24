@@ -1,16 +1,15 @@
 ##################################################################################################################### custom
 
-# log files
 *.log
 *.tlog
 
-# redis dump
 *.rdb
 
-# windows folders
-/Data/
 /Deploy/
-/Dependencies/
+SonoAssist/Dependencies/
+SonoAssist/out/
+
+/SonoAssistScripts/env/
 
 ##################################################################################################################### C++ related files
 

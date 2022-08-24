@@ -5,7 +5,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // predefining the parameters in the config file
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
-
+        
         /*
         * STEP #3: Define the proper configuration entries for your sensor
         *
@@ -54,6 +54,10 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_screen_recorder_client_p = std::make_shared<ScreenRecorder>(m_sensor_devices.size(), "Screen Recorder", "sc_to_redis", log_file_path);
     connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture, this, &SonoAssist::on_new_us_screen_capture);
     m_sensor_devices.push_back(m_screen_recorder_client_p);
+
+    m_key_detector_client_p = std::make_shared<OSKeyDetector>(m_sensor_devices.size(), "OS key detector", "", log_file_path);
+    connect(m_key_detector_client_p.get(), &OSKeyDetector::key_detected, this, &SonoAssist::on_new_os_key_detected);
+    m_sensor_devices.push_back(m_key_detector_client_p);
 
     /* STEP #5: Instantiate your sensor (via a shared pointer) and add it to the "m_sensor_devices" list */
     m_example_client_p = std::make_shared<SensorExample>(m_sensor_devices.size(), "Example Sensor", "example_to_redis", log_file_path);
@@ -247,7 +251,7 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
 
 void SonoAssist::on_sensor_connect_button_clicked(){
     
-    if (!m_stream_is_active && m_config_is_loaded && create_output_folder()) {
+    if (!m_stream_is_active && m_config_is_loaded) {
 
         // making sure all devices are disconnected (for proper state update check)
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
@@ -363,7 +367,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     int n_used_sensors = 0;
 
     // making sure the device isnt already streaming
-    if (!m_stream_is_active) {
+    if (!m_stream_is_active && create_output_folder()) {
 
         // if all used devices are ready, start the acquisition
         if (check_device_connections()) {
@@ -630,12 +634,12 @@ void SonoAssist::add_debug_text(QString debug_str) {
 /*
 Using the key press handler to detect "a" and "d" presses for the creation and deletion of time markers
 */
-void SonoAssist::keyPressEvent(QKeyEvent* event) {
+void SonoAssist::on_new_os_key_detected(int key) {
 
     if (m_stream_is_active) {
 
-        // adding a time marker
-        if (event->key() == Qt::Key_A) {
+        // adding a time marker7
+        if (key == OS_A_KEY) {
 
             // adding the marker to the display list + json time marker list
             QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) + " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
@@ -648,7 +652,7 @@ void SonoAssist::keyPressEvent(QKeyEvent* event) {
         }
 
         // removing a time marker
-        else if (event->key() == Qt::Key_D) {
+        else if (key == OS_D_KEY) {
 
             // removing the latest time marker
             if (ui.time_marker_list->count() > 0) {
@@ -962,24 +966,31 @@ std::string SonoAssist::create_log_folder(void) {
 
 bool SonoAssist::create_output_folder() {
 
+    std::wstring stemp;
     bool valid_output_folder = false;
-    std::string output_folder_path = ui.output_folder_input->text().toStdString();
 
-    // converting str to proper windows format
-    // creating the output folder and updating the clients
+    std::string parent_folder_path = ui.output_folder_input->text().toStdString();
+    std::string output_folder_path = parent_folder_path + "/acquisition_" + SensorDevice::get_micro_timestamp();
+
+    // making sure the parent folder is created
     // https://stackoverflow.com/questions/27220/how-to-convert-stdstring-to-lpcwstr-in-c-unicode
-    std::wstring stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
-    if (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
+    stemp = std::wstring(parent_folder_path.begin(), parent_folder_path.end());
+    valid_output_folder = CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError(); 
 
-        valid_output_folder = true;
+    // creating the output folder (in the parent folder)
+    stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
+    valid_output_folder *= (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError());
+    
+    // updating the devices
+    if (valid_output_folder) {
+        
         m_output_folder_path = output_folder_path;
 
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             m_sensor_devices[i]->set_output_file(output_folder_path);
         }
 
-    }
-    else {
+    } else {
         valid_output_folder = false;
         QString title = "Unable to create output folder";
         QString message = "The application failed to create the output folder for data files.";
@@ -1012,7 +1023,25 @@ bool SonoAssist::load_config_file(QString param_file_path) {
     for (auto& parameter : *m_app_params) {
         children = docElem.elementsByTagName(QString(parameter.first.c_str()));
         if (children.count() == 1) {
-            parameter.second = children.at(0).firstChild().nodeValue().toStdString();
+
+            // handling single elements
+            if (children.at(0).childNodes().length() == 1) {
+                parameter.second = children.at(0).firstChild().nodeValue().toStdString();
+            }
+            
+            // handling 2 levels of elements
+            else {
+                
+                std::string param_value = "";
+                for (auto i(0); i < children.at(0).childNodes().length(); i++) {
+                    param_value += children.at(0).childNodes().at(i).firstChild().nodeValue().toStdString();
+                    if (i != children.at(0).childNodes().length() - 1) param_value += ", ";
+                }
+
+                parameter.second = param_value;
+         
+            }
+            
         }
     }
 
@@ -1022,20 +1051,18 @@ bool SonoAssist::load_config_file(QString param_file_path) {
 
 void SonoAssist::write_output_params(void) {
 
-    // making sure there is data to save
-    if (!m_output_params.isEmpty()) {
-    
-        // opening the output file
-        QString output_file_path = QString(m_output_folder_path.c_str()) + "/sono_assist_output_params.json";
-        QFile output_file(output_file_path);
+    // opening the output file
+    QString output_file_path = QString(m_output_folder_path.c_str()) + "/sono_assist_output_params.json";
+    QFile output_file(output_file_path);
 
-        // writing the output params
-        if (output_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate))
-            output_file.write(QJsonDocument(m_output_params).toJson());
+    // writing the output params
+    if (output_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate))
+        output_file.write(QJsonDocument(m_output_params).toJson());
+    output_file.close();
 
-        output_file.close();
-
-    }
+    // clearing the time markers
+    m_time_markers_json = QJsonArray();
+    m_output_params["time_markers"] = m_time_markers_json;
 
 }
 

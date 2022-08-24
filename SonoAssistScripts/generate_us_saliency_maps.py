@@ -21,11 +21,11 @@ if __name__ == "__main__":
     config_file_path = ""
     output_video_path = ""
     '''
-    ex :   
-    config_file_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/config.json"
-    output_video_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAsist/SonoAssistScripts/us_video.avi"
+    ex : 
+    config_file_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAssist/SonoAssistScripts/config.json"
+    output_video_path = "/home/one_wizard_boi/Documents/Projects/MedicalUltrasound/SonoAssist/SonoAssistScripts/us_video.avi"
     '''
-
+    
     # parsing script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("acquisition_dir", help="Directory containing the acquisition files")
@@ -35,9 +35,9 @@ if __name__ == "__main__":
     acquisition_dir_path = args.acquisition_dir
 
     # loading acquisition data
-    clarius_manager = ClariusDataManager(acquisition_dir_path)
     gaze_manager = GazeDataManager(acquisition_dir_path, config_file_path)
-
+    clarius_manager = ClariusDataManager(acquisition_dir_path, imu_available=False)
+    
     # defining image handling vars
     alpha = 0.7
     beta = 1 - alpha
@@ -74,6 +74,6 @@ if __name__ == "__main__":
         if data_i >= (clarius_manager.n_acquisitions * progress_percentage):
             progress = int(progress_percentage * 100)
             progress_percentage += 0.1
-            print(f"Training data generation progress : {progress} %")
+            print(f"Saliency map generation progress : {progress} %")
 
     video_output.release()

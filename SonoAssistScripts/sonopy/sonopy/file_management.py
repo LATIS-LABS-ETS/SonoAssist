@@ -4,6 +4,7 @@ import copy
 import os.path
 import pandas as pd
 
+
 class SonoFolderManager:
 
     ''' Allows acces to the different data/files in a SonoAssit recording folder '''
@@ -74,6 +75,7 @@ class SonoFolderManager:
 
         return (gaze_data, head_data)
         
+
     def load_ext_imu_data(self):
 
         acc_data = None 
@@ -85,6 +87,7 @@ class SonoFolderManager:
 
         return (ori_data, acc_data)
 
+
     def load_clarius_data(self):
 
         probe_data = None
@@ -93,6 +96,7 @@ class SonoFolderManager:
         except : pass
 
         return probe_data
+
 
     def load_rgbd_data(self):
 
@@ -103,6 +107,7 @@ class SonoFolderManager:
 
         return camera_data
 
+
     def load_screen_rec_data(self):
 
         sc_data = None
@@ -111,6 +116,7 @@ class SonoFolderManager:
         except : pass
 
         return sc_data
+
 
     def load_output_params(self):
 

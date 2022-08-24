@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RGBDCAMERACLIENT_H
+#define RGBDCAMERACLIENT_H
 
 #include "SensorDevice.h"
 
@@ -67,3 +68,5 @@ class RGBDCameraClient : public SensorDevice {
 		std::string m_output_index_file_str = "";
 
 };
+
+#endif

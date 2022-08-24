@@ -173,7 +173,7 @@ MetaWearBluetoothClient::~MetaWearBluetoothClient() {
 void MetaWearBluetoothClient::connect_device() {
 
 	// making sure that requirements have been loaded
-	if (m_config_loaded && m_output_file_loaded && m_sensor_used) {
+	if (m_config_loaded && m_sensor_used) {
 		
 		clear_metawear_connection();
 
@@ -199,7 +199,7 @@ void MetaWearBluetoothClient::disconnect_device() {
 void MetaWearBluetoothClient::start_stream() {
 
 	// making sure device is ready to stream
-	if (m_device_connected && !m_device_streaming) {
+	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 
 		// opening the output files
 		set_output_file(m_output_folder_path);
@@ -207,10 +207,10 @@ void MetaWearBluetoothClient::start_stream() {
 		m_output_acc_file.open(m_output_acc_file_str, std::fstream::app);
 		
 		// connecting to redis (if redis enabled)
-		if ((*m_config_ptr)["ext_imu_to_redis"] == "true") {
+		if (m_redis_state) {
 			m_redis_entry = (*m_config_ptr)["ext_imu_redis_entry"];
 			m_redis_rate_div = std::atoi((*m_config_ptr)["ext_imu_redis_rate_div"].c_str());
-			connect_to_redis();
+			connect_to_redis({m_redis_entry});
 		}
 		
 		MblMwFnData euler_angles_callback = [](void* context, const MblMwData* data) {
@@ -230,7 +230,7 @@ void MetaWearBluetoothClient::start_stream() {
 					+ std::to_string(euler_angles->pitch) + "," + std::to_string(euler_angles->roll) + "," + std::to_string(euler_angles->yaw)
 					+ "\n";
 
-				client_p->write_to_redis(output_str);
+				client_p->write_str_to_redis(client_p->m_redis_entry, output_str);
 
 				// writing to output file after passthrough mode check
 				if (!client_p->get_pass_through()) {
@@ -293,10 +293,8 @@ void MetaWearBluetoothClient::stop_stream(void){
 		// closing the output files and redis connection
 		m_output_ori_file.close();
 		m_output_acc_file.close();
-		if ((*m_config_ptr)["ext_imu_to_redis"] == "true") {
-			disconnect_from_redis();
-		}
-
+		disconnect_from_redis();
+		
 		m_device_streaming = false;
 	}
 
@@ -428,7 +426,7 @@ void MetaWearBluetoothClient::service_discovered(const QBluetoothUuid& gatt_uuid
 	if (service_p != nullptr) {
 
 		// service objects are stored in a shared pointer vector
-		int service_index = m_metawear_services_p.size();
+		auto service_index = m_metawear_services_p.size();
 		m_metawear_services_p.emplace_back(std::shared_ptr<QLowEnergyService>(service_p));
 
 		// connecting the service object to the necessary callbacks

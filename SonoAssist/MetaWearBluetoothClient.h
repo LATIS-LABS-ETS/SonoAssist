@@ -1,4 +1,5 @@
-#pragma once
+#ifndef METAWEARBLUETOOTHCLIENT_H
+#define METAWEARBLUETOOTHCLIENT_H
 
 #include "SensorDevice.h"
 
@@ -67,9 +68,10 @@ class MetaWearBluetoothClient : public SensorDevice {
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
 
-		// file output attributes
+		// file output attributes + redis
 		std::ofstream m_output_ori_file;
 		std::ofstream m_output_acc_file;
+		std::string m_redis_entry = "";
 
 		// metawear communication attributes
 		MblMwMetaWearBoard* m_metawear_board_p = nullptr;
@@ -119,3 +121,5 @@ class MetaWearBluetoothClient : public SensorDevice {
 		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str="");
 
 };
+
+#endif

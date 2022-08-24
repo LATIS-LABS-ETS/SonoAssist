@@ -49,7 +49,7 @@ void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) 
 				std::to_string(gaze_point->position_xy[0]) + "," + std::to_string(gaze_point->position_xy[1]) + "\n";
 
 			// writing to redis
-			manager->write_to_redis(output_str);
+			manager->write_str_to_redis(manager->m_redis_entry, output_str);
 
 			// writing to output files, after passthrough check
 			if (!manager->get_pass_through()) {
@@ -124,7 +124,7 @@ void GazeTracker::connect_device(void) {
 	char url[256] = { 0 };
 
 	// making sure requirements are filled
-	if (m_tobii_api_valid && m_config_loaded && m_output_file_loaded && m_sensor_used) {
+	if (m_tobii_api_valid && m_config_loaded && m_sensor_used) {
 
 		// making sure device is disconnected
 		tobii_head_pose_unsubscribe(m_tobii_device);
@@ -169,7 +169,7 @@ void GazeTracker::disconnect_device(void) {
 void GazeTracker::start_stream() {
 
 	// making sure requirements are filled
-	if (m_device_connected && !m_device_streaming) {
+	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
 		// opening the output files
 		set_output_file(m_output_folder_path);
@@ -177,10 +177,10 @@ void GazeTracker::start_stream() {
 		m_output_gaze_file.open(m_output_gaze_str, std::fstream::app);
 
 		// connecting to redis (if redis enabled)
-		if ((*m_config_ptr)["eye_tracker_to_redis"] == "true") {
+		if (m_redis_state) {
 			m_redis_entry = (*m_config_ptr)["eye_tracker_redis_entry"];
 			m_redis_rate_div = std::atoi((*m_config_ptr)["eye_tracker_redis_rate_div"].c_str());
-			connect_to_redis();
+			connect_to_redis({m_redis_entry});
 		}
 
 		// launching the collection thread

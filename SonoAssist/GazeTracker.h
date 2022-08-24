@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GAZETRACKER_H
+#define GAZETRACKER_H
 
 #include "SensorDevice.h"
 
@@ -9,7 +10,6 @@
 
 #include <tobii/tobii.h>
 #include <tobii/tobii_streams.h>
-
 
 /*
 * Class to enable communication with the tobii eye tracker 4C
@@ -38,9 +38,11 @@ class GazeTracker : public SensorDevice {
 		tobii_api_t* m_tobii_api = nullptr;
 		tobii_device_t* m_tobii_device = nullptr;
 
-		// output file attributes
+		// output file attributes + redis
+		std::string m_redis_entry = "";
 		std::ofstream m_output_gaze_file;
 		std::ofstream m_output_head_file;
+
 
 	signals:
 		void new_gaze_point(float x , float y);
@@ -62,3 +64,5 @@ class GazeTracker : public SensorDevice {
 void url_receiver(char const* url, void* user_data);
 void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data);
 void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data);
+
+#endif

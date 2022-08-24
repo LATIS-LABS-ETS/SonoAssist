@@ -3,8 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
 
 SensorDevice::SensorDevice(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
-	: m_device_id(device_id), m_device_description(device_description), m_redis_state_entry(redis_state_entry)
-{
+	: m_device_id(device_id), m_device_description(device_description), m_redis_state_entry(redis_state_entry){
 
 	// opening the log file
 	if (log_file_path != "") {
@@ -83,12 +82,7 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 	
 	// getting the redis status (is the device expected to connect to redis)
 	try {
-		if ((*m_config_ptr)[m_redis_state_entry] == "true") {
-			m_redis_state = true;
-		}
-		else {
-			m_redis_state = false;
-		}
+		m_redis_state = (*m_config_ptr)[m_redis_state_entry] == "true";
 	} catch (...) {
 		m_redis_state = false;
 	}
@@ -99,45 +93,78 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods
 
-/**
-* Connects to redis and creates a list with a name specified by the (m_redis_entry) variable
-*/
-void SensorDevice::connect_to_redis(void) {
+void SensorDevice::connect_to_redis(std::vector<std::string>&& redis_entries) {
 
-	if (m_redis_entry != "") {
+	// creating a new redis connection
+	sw::redis::ConnectionOptions connection_options;
+	connection_options.host = "127.0.0.1";
+	connection_options.port = 6379;
+	connection_options.socket_timeout = std::chrono::milliseconds(REDIS_TIMEOUT);
+	m_redis_client_p = std::make_unique<sw::redis::Redis>(connection_options);
 
-		m_redis_client.connect("127.0.0.1", 6379, nullptr, REDIS_TIMEOUT);
-
-		// initializing the data list
-		if (m_redis_client.is_connected()) {
-			m_redis_client.del(std::vector<std::string>({ m_redis_entry }));
-			m_redis_client.rpush(m_redis_entry, std::vector<std::string>({ "" }));
-			m_redis_client.sync_commit();
-		}
+	// initializing the entry
+	for (auto i = 0; i < redis_entries.size(); i++) {
+		try {
+			m_redis_client_p->del(redis_entries[i]);
+		} catch (...) {
+			m_redis_state = false;
+			break;
+		};
+	}
 	
+}
+
+void SensorDevice::disconnect_from_redis(void) {
+	m_redis_client_p = nullptr;
+}
+
+
+/*
+* Once every (m_redis_rate_div) function call, the provided string is appended to the specified redis list
+*/
+void SensorDevice::write_str_to_redis(std::string redis_entry, std::string data_str) {
+
+	if (m_redis_state && m_redis_client_p != nullptr) {
+	
+		try {
+
+			if ((m_redis_data_count % m_redis_rate_div) == 0) {
+				m_redis_client_p->rpush(redis_entry, {data_str});
+				m_redis_data_count = 1;
+			} else {
+				m_redis_data_count++;
+			}
+
+		} catch (...) {
+			m_redis_state = false;
+		};
+
 	}
 
 }
 
-void SensorDevice::disconnect_from_redis(void) {
-	m_redis_client.disconnect();
-}
 
-
-/**
-* Once every (m_redis_rate_div) function calls, the provided data is appended to the (m_redis_entry) list
+/*
+* Once every (m_redis_rate_div) function call, the provided image overwrites the specified redis entry
 */
-void SensorDevice::write_to_redis(std::string data_str){
+void SensorDevice::write_img_to_redis(std::string redis_entry, cv::Mat& img) {
 
-	if (m_redis_client.is_connected()) {
-		if ((m_redis_data_count % m_redis_rate_div) == 0) {
-			m_redis_client.rpushx(m_redis_entry, data_str);
-			m_redis_client.sync_commit();
-			m_redis_data_count = 1;
+	if (m_redis_state && m_redis_client_p != nullptr) {
+
+		try {
+		
+			if ((m_redis_data_count % m_redis_rate_div) == 0) {
+				size_t mat_byte_size = img.step[0] * img.rows;
+				m_redis_client_p->set(redis_entry, std::string((char*)img.data, mat_byte_size));
+				m_redis_data_count = 1;
+			} else {
+				m_redis_data_count++;
+			}
+		
+		} catch (...) {
+			m_redis_state = false;
 		}
-		else {
-			m_redis_data_count++;
-		}
+
 	}
 
 }
@@ -163,11 +190,13 @@ std::string SensorDevice::get_micro_timestamp(void) {
 */
 void SensorDevice::write_debug_output(QString debug_str) {
 
+	QString out_str = QString::fromUtf8(m_device_description.c_str()) + " - " + debug_str;
+
 	// sending msg to the application and vs debug windows
-	qDebug() << "\n" + debug_str;
-	emit debug_output(debug_str);
+	qDebug() << "\n" + out_str;
+	emit debug_output(out_str);
 
 	// logging the message
-	m_log_file << debug_str.toStdString() << std::endl;
+	m_log_file << out_str.toStdString() << std::endl;
 
 }

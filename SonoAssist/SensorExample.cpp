@@ -4,7 +4,7 @@
 
 void SensorExample::connect_device() {
 
-    if (m_config_loaded && m_sensor_used && m_output_file_loaded) {
+    if (m_config_loaded && m_sensor_used) {
 
        // connect to the sensor
        // ...
@@ -33,7 +33,7 @@ void SensorExample::disconnect_device() {
 
 void SensorExample::start_stream() {
 
-    if (m_device_connected && !m_device_streaming) {
+    if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 
         // opening the output file in append mode
         m_output_data_file.open(m_output_data_file_str, std::fstream::app);
@@ -42,7 +42,7 @@ void SensorExample::start_stream() {
         if (m_redis_state) {
             m_redis_entry = (*m_config_ptr)["example_redis_entry"];
             m_redis_rate_div = std::atoi((*m_config_ptr)["example_redis_rate_div"].c_str());
-            connect_to_redis();
+            connect_to_redis({""});
         }
 
         // init random for demonstration purposes
@@ -125,9 +125,7 @@ void SensorExample::collect_sensor_data(void) {
            m_output_data_file << get_micro_timestamp() << "," << collected_data << "\n";
            
             // writing to redis
-            if (m_redis_client.is_connected()) {
-                write_to_redis(collected_data);
-            }
+           write_str_to_redis(m_redis_state_entry, collected_data);
 
         }
 
