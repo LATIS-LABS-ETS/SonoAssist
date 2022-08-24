@@ -54,7 +54,7 @@ class SensorDevice : public QObject {
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
 		// redis communication functions
-		void connect_to_redis(std::vector<std::string>&&);
+		void connect_to_redis(std::vector<std::string>&& = {});
 		void disconnect_from_redis(void);
 		void write_str_to_redis(std::string, std::string);
 		void write_img_to_redis(std::string, cv::Mat&);

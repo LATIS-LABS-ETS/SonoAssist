@@ -26,6 +26,7 @@ class ScreenRecorder : public SensorDevice {
 	public:
 		
 		ScreenRecorder(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path);
+		~ScreenRecorder();
 
 		// SensorDevice interface functions
 		void stop_stream(void);
@@ -38,7 +39,6 @@ class ScreenRecorder : public SensorDevice {
 		void collect_window_captures(void);
 
 		// utility functions
-		void hwnd2mat(void);
 		void get_screen_dimensions(int&, int&) const;
 
 	signals:
@@ -49,6 +49,9 @@ class ScreenRecorder : public SensorDevice {
 		// window capture vars
 		RECT m_window_rc;
 		HWND m_window_handle;
+		HBITMAP m_hbwindow;
+		BITMAPINFOHEADER m_bi;
+		HDC m_hwindowDC, m_hwindowCompatibleDC;
 		
 		// image handling containers
 		QImage m_preview_img;

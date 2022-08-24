@@ -6,9 +6,48 @@ ScreenRecorder::ScreenRecorder(int device_id, std::string device_description, st
     : SensorDevice(device_id, device_description, redis_state_entry, log_file_path) 
 {
 
-    // getting the target window handle and bounding rectangle
+    int height, width, srcheight, srcwidth;
+
+    // getting the window handle and bounding rectangle
     m_window_handle = GetDesktopWindow();
     GetClientRect(m_window_handle, &m_window_rc);
+
+    // getting the window device context
+    m_hwindowDC = GetDC(m_window_handle);
+    m_hwindowCompatibleDC = CreateCompatibleDC(m_hwindowDC);
+    SetStretchBltMode(m_hwindowCompatibleDC, COLORONCOLOR);
+
+    // defining the resized image dimensions
+    width = m_window_rc.right;
+    height = m_window_rc.bottom;
+    srcwidth = m_window_rc.right;
+    srcheight = m_window_rc.bottom;
+
+    // create a bitmap to hold the window content
+    m_hbwindow = CreateCompatibleBitmap(m_hwindowDC, width, height);
+    m_bi.biSize = sizeof(BITMAPINFOHEADER);
+    m_bi.biWidth = width;
+    m_bi.biHeight = -height;
+    m_bi.biPlanes = 1;
+    m_bi.biBitCount = 32;
+    m_bi.biCompression = BI_RGB;
+    m_bi.biSizeImage = 0;
+    m_bi.biXPelsPerMeter = 0;
+    m_bi.biYPelsPerMeter = 0;
+    m_bi.biClrUsed = 0;
+    m_bi.biClrImportant = 0;
+
+    // use the previously created device context with the bitmap
+    SelectObject(m_hwindowCompatibleDC, m_hbwindow);
+
+}
+
+ScreenRecorder::~ScreenRecorder() {
+
+    // releasing the window capture resources
+    DeleteObject(m_hbwindow);
+    DeleteDC(m_hwindowCompatibleDC);
+    ReleaseDC(m_window_handle, m_hwindowDC);
 
 }
 
@@ -64,10 +103,10 @@ void ScreenRecorder::start_stream() {
         
         // launching the acquisition thread
         m_collect_data = true;
-		m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
-		m_device_streaming = true;
+	    m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
+	    m_device_streaming = true;
 
-	}
+    }
 
 }
 
@@ -126,9 +165,11 @@ void ScreenRecorder::collect_window_captures(void) {
   
 	while (m_collect_data) {
 	
-       // capturing the target window
-       hwnd2mat();
-       cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
+        // performing the window capture : copy from the window device context to the bitmap device context + color conversion
+        // Source: https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
+        StretchBlt(m_hwindowCompatibleDC, 0, 0, m_window_rc.right, m_window_rc.bottom, m_hwindowDC, 0, 0, m_window_rc.right, m_window_rc.bottom, SRCCOPY);
+        GetDIBits(m_hwindowCompatibleDC, m_hbwindow, 0, m_window_rc.bottom, m_capture_mat.data, (BITMAPINFO*)&m_bi, DIB_RGB_COLORS);
+        cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
 
         // in preview mode, resizing an sending the image to UI (low resolution display)
         if (m_stream_preview) {
@@ -163,55 +204,4 @@ void ScreenRecorder::collect_window_captures(void) {
 void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height) const {
     screen_width = m_window_rc.right;
     screen_height = m_window_rc.bottom;
-}
-
-/*
-Converts the window's bitmap format to a cv::Mat
-Source : https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
-*/
-void ScreenRecorder::hwnd2mat() {
-
-    cv::Mat src;
-    HBITMAP hbwindow;
-    BITMAPINFOHEADER bi;
-    HDC hwindowDC, hwindowCompatibleDC;
-    int height, width, srcheight, srcwidth;
-
-    // getting the window device context
-    hwindowDC = GetDC(m_window_handle);
-    hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
-    SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR);    
-
-    // defining the resized image dimensions
-    width = m_window_rc.right;
-    height = m_window_rc.bottom;
-    srcwidth = m_window_rc.right;
-    srcheight = m_window_rc.bottom;
-   
-    // create a bitmap
-    hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
-    bi.biSize = sizeof(BITMAPINFOHEADER);
-    bi.biWidth = width;
-    bi.biHeight = -height;
-    bi.biPlanes = 1;
-    bi.biBitCount = 32;
-    bi.biCompression = BI_RGB;
-    bi.biSizeImage = 0;
-    bi.biXPelsPerMeter = 0;
-    bi.biYPelsPerMeter = 0;
-    bi.biClrUsed = 0;
-    bi.biClrImportant = 0;
-
-    // use the previously created device context with the bitmap
-    SelectObject(hwindowCompatibleDC, hbwindow);
-
-    // copy from the window device context to the bitmap device context
-    StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY);
-    GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, m_capture_mat.data, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
-
-    // avoid memory leak
-    DeleteObject(hbwindow);
-    DeleteDC(hwindowCompatibleDC);
-    ReleaseDC(m_window_handle, hwindowDC);
-
 }
