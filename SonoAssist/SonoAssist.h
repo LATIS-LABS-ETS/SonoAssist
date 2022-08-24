@@ -1,23 +1,23 @@
-#pragma once
+#ifndef SONOASSIST_H
+#define SONOASSIST_H
 
-#define _WINSOCKAPI_
-#include <windows.h>
-#include <Lmcons.h>
+#include "ui_SonoAssist.h"
 
 #include <tuple>
 #include <memory>
 #include <vector>
+#include <windows.h>
+#include <Lmcons.h>
 
 #include <QFile>
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QtXML/QDomDocument>
 #include <QGraphicsPixmapItem>
 #include <QtWidgets/QMainWindow>
-
-#include "ui_SonoAssist.h"
 
 #include "GazeTracker.h"
 #include "OSKeyDetector.h"
@@ -63,6 +63,8 @@
 #define DEFAULT_CONFIG_PATH "C:/Program Files (x86)/SonoAssist/resources/params.xml"
 
 typedef std::map<std::string, std::string> config_map;
+
+class ClariusProbeClient;
 
 class SonoAssist : public QMainWindow {
 	
@@ -186,3 +188,5 @@ class SonoAssist : public QMainWindow {
 		// time marker funcions
 		void clear_time_markers(void);
 };
+
+#endif

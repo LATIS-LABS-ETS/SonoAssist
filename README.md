@@ -38,21 +38,32 @@ The python processing scripts were developed and tested in the Windows and Ubunt
 Note that the configuration parameters for the processing scripts are detailed in the [wiki](https://github.com/OneWizzardBoi/SonoAsist/wiki/Processing-scripts-configuration).
 
 ### Installing the sonopy package
-1. Clone the repository
-2. Use pip install
-    - cd SonoAssist/SonoAssistScrips/
-    - pip install sonopy
+1. Clone this repository
+2. Use pip install : `pip install SonoAssist/SonoAssistScrips/sonopy`
 
 ## Installing for development (Windows)
 
-1. Clone the repository
-2. Install [RealSense](https://www.intelrealsense.com/sdk-2/)
-3. Install [Qt](https://www.qt.io/download-open-source?hsCtaTracking=9f6a2170-a938-42df-a8e2-a9f0b1d6cdce%7C6cb0de4f-9bb5-4778-ab02-bfb62735f3e5) and add the extension to your IDE. _This project is known to be compatible with Qt 5.14.2_
-4. Run the `dependencies-download.ps1` script as administrator. You must have previously [allowed script execution on your machine](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-7.1). Script is located in `Utils` folder.
+1. Install system dependencies
+    1. Install the [conan](https://conan.io/) package manager via pip : `pip install conan`
+    2. Install [Qt](https://www.qt.io/download-open-source?hsCtaTracking=9f6a2170-a938-42df-a8e2-a9f0b1d6cdce%7C6cb0de4f-9bb5-4778-ab02-bfb62735f3e5). This project is known to be compatible with Qt 5.14.
+    3. (Optional) Install the [RealSense SDK](https://www.intelrealsense.com/sdk-2/). The SonoAssist's RealSense build dependencies are handled by Conan, but the SDK comes with useful visualization tools.
 
-    **Note 1 :** Ensure the Qt Installation version is a valid version number in the project settings.
+2. Clone this repository and navigate to the source folder
+    - `git clone ...`
+    - `cd SonoAssist/SonoAssist/`
 
-    **Note 2 :** Ensure the project's Character Set is Unicode.
+3. Run the `dependencies-download.ps1` script with administrator privileges. You must have previously [allowed script execution on your machine](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-7.1).
+    - `..\Utils\dependencies-download.ps1`
+
+4. Run the following Conan install commands from the source folder
+    - `conan install . -s build_type=Debug -if=out/build/x64-Debug`
+    - `conan install . -s build_type=Release -if=out/build/x64-Release`
+
+5. Update the `set(CMAKE_PREFIX_PATH C:/Qt/<Qt_version>/<compiler>)` statement in the `CMakeLists.txt` file to match your installed version of Qt.
+
+6. Open the source folder 'SonoAssist/SonoAssist/' in VisualStudio and configure the project with CMake. In VisualStudio, the configuration is done automatically when opening and saving  `CMakeLists.txt.
+
+7. Build the project with VisualStudio: "Build->Build All"
 
 ## Extensibility
 

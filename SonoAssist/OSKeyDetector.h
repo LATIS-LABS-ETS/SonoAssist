@@ -1,8 +1,11 @@
-#pragma once
+#ifndef OSKEYDETECTOR_H
+#define OSKEYDETECTOR_H
+
 
 #include <string>
 #include <thread>
 #include <fstream>
+#include <Windows.h>
 
 #include "SensorDevice.h"
 
@@ -39,3 +42,5 @@ class OSKeyDetector : public SensorDevice {
 		std::thread m_listener_thread;
 
 };
+
+#endif

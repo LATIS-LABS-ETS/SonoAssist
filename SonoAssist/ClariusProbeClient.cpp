@@ -123,11 +123,11 @@ void ClariusProbeClient::start_stream() {
             CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), true);
 
         // connecting to redis (if redis enabled)
-        if ((*m_config_ptr)["us_probe_to_redis"] == "true") {
+        if (m_redis_state) {
             m_redis_imu_entry = (*m_config_ptr)["us_probe_imu_redis_entry"];
             m_redis_img_entry = (*m_config_ptr)["us_probe_img_redis_entry"];
             m_redis_rate_div = std::atoi((*m_config_ptr)["us_probe_redis_rate_div"].c_str());
-            connect_to_redis();
+            connect_to_redis({m_redis_imu_entry, m_redis_img_entry});
         }
 
         // connecting to the probe events
@@ -220,7 +220,8 @@ void ClariusProbeClient::write_output_data() {
         cv::cvtColor(m_output_img_mat, m_video_img_mat, CV_GRAY2BGR);
 
         // writing the probe data to redis (output image is grayscale)
-        write_data_to_redis(imu_str, m_output_img_mat);
+        write_str_to_redis(m_redis_imu_entry, imu_str);
+        write_img_to_redis(m_redis_img_entry, m_output_img_mat);
 
         // writing to the output files, after passthrough check
         if (!m_pass_through) {
@@ -233,53 +234,6 @@ void ClariusProbeClient::write_output_data() {
 
     } catch (...) {
         write_debug_output("ClariusProbeClient - error occured while writting to outputs");
-    }
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////// Redis related methods
-
-/**
-* Connects to redis and creates a list with a name specified by the (m_redis_entry) variable
-*/
-void ClariusProbeClient::connect_to_redis(void) {
-
-    if (m_redis_imu_entry != "" && m_redis_img_entry != "") {
-        
-        m_redis_client.connect("127.0.0.1", 6379, nullptr, REDIS_TIMEOUT);
-
-        // initializing the data list
-        if (m_redis_client.is_connected()) {
-            m_redis_client.del(std::vector<std::string>({ m_redis_imu_entry, m_redis_img_entry }));
-            m_redis_client.rpush(m_redis_imu_entry, std::vector<std::string>({ "" }));
-            m_redis_client.set(m_redis_img_entry, "");
-            m_redis_client.sync_commit();
-        }
-    
-    }
-
-}
-
-/**
-* Once every (m_redis_rate_div) function calls, the provided data (string and image) is written to redis
-*/
-void ClariusProbeClient::write_data_to_redis(std::string imu_data_str, cv::Mat& img_mat) {
-
-    if (m_redis_client.is_connected()) {
-
-        if ((m_redis_data_count % m_redis_rate_div) == 0) {
-
-            size_t mat_byte_size = img_mat.step[0] * img_mat.rows;
-            m_redis_client.set(m_redis_img_entry, std::string((char*)img_mat.data, mat_byte_size));
-            m_redis_client.rpushx(m_redis_imu_entry, imu_data_str);
-
-            m_redis_client.sync_commit();
-            m_redis_data_count = 1;
-
-        } else {
-            m_redis_data_count ++;
-        }
-
     }
 
 }
