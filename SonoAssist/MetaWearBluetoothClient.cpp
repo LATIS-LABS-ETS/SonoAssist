@@ -300,7 +300,7 @@ void MetaWearBluetoothClient::stop_stream(void){
 
 }
 
-void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
+void MetaWearBluetoothClient::set_output_file(const std::string& output_folder_path) {
 
 	try {
 
@@ -616,7 +616,7 @@ void MetaWearBluetoothClient::clear_metawear_connection() {
 
 }
 
- QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str) {
+ QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, const QString& debug_str) {
 
 	// getting the uuid object for the target characteristic and the target service
 	QBluetoothUuid target_characteristic_uuid = metawear_uuid_to_qt_uuid(characteristic_struct->uuid_low, characteristic_struct->uuid_high);

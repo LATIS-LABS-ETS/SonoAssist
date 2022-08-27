@@ -2,7 +2,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
-ScreenRecorder::ScreenRecorder(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+ScreenRecorder::ScreenRecorder(int device_id, const std::string& device_description, const std::string& redis_state_entry, const std::string& log_file_path)
     : SensorDevice(device_id, device_description, redis_state_entry, log_file_path) 
 {
 
@@ -128,7 +128,7 @@ void ScreenRecorder::stop_stream() {
 
 }
 
-void ScreenRecorder::set_output_file(std::string output_folder_path) {
+void ScreenRecorder::set_output_file(const std::string& output_folder_path) {
 
     try {
 
@@ -188,6 +188,7 @@ void ScreenRecorder::collect_window_captures(void) {
                 write_img_to_redis(m_redis_img_entry, m_redis_img_mat);
             }
            
+            // write to file
             if (!m_pass_through) {
                 m_video->write(m_capture_cvt_mat);
                 m_output_index_file << get_micro_timestamp() << "\n";

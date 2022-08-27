@@ -604,7 +604,7 @@ void SonoAssist::set_device_status(int device_id, bool device_status) {
 
 }
 
-void SonoAssist::add_debug_text(QString debug_str) {
+void SonoAssist::add_debug_text(const QString& debug_str) {
     
     try {
         ui.debug_text_edit->setText(ui.debug_text_edit->toPlainText() + "\n" + debug_str);
@@ -716,7 +716,7 @@ void SonoAssist::set_acquisition_label(bool active) {
 
 }
 
-void SonoAssist::display_warning_message(QString title, QString message) {
+void SonoAssist::display_warning_message(const QString& title, const QString& message) {
     QMessageBox::warning(this, title, message);
 }
 
@@ -984,7 +984,7 @@ bool SonoAssist::create_output_folder() {
 
 }
 
-bool SonoAssist::load_config_file(QString param_file_path) {
+bool SonoAssist::load_config_file(const QString& param_file_path) {
 
     // loading the contents of the param file
     QDomDocument doc("params");

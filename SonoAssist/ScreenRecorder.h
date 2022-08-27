@@ -1,5 +1,4 @@
-#ifndef SCREENRECORDER_H
-#define SCREENRECORDER_H
+#pragma once
 
 #include "SensorDevice.h"
 
@@ -25,7 +24,8 @@ class ScreenRecorder : public SensorDevice {
 
 	public:
 		
-		ScreenRecorder(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path);
+		ScreenRecorder(int device_id, const std::string& device_description, 
+			const std::string& redis_state_entry, const std::string& log_file_path);
 		~ScreenRecorder();
 
 		// SensorDevice interface functions
@@ -33,18 +33,14 @@ class ScreenRecorder : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
-		void set_output_file(std::string output_folder);
-		
-		// threaded collection function
-		void collect_window_captures(void);
-
-		// utility functions
+		void set_output_file(const std::string& output_folder);
+	
 		void get_screen_dimensions(int&, int&) const;
 
-	signals:
-		void new_window_capture(QImage image);
+	private:
+		void collect_window_captures(void);
 
-	protected:
+	private:
 
 		// window capture vars
 		RECT m_window_rc;
@@ -75,7 +71,8 @@ class ScreenRecorder : public SensorDevice {
 
 		// redis entry
 		std::string m_redis_img_entry;
+
+	signals:
+		void new_window_capture(QImage image);
 		
 };
-
-#endif

@@ -101,7 +101,7 @@ void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// GazeTracker public methods
 
-GazeTracker::GazeTracker(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path) : 
+GazeTracker::GazeTracker(int device_id, const std::string& device_description, const std::string& redis_state_entry, const std::string& log_file_path) : 
 	SensorDevice(device_id, device_description, redis_state_entry, log_file_path)
 {
 
@@ -212,7 +212,7 @@ void GazeTracker::stop_stream() {
 
 }
 
-void GazeTracker::set_output_file(std::string output_folder_path) {
+void GazeTracker::set_output_file(const std::string& output_folder_path) {
 
 	try {
 

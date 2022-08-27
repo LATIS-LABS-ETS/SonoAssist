@@ -1,7 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 
 #include <QtWidgets/QApplication>
 #include "SonoAssist.h"
-
-#endif

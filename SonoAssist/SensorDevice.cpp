@@ -2,10 +2,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
 
-SensorDevice::SensorDevice(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+SensorDevice::SensorDevice(int device_id, const std::string& device_description, const std::string& redis_state_entry, const std::string& log_file_path)
 	: m_device_id(device_id), m_device_description(device_description), m_redis_state_entry(redis_state_entry){
 
-	// opening the log file
 	if (log_file_path != "") {
 		m_log_file.open(log_file_path, std::fstream::app);
 	}
@@ -14,7 +13,6 @@ SensorDevice::SensorDevice(int device_id, std::string device_description, std::s
 
 SensorDevice::~SensorDevice() {
 
-	// closing the log file
 	m_log_file.close();
 
 }
@@ -93,7 +91,7 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods
 
-void SensorDevice::connect_to_redis(std::vector<std::string>&& redis_entries) {
+void SensorDevice::connect_to_redis(const std::vector<std::string>&& redis_entries) {
 
 	// creating a new redis connection
 	sw::redis::ConnectionOptions connection_options;
@@ -122,7 +120,7 @@ void SensorDevice::disconnect_from_redis(void) {
 /*
 * Once every (m_redis_rate_div) function call, the provided string is appended to the specified redis list
 */
-void SensorDevice::write_str_to_redis(std::string redis_entry, std::string data_str) {
+void SensorDevice::write_str_to_redis(const std::string& redis_entry, std::string data_str) {
 
 	if (m_redis_state && m_redis_client_p != nullptr) {
 	
@@ -147,7 +145,7 @@ void SensorDevice::write_str_to_redis(std::string redis_entry, std::string data_
 /*
 * Once every (m_redis_rate_div) function call, the provided image overwrites the specified redis entry
 */
-void SensorDevice::write_img_to_redis(std::string redis_entry, cv::Mat& img) {
+void SensorDevice::write_img_to_redis(const std::string& redis_entry, const cv::Mat& img) {
 
 	if (m_redis_state && m_redis_client_p != nullptr) {
 
@@ -188,7 +186,7 @@ std::string SensorDevice::get_micro_timestamp(void) {
 /*
 * Writes debug output to QDebug (the debug console) and the debug output window
 */
-void SensorDevice::write_debug_output(QString debug_str) {
+void SensorDevice::write_debug_output(const QString& debug_str) {
 
 	QString out_str = QString::fromUtf8(m_device_description.c_str()) + " - " + debug_str;
 

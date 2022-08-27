@@ -1,6 +1,4 @@
-#ifndef OSKEYDETECTOR_H
-#define OSKEYDETECTOR_H
-
+#pragma once
 
 #include <string>
 #include <thread>
@@ -19,7 +17,8 @@ class OSKeyDetector : public SensorDevice {
 
 	public:
 
-		OSKeyDetector(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
+		OSKeyDetector(int device_id, const std::string& device_description, 
+			const std::string& redis_state_entry, const std::string& log_file_path)
 			: SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 
 		// SensorDevice interface functions
@@ -27,20 +26,18 @@ class OSKeyDetector : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
-		void set_output_file(std::string output_folder) {};
+		void set_output_file(const std::string& output_folder) {};
 
+	private:
 		// threaded key detection function
 		void detect_keys(void);
 
-	signals:
-		void key_detected(int key);
-
 	protected:
-
 		// thread vars
 		bool m_listen = false;
 		std::thread m_listener_thread;
 
-};
+	signals:
+		void key_detected(int key);
 
-#endif
+};

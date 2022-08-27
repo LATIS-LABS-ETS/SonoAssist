@@ -94,7 +94,7 @@ void RGBDCameraClient::stop_stream() {
 
 }
 
-void RGBDCameraClient::set_output_file(std::string output_folder_path) {
+void RGBDCameraClient::set_output_file(const std::string& output_folder_path) {
 
 	try {
 

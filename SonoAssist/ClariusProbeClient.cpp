@@ -158,7 +158,7 @@ void ClariusProbeClient::stop_stream() {
         }
 
         // closing the outputs
-        while (m_writing_ouput);
+        while(m_writing_ouput);
         m_video->release();
         m_output_imu_file.close();
         disconnect_from_redis();
@@ -167,7 +167,7 @@ void ClariusProbeClient::stop_stream() {
 
 }
 
-void ClariusProbeClient::set_output_file(std::string output_folder_path) {
+void ClariusProbeClient::set_output_file(const std::string& output_folder_path) {
 
     try {
 

@@ -1,5 +1,4 @@
-#ifndef RGBDCAMERACLIENT_H
-#define RGBDCAMERACLIENT_H
+#pragma once
 
 #include "SensorDevice.h"
 
@@ -34,7 +33,8 @@ class RGBDCameraClient : public SensorDevice {
 
 	public:
 
-		RGBDCameraClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path) 
+		RGBDCameraClient(int device_id, const std::string& device_description, 
+			const std::string& redis_state_entry, const std::string& log_file_path) 
 			: SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 		~RGBDCameraClient();
 
@@ -43,13 +43,11 @@ class RGBDCameraClient : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
-		void set_output_file(std::string output_folder);
+		void set_output_file(const std::string& output_folder);
 
+	private:
 		// threaded data collection function
 		void collect_camera_data(void);
-
-	signals:
-		void new_video_frame(QImage image);
 
 	private:
 
@@ -67,6 +65,7 @@ class RGBDCameraClient : public SensorDevice {
 		std::string m_output_file_str = "";
 		std::string m_output_index_file_str = "";
 
-};
+	signals:
+		void new_video_frame(QImage image);
 
-#endif
+};

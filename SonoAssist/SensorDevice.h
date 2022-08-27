@@ -1,5 +1,4 @@
-#ifndef SENSORDEVICE_h
-#define SENSORDEVICE_h
+#pragma once
 
 #include <map>
 #include <string>
@@ -29,12 +28,12 @@ class SensorDevice : public QObject {
 
 	public : 
 
-		// constructor & destructor
-		SensorDevice(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path);
+		SensorDevice(int device_id, const std::string& device_description, 
+			const std::string& redis_state_entry, const std::string& log_file_path);
 		~SensorDevice();
 
-		// status getters and setters
-
+		int get_device_id(void) const;
+		std::string get_device_description(void) const;
 		bool get_sensor_used(void) const;
 		bool get_pass_through(void) const;
 		bool get_stream_status(void) const;
@@ -47,21 +46,15 @@ class SensorDevice : public QObject {
 		void set_stream_status(bool state);
 		void set_connection_status(bool state);
 		void set_stream_preview_status(bool state);
-		
-		// other getters and setters
-		int get_device_id(void) const;
-		std::string get_device_description(void) const;
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
-		// redis communication functions
-		void connect_to_redis(std::vector<std::string>&& = {});
-		void disconnect_from_redis(void);
-		void write_str_to_redis(std::string, std::string);
-		void write_img_to_redis(std::string, cv::Mat&);
-
-		// helper functions
-		void write_debug_output(QString);
 		static std::string get_micro_timestamp(void);
+
+		// redis communication functions
+		void connect_to_redis(const std::vector<std::string> && = {});
+		void disconnect_from_redis(void);
+		void write_str_to_redis(const std::string&, std::string);
+		void write_img_to_redis(const std::string&, const cv::Mat&);
 
 		// interface functions (virtual)
 		// all interface functions must be non-bloking
@@ -69,11 +62,10 @@ class SensorDevice : public QObject {
 		virtual void start_stream(void) = 0;
 		virtual void connect_device(void) = 0;
 		virtual void disconnect_device(void) = 0;
-		virtual void set_output_file(std::string ouput_folder) = 0;
+		virtual void set_output_file(const std::string& ouput_folder) = 0;
 
-	signals:
-		void debug_output(QString debug_str);
-		void device_status_change(int device_id, bool is_connected);
+	protected:
+		void write_debug_output(const QString&);
 
 	protected:
 
@@ -103,6 +95,8 @@ class SensorDevice : public QObject {
 		std::ofstream m_log_file;
 		std::string m_output_folder_path;
 
-};
+	signals:
+		void debug_output(QString debug_str);
+		void device_status_change(int device_id, bool is_connected);
 
-#endif
+};
