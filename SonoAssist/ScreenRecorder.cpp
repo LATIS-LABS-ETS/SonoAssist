@@ -155,12 +155,16 @@ void ScreenRecorder::set_output_file(const std::string& output_folder_path) {
 
 }
 
-cv::Mat ScreenRecorder::get_lastest_acquisition(void) {
+cv::Mat ScreenRecorder::get_lastest_acquisition(cv::Rect aoi) {
 
     cv::Mat latest_capture;
 
     m_capture_mtx.lock();
-    latest_capture = m_capture_cvt_mat.clone();
+    if (aoi.width == 0) {
+        latest_capture = m_capture_cvt_mat.clone();
+    } else {
+        latest_capture = m_capture_cvt_mat(aoi).clone();
+    }
     m_capture_mtx.unlock();
 
     return latest_capture;

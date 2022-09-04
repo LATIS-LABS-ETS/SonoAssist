@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <thread>
+#include <chrono>
 
 #undef slots
 #include <torch/script.h>
@@ -33,7 +34,7 @@ class CUGNModel : public MLModel {
 	private:
 
 		std::thread m_eval_thread;
-		int m_sampling_delay = 100;
+		int m_sampling_period_ms = 100;
 		std::shared_ptr<ScreenRecorder> m_sc_p = nullptr;
 
 		// screen recorder img preprocessing

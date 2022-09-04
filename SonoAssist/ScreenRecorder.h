@@ -35,7 +35,7 @@ class ScreenRecorder : public SensorDevice {
 		void disconnect_device(void);
 		void set_output_file(const std::string& output_folder);
 	
-		cv::Mat get_lastest_acquisition(void);
+		cv::Mat get_lastest_acquisition(cv::Rect aoi=cv::Rect(0, 0, 0, 0));
 		void get_screen_dimensions(int&, int&) const;
 
 	private:
