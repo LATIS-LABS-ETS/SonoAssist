@@ -25,6 +25,9 @@
 #include "ClariusProbeClient.h"
 #include "MetaWearBluetoothClient.h"
 
+#include "CUGNModel.h"
+
+#include "MlModel.h"
 #include "SensorDevice.h"
 #include "process_management.h"
 
@@ -185,6 +188,9 @@ class SonoAssist : public QMainWindow {
 		
 		std::vector<int> m_sensor_conn_updates;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
+
+		// ML models
+		std::vector<std::shared_ptr<MLModel>> m_ml_models;
 
 		// redis process info
 		PROCESS_INFORMATION m_redis_process;

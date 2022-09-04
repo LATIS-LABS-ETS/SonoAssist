@@ -32,7 +32,7 @@ class SensorDevice : public QObject {
 
 		SensorDevice(int device_id, const std::string& device_description, 
 			const std::string& redis_state_entry, const std::string& log_file_path);
-		~SensorDevice();
+		virtual ~SensorDevice();
 
 		int get_device_id(void) const;
 		std::string get_device_description(void) const;
@@ -53,12 +53,12 @@ class SensorDevice : public QObject {
 		static std::string get_micro_timestamp(void);
 
 		// redis communication functions
-		void connect_to_redis(const std::vector<std::string> && = {});
-		void disconnect_from_redis(void);
-		void write_str_to_redis(const std::string&, std::string);
-		void write_img_to_redis(const std::string&, const cv::Mat&);
+		virtual void connect_to_redis(const std::vector<std::string> && = {});
+		virtual void disconnect_from_redis(void);
+		virtual void write_str_to_redis(const std::string&, std::string);
+		virtual void write_img_to_redis(const std::string&, const cv::Mat&);
 
-		// interface functions (virtual)
+		// interface methods (virtual)
 		// all interface functions must be non-bloking
 		virtual void stop_stream(void) = 0;
 		virtual void start_stream(void) = 0;

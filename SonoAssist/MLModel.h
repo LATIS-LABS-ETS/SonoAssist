@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <fstream>
+#include <exception>
 
 #include <QObject>
 #include<QDebug>
@@ -24,14 +25,18 @@ class MLModel : public QObject {
 	public:
 
 		MLModel(int, const std::string&, const std::string&, const std::string&, const std::string&);
-		~MLModel();
+		virtual ~MLModel();
 
-		void set_configuration(std::shared_ptr<config_map> config_ptr);
-
-		// interface methods
+		// interface methods (virtual)
+		// all interface functions must be non-bloking
 		virtual void eval(void) = 0;
 		virtual void start_stream(void) = 0;
 		virtual void stop_stream(void) = 0;
+		
+		// setters and getters
+		bool get_model_status(void) const;
+		bool get_redis_state(void) const;
+		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
 		// redis methods
 		void connect_to_redis(const std::vector<std::string> && = {});
@@ -44,12 +49,13 @@ class MLModel : public QObject {
 	protected:
 
 		int m_model_id;
-		bool m_model_loaded = false;
+		bool m_model_status = false;
 		bool m_stream_status = false;
 		std::string m_model_description;
 
 		// configs vars
 		bool m_config_loaded = false;
+		std::string m_model_path_entry;
 		std::shared_ptr<config_map> m_config_ptr;
 
 		// redis vars

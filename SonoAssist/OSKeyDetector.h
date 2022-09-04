@@ -18,8 +18,8 @@ class OSKeyDetector : public SensorDevice {
 	public:
 
 		OSKeyDetector(int device_id, const std::string& device_description, 
-			const std::string& redis_state_entry, const std::string& log_file_path)
-			: SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
+			const std::string& redis_state_entry, const std::string& log_file_path): 
+			SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 
 		// SensorDevice interface functions
 		void stop_stream(void);

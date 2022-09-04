@@ -52,11 +52,12 @@ add_executable(SonoAssist WIN32
 	"process_management.cpp" "process_management.h"
 	"MetaWearBluetoothClient.cpp" "MetaWearBluetoothClient.h"
 	"ClariusProbeClient.cpp" "ClariusProbeClient.h"
-	"MLModel.cpp"  "MLModel.h"
+	"MLModel.cpp" "MLModel.h"
+	"CUGNModel.h" "CUGNModel.cpp"
 	"SonoAssist.cpp" "SonoAssist.h"
 	"main.cpp" "main.h"
 	"SonoAssist.rc"
-)
+ )
 
 target_link_libraries(SonoAssist
 	${CONAN_LIBS} 

@@ -20,8 +20,7 @@ Write-Host "*****************************************"
 Write-Host "Checking if 7zip module is installed.."
 if (Get-Module -ListAvailable -Name 7Zip4Powershell) {
     Write-Host "--> 7Zip4Powershell Already Installed. "
-} 
-else {
+} else {
     try {
         Write-Host "Installing 7zip module for Powershell.."
         Install-Module -Name 7Zip4Powershell

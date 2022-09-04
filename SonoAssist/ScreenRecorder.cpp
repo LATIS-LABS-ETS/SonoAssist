@@ -2,9 +2,9 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
-ScreenRecorder::ScreenRecorder(int device_id, const std::string& device_description, const std::string& redis_state_entry, const std::string& log_file_path)
-    : SensorDevice(device_id, device_description, redis_state_entry, log_file_path) 
-{
+ScreenRecorder::ScreenRecorder(int device_id, const std::string& device_description, 
+    const std::string& redis_state_entry, const std::string& log_file_path):
+    SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {
 
     int height, width, srcheight, srcwidth;
 
@@ -98,7 +98,7 @@ void ScreenRecorder::start_stream() {
         if (m_redis_state) {
             m_redis_img_entry = (*m_config_ptr)["sc_img_redis_entry"];
             m_redis_rate_div = std::atoi((*m_config_ptr)["sc_redis_rate_div"].c_str());
-            connect_to_redis({ m_redis_img_entry });
+            connect_to_redis({m_redis_img_entry});
         }
         
         // launching the acquisition thread
