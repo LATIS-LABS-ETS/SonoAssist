@@ -52,8 +52,8 @@ class RGBDCameraClient : public SensorDevice {
 	private:
 
 		// camera communication vars
-		std::unique_ptr <rs2::config> m_camera_cfg_p;
-		std::unique_ptr< rs2::pipeline> m_camera_pipe_p;
+		rs2::config m_camera_cfg;
+		rs2::pipeline m_camera_pipe;
 
 		// streaming vars
 		bool m_collect_data = false;

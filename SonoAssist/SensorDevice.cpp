@@ -12,9 +12,7 @@ SensorDevice::SensorDevice(int device_id, const std::string& device_description,
 }
 
 SensorDevice::~SensorDevice() {
-
 	m_log_file.close();
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// getters and setters
@@ -75,7 +73,6 @@ bool SensorDevice::get_redis_state(void) const {
 
 void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 
-	// keeping a pointer to the config map
 	m_config_ptr = config_ptr;
 	
 	// getting the redis status (is the device expected to connect to redis)
@@ -93,23 +90,26 @@ void SensorDevice::set_configuration(std::shared_ptr<config_map> config_ptr) {
 
 void SensorDevice::connect_to_redis(const std::vector<std::string>&& redis_entries) {
 
-	// creating a new redis connection
-	sw::redis::ConnectionOptions connection_options;
-	connection_options.host = "127.0.0.1";
-	connection_options.port = 6379;
-	connection_options.socket_timeout = std::chrono::milliseconds(REDIS_TIMEOUT);
-	m_redis_client_p = std::make_unique<sw::redis::Redis>(connection_options);
+	try {
+		
+		// creating a new redis connection
+		sw::redis::ConnectionOptions connection_options;
+		connection_options.host = REDIS_ADDRESS;
+		connection_options.port = REDIS_PORT;
+		connection_options.socket_timeout = std::chrono::milliseconds(REDIS_TIMEOUT);
+		m_redis_client_p = std::make_unique<sw::redis::Redis>(connection_options);
 
-	// initializing the entry
-	for (auto i = 0; i < redis_entries.size(); i++) {
-		try {
+		// clearing the sepcified entries
+		for (auto i = 0; i < redis_entries.size(); i++)
 			m_redis_client_p->del(redis_entries[i]);
-		} catch (...) {
-			m_redis_state = false;
-			break;
-		};
+
+		m_redis_state = true;
+
+	} catch (...) {
+		m_redis_state = false;
+		write_debug_output("Failed to connect to redis");
 	}
-	
+
 }
 
 void SensorDevice::disconnect_from_redis(void) {
@@ -135,6 +135,7 @@ void SensorDevice::write_str_to_redis(const std::string& redis_entry, std::strin
 
 		} catch (...) {
 			m_redis_state = false;
+			write_debug_output("Failed to write (string) to redis");
 		};
 
 	}
@@ -161,6 +162,7 @@ void SensorDevice::write_img_to_redis(const std::string& redis_entry, const cv::
 		
 		} catch (...) {
 			m_redis_state = false;
+			write_debug_output("Failed to write (image) to redis");
 		}
 
 	}

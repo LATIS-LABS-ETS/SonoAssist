@@ -13,6 +13,8 @@
 #include <sw/redis++/redis++.h>
 
 #define REDIS_TIMEOUT 200
+#define REDIS_PORT 6379
+#define REDIS_ADDRESS "127.0.0.1"
 
 typedef std::map<std::string, std::string> config_map;
 
@@ -26,7 +28,7 @@ class SensorDevice : public QObject {
 
 	Q_OBJECT
 
-	public : 
+	public: 
 
 		SensorDevice(int device_id, const std::string& device_description, 
 			const std::string& redis_state_entry, const std::string& log_file_path);

@@ -35,6 +35,7 @@ class ScreenRecorder : public SensorDevice {
 		void disconnect_device(void);
 		void set_output_file(const std::string& output_folder);
 	
+		cv::Mat get_lastest_acquisition(void);
 		void get_screen_dimensions(int&, int&) const;
 
 	private:
@@ -59,6 +60,7 @@ class ScreenRecorder : public SensorDevice {
 		// thread vars
 		bool m_collect_data = false;
 		std::thread m_collection_thread;
+		std::mutex m_capture_mtx;
 
 		// output file vars
 		bool m_output_file_loaded = false;
@@ -67,7 +69,7 @@ class ScreenRecorder : public SensorDevice {
 		std::string m_output_video_file_str;
 
 		// video output vars
-		std::unique_ptr<cv::VideoWriter> m_video;
+		cv::VideoWriter m_video;
 
 		// redis entry
 		std::string m_redis_img_entry;

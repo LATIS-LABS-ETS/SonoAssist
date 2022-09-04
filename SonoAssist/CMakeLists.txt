@@ -52,6 +52,7 @@ add_executable(SonoAssist WIN32
 	"process_management.cpp" "process_management.h"
 	"MetaWearBluetoothClient.cpp" "MetaWearBluetoothClient.h"
 	"ClariusProbeClient.cpp" "ClariusProbeClient.h"
+	"MLModel.cpp"  "MLModel.h"
 	"SonoAssist.cpp" "SonoAssist.h"
 	"main.cpp" "main.h"
 	"SonoAssist.rc"

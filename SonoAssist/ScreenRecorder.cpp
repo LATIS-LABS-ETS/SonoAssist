@@ -91,7 +91,7 @@ void ScreenRecorder::start_stream() {
 
         // opening output files
         m_output_index_file.open(m_output_index_file_str, std::fstream::app);
-        m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
+        m_video = cv::VideoWriter(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
             SCREEN_CAPTURE_FPS, cv::Size(m_window_rc.right, m_window_rc.bottom));
 
         // connecting to redis (if redis enabled)
@@ -120,7 +120,7 @@ void ScreenRecorder::stop_stream() {
 		m_device_streaming = false;
 	
         // closing output files
-        m_video->release();
+        m_video.release();
         m_output_index_file.close();
         disconnect_from_redis();
 
@@ -155,6 +155,23 @@ void ScreenRecorder::set_output_file(const std::string& output_folder_path) {
 
 }
 
+cv::Mat ScreenRecorder::get_lastest_acquisition(void) {
+
+    cv::Mat latest_capture;
+
+    m_capture_mtx.lock();
+    latest_capture = m_capture_cvt_mat.clone();
+    m_capture_mtx.unlock();
+
+    return latest_capture;
+
+}
+
+void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height) const {
+    screen_width = m_window_rc.right;
+    screen_height = m_window_rc.bottom;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// data collection function
 
 /*
@@ -165,11 +182,15 @@ void ScreenRecorder::collect_window_captures(void) {
   
 	while (m_collect_data) {
 	
-        // performing the window capture : copy from the window device context to the bitmap device context + color conversion
+        // performing the window capture : copy from the window device context to the bitmap device context
         // Source: https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
         StretchBlt(m_hwindowCompatibleDC, 0, 0, m_window_rc.right, m_window_rc.bottom, m_hwindowDC, 0, 0, m_window_rc.right, m_window_rc.bottom, SRCCOPY);
         GetDIBits(m_hwindowCompatibleDC, m_hbwindow, 0, m_window_rc.bottom, m_capture_mat.data, (BITMAPINFO*)&m_bi, DIB_RGB_COLORS);
+        
+        // color conversion -> filling (m_capture_cvt_mat) the screen capture's final form
+        m_capture_mtx.lock();
         cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
+        m_capture_mtx.unlock();
 
         // in preview mode, resizing an sending the image to UI (low resolution display)
         if (m_stream_preview) {
@@ -181,7 +202,6 @@ void ScreenRecorder::collect_window_captures(void) {
         // in normal mode, write to video and index file + redis
         else {
 
-            // write to redis
             if (m_redis_state) {
                 cv::resize(m_capture_cvt_mat, m_redis_img_mat, m_redis_img_mat.size(), 0, 0, cv::INTER_AREA);
                 cv::cvtColor(m_redis_img_mat, m_redis_img_mat, CV_BGRA2GRAY);
@@ -190,7 +210,7 @@ void ScreenRecorder::collect_window_captures(void) {
            
             // write to file
             if (!m_pass_through) {
-                m_video->write(m_capture_cvt_mat);
+                m_video.write(m_capture_cvt_mat);
                 m_output_index_file << get_micro_timestamp() << "\n";
             }
             
@@ -198,11 +218,4 @@ void ScreenRecorder::collect_window_captures(void) {
 
 	}
 
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
-
-void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height) const {
-    screen_width = m_window_rc.right;
-    screen_height = m_window_rc.bottom;
 }
