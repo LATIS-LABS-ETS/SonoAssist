@@ -112,8 +112,7 @@ void CUGNModel::eval() {
 				
 				// converting to tensor, normalizing and feeding the model
 				at::Tensor sc_img_tensor = torch::from_blob(m_sc_masked.data,
-					{1, 1, 1, m_sc_masked.rows, m_sc_masked.cols},
-					torch::TensorOptions().dtype(torch::kFloat32));
+					{1, 1, 1, m_sc_masked.rows, m_sc_masked.cols}, at::kByte).to(torch::kFloat32);
 				sc_img_tensor = sc_img_tensor.sub(m_pix_std_div).div(m_pix_mean);
 				
 				// evaluating the model + extracting predicted data
@@ -127,10 +126,8 @@ void CUGNModel::eval() {
 				float z_rot_pred = mov_pred_tensor[0][0][2].item<float>();
 				
 				if (m_redis_state) {
-					std::string model_rot_pred_str = "[" +
-						std::to_string(x_rot_pred) + ", " +
-						std::to_string(y_rot_pred) + ", " +
-						std::to_string(z_rot_pred) + "]";
+					std::string model_rot_pred_str = std::to_string(x_rot_pred) +
+						"," + std::to_string(y_rot_pred) + "," + std::to_string(z_rot_pred);
 					write_str_to_redis(m_redis_pred_entry, model_rot_pred_str);
 				}
 				
@@ -144,7 +141,7 @@ void CUGNModel::eval() {
 		auto eval_time = std::chrono::duration_cast<std::chrono::milliseconds>(eval_end - eval_start).count();
 		auto thread_wait_time = m_sampling_period_ms - eval_time;
 		if (thread_wait_time < 0) thread_wait_time = 0;
-        std::this_thread::sleep_for(std::chrono::milliseconds(thread_wait_time));
+		std::this_thread::sleep_for(std::chrono::milliseconds(thread_wait_time));
 
     }
 
