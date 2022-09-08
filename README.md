@@ -1,6 +1,6 @@
 # Welcome to the add-sensor-example branch!
 
-**In this branch, we cover the 5 required steps (in the code) to add support for a new sensor.**
+**In this branch, we cover the 6 required steps (in the code) to add support for a new sensor.**
 
 This version of SonoAssist supports an additional sensor called "Example Sensor" for which we highlighted the required development steps via comments of the form: "STEP#N".
 The relevant files are the following : 

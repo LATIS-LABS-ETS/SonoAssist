@@ -1,5 +1,4 @@
-#ifndef SCREENRECORDER_H
-#define SCREENRECORDER_H
+#pragma once
 
 #include "SensorDevice.h"
 
@@ -25,30 +24,31 @@ class ScreenRecorder : public SensorDevice {
 
 	public:
 		
-		ScreenRecorder(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path);
+		ScreenRecorder(int device_id, const std::string& device_description, 
+			const std::string& redis_state_entry, const std::string& log_file_path);
+		~ScreenRecorder();
 
 		// SensorDevice interface functions
 		void stop_stream(void);
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
-		void set_output_file(std::string output_folder);
-		
-		// threaded collection function
-		void collect_window_captures(void);
-
-		// utility functions
-		void hwnd2mat(void);
+		void set_output_file(const std::string& output_folder);
+	
+		cv::Mat get_lastest_acquisition(cv::Rect aoi=cv::Rect(0, 0, 0, 0));
 		void get_screen_dimensions(int&, int&) const;
 
-	signals:
-		void new_window_capture(QImage image);
+	private:
+		void collect_window_captures(void);
 
-	protected:
+	private:
 
 		// window capture vars
 		RECT m_window_rc;
 		HWND m_window_handle;
+		HBITMAP m_hbwindow;
+		BITMAPINFOHEADER m_bi;
+		HDC m_hwindowDC, m_hwindowCompatibleDC;
 		
 		// image handling containers
 		QImage m_preview_img;
@@ -60,6 +60,7 @@ class ScreenRecorder : public SensorDevice {
 		// thread vars
 		bool m_collect_data = false;
 		std::thread m_collection_thread;
+		std::mutex m_capture_mtx;
 
 		// output file vars
 		bool m_output_file_loaded = false;
@@ -68,11 +69,12 @@ class ScreenRecorder : public SensorDevice {
 		std::string m_output_video_file_str;
 
 		// video output vars
-		std::unique_ptr<cv::VideoWriter> m_video;
+		cv::VideoWriter m_video;
 
 		// redis entry
 		std::string m_redis_img_entry;
+
+	signals:
+		void new_window_capture(QImage image);
 		
 };
-
-#endif

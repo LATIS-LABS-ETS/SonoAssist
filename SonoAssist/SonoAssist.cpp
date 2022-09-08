@@ -24,8 +24,11 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"sc_to_redis", ""}, {"sc_img_redis_entry", ""}, {"sc_redis_rate_div", ""},
         {"us_probe_ip_address", ""}, {"us_probe_to_redis", ""}, {"us_probe_imu_redis_entry", ""}, {"us_probe_img_redis_entry", ""} , {"us_probe_redis_rate_div", ""},
         {"redis_server_path", ""},
-        {"eye_tracker_crosshairs_path", ""},{"eye_tracker_target_path", ""},
-        {"us_image_main_display_height", ""},{"us_image_main_display_width", ""},
+        {"eye_tracker_crosshairs_path", ""}, {"eye_tracker_target_path", ""},
+        {"us_image_main_display_height", ""}, {"us_image_main_display_width", ""},
+        {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
+        {"cugn_sample_frequency", ""}, {"cugn_sequence_lenght", ""},  {"cugn_n_gru_cells", ""}, {"cugn_n_gru_neurons", ""}, {"cugn_pixel_mean", ""}, {"cugn_pixel_std_div", ""},
+        {"cugn_sc_mask_path", ""}, {"cugn_input_h", "" }, { "cugn_input_w", "" }, {"cugn_sc_bbox_w", ""}, {"cugn_sc_bbox_h", ""}, {"cugn_sc_bbox_x", ""}, {"cugn_sc_bbox_y", ""}
     };
 
     // creating the log folder
@@ -72,6 +75,22 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         connect(m_sensor_devices[i].get(), &SensorDevice::debug_output, this, &SonoAssist::add_debug_text, Qt::QueuedConnection);
         connect(m_sensor_devices[i].get(), &SensorDevice::device_status_change, this, &SonoAssist::set_device_status);
     }
+
+    // creating the sensor devices ... end
+
+    // creating the ML Models ... begin
+
+    m_ml_models = std::vector<std::shared_ptr<MLModel>>();
+
+    m_ml_models.emplace_back(std::make_shared<CUGNModel>(m_ml_models.size(),
+        "CUGN Model", "cugn_to_redis", "cugn_model_path", log_file_path, m_screen_recorder_client_p));
+
+    // connecting to the models (debug output) signal
+    for (auto i = 0; i < m_ml_models.size(); i++) {
+        connect(m_ml_models[i].get(), &MLModel::debug_output, this, &SonoAssist::add_debug_text, Qt::QueuedConnection);
+    }
+
+    // creating the ML Models ... end
 	
     // setting up the gui
     ui.setupUi(this);
@@ -100,6 +119,7 @@ SonoAssist::~SonoAssist(){
     try {
 
         // making sure all streams are shut off
+        
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->stop_stream();
@@ -107,11 +127,17 @@ SonoAssist::~SonoAssist(){
             }
         }
 
+        for (auto i = 0; i < m_ml_models.size(); i++) {
+            if (m_ml_models[i]->get_model_status()) {
+                m_ml_models[i]->stop_stream();
+            }
+        }
+
         remove_normal_display();
         remove_preview_display();
 
     } catch (...) {
-        qDebug() << "n\SonoAssist - failed to stop the devices from treaming (in destructor)";
+        qDebug() << "\nSonoAssist - failed to stop the devices from treaming (in destructor)";
     }
 
 }
@@ -255,7 +281,9 @@ void SonoAssist::on_sensor_connect_button_clicked(){
 
         // making sure all devices are disconnected (for proper state update check)
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if(m_sensor_devices[i]->get_connection_status()) m_sensor_devices[i]->disconnect_device();
+            if (m_sensor_devices[i]->get_connection_status()) {
+                m_sensor_devices[i]->disconnect_device();
+            }
         }
 
         // preventing multiple connection button clicks
@@ -269,7 +297,9 @@ void SonoAssist::on_sensor_connect_button_clicked(){
         // connecting the devices
         ui.debug_text_edit->clear();
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
-            if (m_sensor_devices[i]->get_sensor_used()) m_sensor_devices[i]->connect_device();
+            if (m_sensor_devices[i]->get_sensor_used()) {
+                m_sensor_devices[i]->connect_device();
+            }
         }
 
     } else {
@@ -369,7 +399,7 @@ void SonoAssist::on_start_acquisition_button_clicked() {
     // making sure the device isnt already streaming
     if (!m_stream_is_active && create_output_folder()) {
 
-        // if all used devices are ready, start the acquisition
+        // if all used devices are ready, start the acquisition streams
         if (check_device_connections()) {
 
             m_stream_is_active = true;
@@ -384,6 +414,12 @@ void SonoAssist::on_start_acquisition_button_clicked() {
                 if (m_sensor_devices[i]->get_sensor_used()) {
                     n_used_sensors++;
                     m_sensor_devices[i]->start_stream();
+                }
+            }
+
+            for (auto i = 0; i < m_ml_models.size(); i++) {
+                if (m_ml_models[i]->get_model_status()) {
+                    m_ml_models[i]->start_stream();
                 }
             }
            
@@ -433,7 +469,12 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         m_stream_is_active = false;
         set_acquisition_label(false);
 
-        // stoping the sensor streams
+        for (auto i = 0; i < m_ml_models.size(); i++) {
+            if (m_ml_models[i]->get_model_status()) {
+                m_ml_models[i]->stop_stream();
+            }
+        }
+
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 m_sensor_devices[i]->stop_stream();
@@ -460,33 +501,41 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
 
 void SonoAssist::on_param_file_apply_clicked() {
 
+    int entities_with_redis = 0;
+
     // making sure devices arent streaming
     if (!m_stream_is_active) {
 
         m_config_is_loaded = load_config_file(ui.param_file_input->text());
 
-        // a successful load updates all clients
+        // a successful load updates all sensors and models
         if (m_config_is_loaded) {
 
-            // sensors load the new configs
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_connection_status()) m_sensor_devices[i]->disconnect_device();
+                if (m_sensor_devices[i]->get_connection_status()) {
+                    m_sensor_devices[i]->disconnect_device();
+                }
                 m_sensor_devices[i]->set_configuration(m_app_params);
+                if (m_sensor_devices[i]->get_redis_state()) entities_with_redis++;
+            }
+
+            for (auto i = 0; i < m_ml_models.size(); i++) {
+                m_ml_models[i]->set_configuration(m_app_params);
+                if (m_ml_models[i]->get_redis_state()) entities_with_redis++;
             }
 
             // applying config changes to the UI
             configure_normal_display();
 
-            // launching redis server (not checking for success)
-            for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_redis_state()) {
-                    if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
-                        qDebug() << "\nSonoAssist - failed to launch redis server - error code : " << GetLastError();
-                    }
-                    break;
+            // launching redis server
+            if (entities_with_redis > 0) {
+                if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
+                    QString debug_str = "\nSonoAssist - failed to launch redis server";
+                    qDebug() << debug_str << GetLastError();
+                    add_debug_text(debug_str);
                 }
             }
-
+            
         } else {
             QString title = "Parameters were not loaded";
             QString message = "An invalid file path was specified or the config file is ill-formatted.";
@@ -528,11 +577,7 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
 
 // inserting the port in the config map
 void SonoAssist::on_udp_port_input_editingFinished(void) {
-
-    try {
-        m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());
-    } catch (...) {}
-        
+    m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());    
 }
 
 void SonoAssist::sensor_panel_selection_handler(int row, int column) {
@@ -612,7 +657,7 @@ void SonoAssist::set_device_status(int device_id, bool device_status) {
         bool updates_complete = true;
         for (auto i = 0; i < m_sensor_conn_updates.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
-                updates_complete *= (m_sensor_conn_updates[i] > 0);
+                updates_complete = updates_complete && (m_sensor_conn_updates[i] > 0);
             }
         }
         if (updates_complete) ui.sensor_connect_button->setEnabled(true);
@@ -621,12 +666,8 @@ void SonoAssist::set_device_status(int device_id, bool device_status) {
 
 }
 
-void SonoAssist::add_debug_text(QString debug_str) {
-    
-    try {
-        ui.debug_text_edit->setText(ui.debug_text_edit->toPlainText() + "\n" + debug_str);
-    } catch (...) {};
-    
+void SonoAssist::add_debug_text(const QString& debug_str) {
+    ui.debug_text_edit->setText(ui.debug_text_edit->toPlainText() + "\n" + debug_str);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////// time marker handling
@@ -640,29 +681,23 @@ void SonoAssist::on_new_os_key_detected(int key) {
 
         // adding a time marker7
         if (key == OS_A_KEY) {
-
             // adding the marker to the display list + json time marker list
             QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) + " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
             ui.time_marker_list->addItem(new QListWidgetItem(marker_str));
             m_time_markers_json.push_back(QJsonValue(marker_str));
-
             // updating the output params
             m_output_params["time_markers"] = m_time_markers_json;
-
         }
 
         // removing a time marker
         else if (key == OS_D_KEY) {
-
             // removing the latest time marker
             if (ui.time_marker_list->count() > 0) {
                 m_time_markers_json.pop_back();
                 delete ui.time_marker_list->takeItem(ui.time_marker_list->count() - 1);
             }
-
             // updating the output params
             m_output_params["time_markers"] = m_time_markers_json;
-
         }
 
     }
@@ -733,7 +768,7 @@ void SonoAssist::set_acquisition_label(bool active) {
 
 }
 
-void SonoAssist::display_warning_message(QString title, QString message) {
+void SonoAssist::display_warning_message(const QString& title, const QString& message) {
     QMessageBox::warning(this, title, message);
 }
 
@@ -849,7 +884,7 @@ void SonoAssist::generate_normal_display(void) {
     // getting the placeholder position (screen coordinates)
     QPoint view_point = ui.graphicsView->mapFromScene(m_us_bg_p->pos());
     QPoint screen_point = ui.graphicsView->viewport()->mapToGlobal(view_point);
-    // writing the placeholder position to the output params
+    
     m_output_params["display_x"] = screen_point.x();
     m_output_params["display_y"] = screen_point.y();
     m_output_params["display_width"] = m_main_us_img_width;
@@ -979,7 +1014,7 @@ bool SonoAssist::create_output_folder() {
 
     // creating the output folder (in the parent folder)
     stemp = std::wstring(output_folder_path.begin(), output_folder_path.end());
-    valid_output_folder *= (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError());
+    valid_output_folder = valid_output_folder && (CreateDirectory(stemp.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError());
     
     // updating the devices
     if (valid_output_folder) {
@@ -1001,7 +1036,7 @@ bool SonoAssist::create_output_folder() {
 
 }
 
-bool SonoAssist::load_config_file(QString param_file_path) {
+bool SonoAssist::load_config_file(const QString& param_file_path) {
 
     // loading the contents of the param file
     QDomDocument doc("params");
@@ -1031,15 +1066,12 @@ bool SonoAssist::load_config_file(QString param_file_path) {
             
             // handling 2 levels of elements
             else {
-                
                 std::string param_value = "";
                 for (auto i(0); i < children.at(0).childNodes().length(); i++) {
                     param_value += children.at(0).childNodes().at(i).firstChild().nodeValue().toStdString();
                     if (i != children.at(0).childNodes().length() - 1) param_value += ", ";
                 }
-
                 parameter.second = param_value;
-         
             }
             
         }

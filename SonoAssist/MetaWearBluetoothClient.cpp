@@ -140,9 +140,8 @@ void MetaWearBluetoothClient::on_disconnect(const void* caller, MblMwFnVoidVoidP
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// MetaWearBluetoothClient public methods
 
-MetaWearBluetoothClient::MetaWearBluetoothClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
-	: SensorDevice(device_id, device_description, redis_state_entry, log_file_path)
-{
+MetaWearBluetoothClient::MetaWearBluetoothClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path): 
+	SensorDevice(device_id, device_description, redis_state_entry, log_file_path){
 
 	// configuring the discovery agent
 	m_discovery_agent.setLowEnergyDiscoveryTimeout(DISCOVERY_TIMEOUT);
@@ -300,7 +299,7 @@ void MetaWearBluetoothClient::stop_stream(void){
 
 }
 
-void MetaWearBluetoothClient::set_output_file(std::string output_folder_path) {
+void MetaWearBluetoothClient::set_output_file(const std::string& output_folder_path) {
 
 	try {
 
@@ -498,7 +497,7 @@ void MetaWearBluetoothClient::service_discovery_finished() {
 
 			// configuring the board on succes
 			if (connection_status) {
-				mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_NDOF);
+				mbl_mw_sensor_fusion_set_mode(board, MBL_MW_SENSOR_FUSION_MODE_IMU_PLUS);
 				mbl_mw_sensor_fusion_set_acc_range(board, MBL_MW_SENSOR_FUSION_ACC_RANGE_8G);
 				mbl_mw_sensor_fusion_write_config(board);
 			}  else {
@@ -616,7 +615,7 @@ void MetaWearBluetoothClient::clear_metawear_connection() {
 
 }
 
- QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str) {
+ QLowEnergyCharacteristic MetaWearBluetoothClient::find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, const QString& debug_str) {
 
 	// getting the uuid object for the target characteristic and the target service
 	QBluetoothUuid target_characteristic_uuid = metawear_uuid_to_qt_uuid(characteristic_struct->uuid_low, characteristic_struct->uuid_high);

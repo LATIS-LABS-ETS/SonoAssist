@@ -1,5 +1,4 @@
-#ifndef GAZETRACKER_H
-#define GAZETRACKER_H
+#pragma once
 
 #include "SensorDevice.h"
 
@@ -20,7 +19,8 @@ class GazeTracker : public SensorDevice {
 
 	public:
 
-		GazeTracker(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path);
+		GazeTracker(int device_id, const std::string& device_description,
+			const std::string& redis_state_entry, const std::string& log_file_path);
 		~GazeTracker();
 
 		// SensorDevice interface functions
@@ -28,11 +28,10 @@ class GazeTracker : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
-		void set_output_file(std::string output_folder);
+		void set_output_file(const std::string& output_folder);
 
-		// threaded collection method and callback
-		void collect_data(void);
-
+	public:
+		
 		// tobii communication vars (accessed from callbacks)
 		bool m_tobii_api_valid = false;
 		tobii_api_t* m_tobii_api = nullptr;
@@ -43,9 +42,9 @@ class GazeTracker : public SensorDevice {
 		std::ofstream m_output_gaze_file;
 		std::ofstream m_output_head_file;
 
-
-	signals:
-		void new_gaze_point(float x , float y);
+	private:
+		// threaded collection method and callback
+		void collect_data(void);
 
 	private:
 
@@ -58,11 +57,11 @@ class GazeTracker : public SensorDevice {
 		bool m_collect_data = false;
 		std::thread m_collection_thread;
 
+	signals:
+		void new_gaze_point(float x, float y);
 };
 
 // helper and call back function prototypes
 void url_receiver(char const* url, void* user_data);
 void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data);
 void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data);
-
-#endif

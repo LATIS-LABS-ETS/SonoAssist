@@ -2,13 +2,52 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
 
-ScreenRecorder::ScreenRecorder(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
-    : SensorDevice(device_id, device_description, redis_state_entry, log_file_path) 
-{
+ScreenRecorder::ScreenRecorder(int device_id, const std::string& device_description, 
+    const std::string& redis_state_entry, const std::string& log_file_path):
+    SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {
 
-    // getting the target window handle and bounding rectangle
+    int height, width, srcheight, srcwidth;
+
+    // getting the window handle and bounding rectangle
     m_window_handle = GetDesktopWindow();
     GetClientRect(m_window_handle, &m_window_rc);
+
+    // getting the window device context
+    m_hwindowDC = GetDC(m_window_handle);
+    m_hwindowCompatibleDC = CreateCompatibleDC(m_hwindowDC);
+    SetStretchBltMode(m_hwindowCompatibleDC, COLORONCOLOR);
+
+    // defining the resized image dimensions
+    width = m_window_rc.right;
+    height = m_window_rc.bottom;
+    srcwidth = m_window_rc.right;
+    srcheight = m_window_rc.bottom;
+
+    // create a bitmap to hold the window content
+    m_hbwindow = CreateCompatibleBitmap(m_hwindowDC, width, height);
+    m_bi.biSize = sizeof(BITMAPINFOHEADER);
+    m_bi.biWidth = width;
+    m_bi.biHeight = -height;
+    m_bi.biPlanes = 1;
+    m_bi.biBitCount = 32;
+    m_bi.biCompression = BI_RGB;
+    m_bi.biSizeImage = 0;
+    m_bi.biXPelsPerMeter = 0;
+    m_bi.biYPelsPerMeter = 0;
+    m_bi.biClrUsed = 0;
+    m_bi.biClrImportant = 0;
+
+    // use the previously created device context with the bitmap
+    SelectObject(m_hwindowCompatibleDC, m_hbwindow);
+
+}
+
+ScreenRecorder::~ScreenRecorder() {
+
+    // releasing the window capture resources
+    DeleteObject(m_hbwindow);
+    DeleteDC(m_hwindowCompatibleDC);
+    ReleaseDC(m_window_handle, m_hwindowDC);
 
 }
 
@@ -52,22 +91,22 @@ void ScreenRecorder::start_stream() {
 
         // opening output files
         m_output_index_file.open(m_output_index_file_str, std::fstream::app);
-        m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
+        m_video = cv::VideoWriter(m_output_video_file_str, CV_FOURCC('M', 'J', 'P', 'G'),
             SCREEN_CAPTURE_FPS, cv::Size(m_window_rc.right, m_window_rc.bottom));
 
         // connecting to redis (if redis enabled)
         if (m_redis_state) {
             m_redis_img_entry = (*m_config_ptr)["sc_img_redis_entry"];
             m_redis_rate_div = std::atoi((*m_config_ptr)["sc_redis_rate_div"].c_str());
-            connect_to_redis({ m_redis_img_entry });
+            connect_to_redis({m_redis_img_entry});
         }
         
         // launching the acquisition thread
         m_collect_data = true;
-		m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
-		m_device_streaming = true;
+	    m_collection_thread = std::thread(&ScreenRecorder::collect_window_captures, this);
+	    m_device_streaming = true;
 
-	}
+    }
 
 }
 
@@ -81,7 +120,7 @@ void ScreenRecorder::stop_stream() {
 		m_device_streaming = false;
 	
         // closing output files
-        m_video->release();
+        m_video.release();
         m_output_index_file.close();
         disconnect_from_redis();
 
@@ -89,7 +128,7 @@ void ScreenRecorder::stop_stream() {
 
 }
 
-void ScreenRecorder::set_output_file(std::string output_folder_path) {
+void ScreenRecorder::set_output_file(const std::string& output_folder_path) {
 
     try {
 
@@ -116,6 +155,27 @@ void ScreenRecorder::set_output_file(std::string output_folder_path) {
 
 }
 
+cv::Mat ScreenRecorder::get_lastest_acquisition(cv::Rect aoi) {
+
+    cv::Mat latest_capture;
+
+    m_capture_mtx.lock();
+    if (aoi.width == 0) {
+        latest_capture = m_capture_cvt_mat.clone();
+    } else {
+        latest_capture = m_capture_cvt_mat(aoi).clone();
+    }
+    m_capture_mtx.unlock();
+
+    return latest_capture;
+
+}
+
+void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height) const {
+    screen_width = m_window_rc.right;
+    screen_height = m_window_rc.bottom;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// data collection function
 
 /*
@@ -126,9 +186,15 @@ void ScreenRecorder::collect_window_captures(void) {
   
 	while (m_collect_data) {
 	
-       // capturing the target window
-       hwnd2mat();
-       cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
+        // performing the window capture : copy from the window device context to the bitmap device context
+        // Source: https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
+        StretchBlt(m_hwindowCompatibleDC, 0, 0, m_window_rc.right, m_window_rc.bottom, m_hwindowDC, 0, 0, m_window_rc.right, m_window_rc.bottom, SRCCOPY);
+        GetDIBits(m_hwindowCompatibleDC, m_hbwindow, 0, m_window_rc.bottom, m_capture_mat.data, (BITMAPINFO*)&m_bi, DIB_RGB_COLORS);
+        
+        // color conversion -> filling (m_capture_cvt_mat) the screen capture's final form
+        m_capture_mtx.lock();
+        cv::cvtColor(m_capture_mat, m_capture_cvt_mat, CV_BGRA2BGR);
+        m_capture_mtx.unlock();
 
         // in preview mode, resizing an sending the image to UI (low resolution display)
         if (m_stream_preview) {
@@ -140,78 +206,20 @@ void ScreenRecorder::collect_window_captures(void) {
         // in normal mode, write to video and index file + redis
         else {
 
-            // write to redis
             if (m_redis_state) {
                 cv::resize(m_capture_cvt_mat, m_redis_img_mat, m_redis_img_mat.size(), 0, 0, cv::INTER_AREA);
                 cv::cvtColor(m_redis_img_mat, m_redis_img_mat, CV_BGRA2GRAY);
                 write_img_to_redis(m_redis_img_entry, m_redis_img_mat);
             }
            
+            // write to file
             if (!m_pass_through) {
-                m_video->write(m_capture_cvt_mat);
+                m_video.write(m_capture_cvt_mat);
                 m_output_index_file << get_micro_timestamp() << "\n";
             }
             
         }
 
 	}
-
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
-
-void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height) const {
-    screen_width = m_window_rc.right;
-    screen_height = m_window_rc.bottom;
-}
-
-/*
-Converts the window's bitmap format to a cv::Mat
-Source : https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
-*/
-void ScreenRecorder::hwnd2mat() {
-
-    cv::Mat src;
-    HBITMAP hbwindow;
-    BITMAPINFOHEADER bi;
-    HDC hwindowDC, hwindowCompatibleDC;
-    int height, width, srcheight, srcwidth;
-
-    // getting the window device context
-    hwindowDC = GetDC(m_window_handle);
-    hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
-    SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR);    
-
-    // defining the resized image dimensions
-    width = m_window_rc.right;
-    height = m_window_rc.bottom;
-    srcwidth = m_window_rc.right;
-    srcheight = m_window_rc.bottom;
-   
-    // create a bitmap
-    hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
-    bi.biSize = sizeof(BITMAPINFOHEADER);
-    bi.biWidth = width;
-    bi.biHeight = -height;
-    bi.biPlanes = 1;
-    bi.biBitCount = 32;
-    bi.biCompression = BI_RGB;
-    bi.biSizeImage = 0;
-    bi.biXPelsPerMeter = 0;
-    bi.biYPelsPerMeter = 0;
-    bi.biClrUsed = 0;
-    bi.biClrImportant = 0;
-
-    // use the previously created device context with the bitmap
-    SelectObject(hwindowCompatibleDC, hbwindow);
-
-    // copy from the window device context to the bitmap device context
-    StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY);
-    GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, m_capture_mat.data, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
-
-    // avoid memory leak
-    DeleteObject(hbwindow);
-    DeleteDC(hwindowCompatibleDC);
-    ReleaseDC(m_window_handle, hwindowDC);
 
 }
