@@ -41,10 +41,11 @@ class CUGNModel : public MLModel {
 		cv::Rect m_sc_roi;
 		cv::Size m_cugn_sc_in_dims;
 		cv::Mat m_sc_mask, m_sc_masked, m_sc_redim;
+		int m_sequence_len = 0;
 		float m_pix_mean, m_pix_std_div = 0;
 
 		// model inputs
-		at::Tensor m_hx_tensor, m_default_mov_tensor;
+		at::Tensor m_start_hx_tensor, m_default_mov_tensor;
 
 		// redis vars
 		std::string m_redis_pred_entry;

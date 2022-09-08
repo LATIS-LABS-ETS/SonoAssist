@@ -30,6 +30,7 @@
 	<cugn_model_path>C:/Program Files (x86)/SonoAssist/resources/traced_cugn.pt</cugn_model_path>
 	<cugn_n_gru_cells>1</cugn_n_gru_cells>
 	<cugn_n_gru_neurons>500</cugn_n_gru_neurons>
+	<cugn_sequence_lenght>15</cugn_sequence_lenght>
 	<cugn_sample_frequency>7</cugn_sample_frequency>
 	<cugn_pixel_mean>0.2</cugn_pixel_mean>
 	<cugn_pixel_std_div>0.1853</cugn_pixel_std_div>

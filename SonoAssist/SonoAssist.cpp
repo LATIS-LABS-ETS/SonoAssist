@@ -14,7 +14,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"eye_tracker_crosshairs_path", ""}, {"eye_tracker_target_path", ""},
         {"us_image_main_display_height", ""}, {"us_image_main_display_width", ""},
         {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
-        {"cugn_sample_frequency", ""}, {"cugn_n_gru_cells", ""}, {"cugn_n_gru_neurons", ""}, {"cugn_pixel_mean", ""}, {"cugn_pixel_std_div", ""},
+        {"cugn_sample_frequency", ""}, {"cugn_sequence_lenght", ""},  {"cugn_n_gru_cells", ""}, {"cugn_n_gru_neurons", ""}, {"cugn_pixel_mean", ""}, {"cugn_pixel_std_div", ""},
         {"cugn_sc_mask_path", ""}, {"cugn_input_h", "" }, { "cugn_input_w", "" }, {"cugn_sc_bbox_w", ""}, {"cugn_sc_bbox_h", ""}, {"cugn_sc_bbox_x", ""}, {"cugn_sc_bbox_y", ""}
     };
 

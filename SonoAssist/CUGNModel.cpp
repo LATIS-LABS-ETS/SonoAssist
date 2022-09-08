@@ -26,9 +26,10 @@ void CUGNModel::start_stream(void) {
 		// loading model pipeline params
 		try {
 
-			// defining the model's samlping frequency
+			// defining the model's sampling frequency + sequence length
 			float sample_frequency = std::atoi((*m_config_ptr)["cugn_sample_frequency"].c_str());
 			m_sampling_period_ms = round((1 / sample_frequency) * 1000);
+			m_sequence_len = std::atoi((*m_config_ptr)["cugn_sequence_lenght"].c_str());
 
 			// defining the US image bounding box
 			int sc_roi_x = std::atoi((*m_config_ptr)["cugn_sc_bbox_x"].c_str());
@@ -53,8 +54,7 @@ void CUGNModel::start_stream(void) {
 			// defining the model's starting hidden state input
 			int n_gru_cells = std::atoi((*m_config_ptr)["cugn_n_gru_cells"].c_str());
 			int n_gru_neurons = std::atoi((*m_config_ptr)["cugn_n_gru_neurons"].c_str());
-			m_hx_tensor = torch::zeros({n_gru_cells, 1, n_gru_neurons}, 
-				torch::TensorOptions().dtype(torch::kFloat32));
+			m_start_hx_tensor = torch::zeros({n_gru_cells, 1, n_gru_neurons}, torch::TensorOptions().dtype(torch::kFloat32));
 
 		} catch(...) {
 			valid_params = false;
@@ -83,7 +83,9 @@ void CUGNModel::stop_stream(void) {
 
 void CUGNModel::eval() {
 
+	int input_counter = 0;
 	cv::Mat sc_input;
+	at::Tensor hx_tensor = m_start_hx_tensor;
 
     while (m_stream_status) {
 		
@@ -113,13 +115,24 @@ void CUGNModel::eval() {
 				// converting to tensor, normalizing and feeding the model
 				at::Tensor sc_img_tensor = torch::from_blob(m_sc_masked.data,
 					{1, 1, 1, m_sc_masked.rows, m_sc_masked.cols}, at::kByte).to(torch::kFloat32);
-				sc_img_tensor = sc_img_tensor.sub(m_pix_std_div).div(m_pix_mean);
+				sc_img_tensor = sc_img_tensor.sub(m_pix_mean).div(m_pix_std_div);
 				
-				// evaluating the model + extracting predicted data
+				// evaluating the model
 				c10::IValue model_output = m_model.forward(
-					std::vector<torch::jit::IValue>{sc_img_tensor, m_hx_tensor, m_default_mov_tensor});
+					std::vector<torch::jit::IValue>{sc_img_tensor, hx_tensor, m_default_mov_tensor});
 				c10::ivalue::Tuple& model_output_tuple = model_output.toTupleRef();			
-				m_hx_tensor = model_output_tuple.elements()[1].toTensor().detach().clone();
+				
+				// defining the next hidden state
+				if (input_counter < m_sequence_len) {
+					hx_tensor = model_output_tuple.elements()[1].toTensor().detach().clone();
+					input_counter ++;
+				} else {
+					hx_tensor = m_start_hx_tensor;
+					input_counter = 0;
+				}
+				
+				// extracting the prediction + writing to redis
+
 				at::Tensor mov_pred_tensor = model_output_tuple.elements()[0].toTensor().detach();
 				float x_rot_pred = mov_pred_tensor[0][0][0].item<float>();
 				float y_rot_pred = mov_pred_tensor[0][0][1].item<float>();
