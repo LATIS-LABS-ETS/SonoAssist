@@ -1,5 +1,4 @@
-#ifndef METAWEARBLUETOOTHCLIENT_H
-#define METAWEARBLUETOOTHCLIENT_H
+#pragma once
 
 #include "SensorDevice.h"
 
@@ -57,7 +56,7 @@ class MetaWearBluetoothClient : public SensorDevice {
 		void start_stream(void);
 		void connect_device(void);
 		void disconnect_device(void);
-		void set_output_file(std::string output_folder);
+		void set_output_file(const std::string& output_folder);
 
 		// metawear integration functions
 		void read_gatt_char(const void* caller,
@@ -68,6 +67,8 @@ class MetaWearBluetoothClient : public SensorDevice {
 			MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
 		void on_disconnect(const void* caller, MblMwFnVoidVoidPtrInt handler);
 
+	public:
+
 		// file output attributes + redis
 		std::ofstream m_output_ori_file;
 		std::ofstream m_output_acc_file;
@@ -77,20 +78,11 @@ class MetaWearBluetoothClient : public SensorDevice {
 		MblMwMetaWearBoard* m_metawear_board_p = nullptr;
 		MblMwBtleConnection m_metawear_ble_interface = { 0 };
 
-	private slots:
-
-		// ble device slots
-		void device_disconnected(void);
-		void device_discovery_finished(void);
-		void device_discovered(const QBluetoothDeviceInfo& device);
-		
-		// ble service slots
-		void service_discovery_finished();
-		void service_discovered(const QBluetoothUuid& gatt);
-		
-		// service characteristic slots
-		void service_characteristic_read(const QLowEnergyCharacteristic& descriptor, const QByteArray& value);
-		void service_characteristic_changed(const QLowEnergyCharacteristic& characteristic, const QByteArray& newValue);
+	private:
+		// convenience functions
+		void clear_metawear_connection(void);
+		QBluetoothUuid metawear_uuid_to_qt_uuid(const uint64_t uuid_low, const uint64_t uuid_high) const;
+		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, const QString& debug_str = "");
 
 	private:
 	
@@ -115,11 +107,19 @@ class MetaWearBluetoothClient : public SensorDevice {
 		bytes_callback_map m_char_update_callback_map;
 		bytes_callback_queue m_char_read_callback_queue;
 
-		// convenience functions
-		void clear_metawear_connection(void);
-		QBluetoothUuid metawear_uuid_to_qt_uuid(const uint64_t uuid_low, const uint64_t uuid_high) const;
-		QLowEnergyCharacteristic find_characteristic(const MblMwGattChar* characteristic_struct, int& service_index, QString debug_str="");
+	private slots:
+
+		// ble device slots
+		void device_disconnected(void);
+		void device_discovery_finished(void);
+		void device_discovered(const QBluetoothDeviceInfo& device);
+
+		// ble service slots
+		void service_discovery_finished();
+		void service_discovered(const QBluetoothUuid& gatt);
+
+		// service characteristic slots
+		void service_characteristic_read(const QLowEnergyCharacteristic& descriptor, const QByteArray& value);
+		void service_characteristic_changed(const QLowEnergyCharacteristic& characteristic, const QByteArray& newValue);
 
 };
-
-#endif

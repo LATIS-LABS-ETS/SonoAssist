@@ -43,20 +43,20 @@ void RGBDCameraClient::start_stream() {
 	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
-		// defining the base recording configurations
-		m_camera_cfg_p = std::make_unique<rs2::config>();
-		m_camera_cfg_p->enable_stream(RS2_STREAM_COLOR, RGB_WIDTH, RGB_HEIGHT, RS2_FORMAT_BGR8, RGB_FPS);
-		m_camera_cfg_p->enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGHT, RS2_FORMAT_Z16, DEPTH_FPS);
+		// setting the base recording configurations
+		m_camera_cfg = rs2::config();
+		m_camera_cfg.enable_stream(RS2_STREAM_COLOR, RGB_WIDTH, RGB_HEIGHT, RS2_FORMAT_BGR8, RGB_FPS);
+		m_camera_cfg.enable_stream(RS2_STREAM_DEPTH, DEPTH_WIDTH, DEPTH_HEIGHT, RS2_FORMAT_Z16, DEPTH_FPS);
 
 		// preview mode does not record the camera images
 		if (!m_stream_preview && !m_pass_through) {
-			m_camera_cfg_p->enable_record_to_file(m_output_file_str);
+			m_camera_cfg.enable_record_to_file(m_output_file_str);
 			m_output_index_file.open(m_output_index_file_str, std::fstream::app);
 		} 
 
 		// starting the acquisition pipeline
-		m_camera_pipe_p = std::make_unique<rs2::pipeline>();
-		m_camera_pipe_p->start(*m_camera_cfg_p);
+		m_camera_pipe = rs2::pipeline();
+		m_camera_pipe.start(m_camera_cfg);
 		
 		// launching the image emitting / indexing
 		// camera images are only sent to the UI in preview mode
@@ -79,9 +79,7 @@ void RGBDCameraClient::stop_stream() {
 		m_collection_thread.join();
 		
 		// stoping the acquisition pipeline
-		m_camera_pipe_p->stop();
-		m_camera_pipe_p.reset();
-		m_camera_cfg_p.reset();
+		m_camera_pipe.stop();
 
 		// closing the output index
 		if (!m_stream_preview) {
@@ -94,7 +92,7 @@ void RGBDCameraClient::stop_stream() {
 
 }
 
-void RGBDCameraClient::set_output_file(std::string output_folder_path) {
+void RGBDCameraClient::set_output_file(const std::string& output_folder_path) {
 
 	try {
 
@@ -136,7 +134,7 @@ void RGBDCameraClient::collect_camera_data(void) {
 	while (m_collect_data) {
 
 		// grabbing the color image from the camera
-		frame_data_p = (void*)m_camera_pipe_p->wait_for_frames().get_color_frame().get_data();
+		frame_data_p = (void*)m_camera_pipe.wait_for_frames().get_color_frame().get_data();
 
 		// displaying images in preview mode
 		if (m_stream_preview) {

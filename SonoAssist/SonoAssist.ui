@@ -120,7 +120,7 @@
    </palette>
   </property>
   <property name="windowTitle">
-   <string>SonoAssist Recorder</string>
+   <string>SonoAssist</string>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>

@@ -1,9 +1,9 @@
 '''
-This script displays the orientation data of an IMU (in real time ) as recorded in a SonoAssit tool acquiition
+This script displays the orientation data from an IMU, in real time, as its being recorded by SonoAssist.
 
 Usage
 -----
-python3 display_recorded_imu.py (path to the acquisition folder)
+python3 display_live_imu.py
 '''
 
 import time
@@ -28,10 +28,7 @@ class IMUProbeRedisModel:
 
 
     def data_available(self):
-
-        '''  Returns True if new probe data is available '''
-
-        return self.r_connection.llen(self.data_key) > 1
+        return self.r_connection.llen(self.data_key)
 
 
     def get_imu_data(self):
@@ -59,7 +56,7 @@ class IMUProbeRedisModel:
 if __name__ == "__main__":
     
     # initializing the graphics display + redis model
-    scene = OrientationScene(0.05, display_triangles=True)
+    scene = OrientationScene(update_pause_time=0.05, display_triangles=True)
     us_model = IMUProbeRedisModel()
     
     while True:
@@ -71,11 +68,8 @@ if __name__ == "__main__":
         
             # updating the display
             if orientation_data:
-                
                 scene.update_dynamic_arrow(orientation_data[1], orientation_data[2], orientation_data[3])
                 scene.update_display()
-
                 print(f"queue size : {us_model.r_connection.llen(us_model.data_key)}")
 
-        # compatible with > 20 Hz acquisition
         else: time.sleep(0.05)

@@ -1,5 +1,6 @@
 '''
-This script displays the images from the US probe and prints the accompanying IMU data (in real time) as recorded in a SonoAssit tool acquiition
+This script displays the images from the US probe and prints the accompanying IMU data, 
+in real time, as its being recorded by SonoAssist.
 
 Usage
 -----
@@ -33,10 +34,7 @@ class USProbeRedisModel:
 
 
     def data_available(self):
-
-        '''  Returns True if new probe data is available '''
-
-        return self.r_connection.llen(self.imu_data_key) > 1
+        return self.r_connection.llen(self.imu_data_key)
 
 
     def get_imu_data(self):
@@ -74,13 +72,10 @@ class USProbeRedisModel:
         image = None
 
         try:
-
             img_bytes = self.r_connection.get(self.img_data_key)
             if not self.r_connection.get(self.img_data_key) == b'':
-
                 image = np.frombuffer(img_bytes, np.uint8)
                 image = image.reshape((self.img_height, self.img_width))
-            
         except: pass
 
         return image

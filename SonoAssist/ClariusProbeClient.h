@@ -1,5 +1,4 @@
-#ifndef CLARIUSPROBECLIENT_H
-#define CLARIUSPROBECLIENT_H
+#pragma once
 
 #ifdef __clang__
 	#pragma clang diagnostic push
@@ -60,21 +59,22 @@ class ClariusProbeClient : public SensorDevice {
 
     public:
 
-		ClariusProbeClient(int device_id, std::string device_description, std::string redis_state_entry, std::string log_file_path)
-			: SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
+		ClariusProbeClient(int device_id, const std::string& device_description, 
+			const std::string& redis_state_entry, const std::string& log_file_path):
+			SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 
         // SensorDevice interface functions
         void stop_stream(void);
         void start_stream(void);
         void connect_device(void);
         void disconnect_device(void);
-        void set_output_file(std::string output_folder_path);
+        void set_output_file(const std::string& output_folder_path);
 
-		// setters and getters
 		void set_udp_port(int port);
-
 		void write_output_data(void);
 
+	public:
+		
 		// ouput image dimensions (accessed from callback)
 		int m_out_img_width = CLARIUS_NORMAL_DEFAULT_WIDTH;
 		int m_out_img_height = CLARIUS_NORMAL_DEFAULT_HEIGHT;
@@ -99,15 +99,12 @@ class ClariusProbeClient : public SensorDevice {
 		std::atomic<bool> m_display_locked = true;
 		std::atomic<bool> m_handler_locked = false;
 
-	signals:
-		void no_imu_data(void);
-		void new_us_image(QImage image);
-
-	protected:
-
+	private:
 		// helper functions
 		void initialize_img_handling(void);
 		void configure_img_acquisition(void);
+
+	private:
 
 		// output vars
 		bool m_output_file_loaded = false;
@@ -117,14 +114,16 @@ class ClariusProbeClient : public SensorDevice {
 		// output writing vars (accessed from callback)
 		bool m_writing_ouput = false;
 		std::ofstream m_output_imu_file;
-		std::unique_ptr<cv::VideoWriter> m_video;
+		cv::VideoWriter m_video;
 
 		// custom redis entry names
 		std::string m_redis_imu_entry;
 		std::string m_redis_img_entry;
 
 		int m_udp_port = 0;
-		
-};
 
-#endif
+	signals:
+		void no_imu_data(void);
+		void new_us_image(QImage image);
+
+};

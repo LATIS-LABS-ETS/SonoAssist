@@ -169,7 +169,7 @@ class GazeDataManager():
         # calculating avg values of 1 deg of visual angle
         for avg_head_pos_data in self.avg_head_positions:
             angle_data = [None , None]
-            angle_data[0] = (2 * math.tan(math.radians(1) / 2)) / avg_head_pos_data[0]
+            angle_data[0] = 2 * math.tan(math.radians(1) / 2) * avg_head_pos_data[0]
             angle_data[1] = avg_head_pos_data[1]
             self.avg_v_angle_distances.append(tuple(angle_data))
 

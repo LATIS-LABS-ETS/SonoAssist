@@ -1,5 +1,5 @@
 '''
-This script displays the orientation data of an IMU as recorded in a SonoAssit tool acquiition
+This script displays the orientation data of an IMU recorded by SonoAssist.
 
 Usage
 -----
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     imu_data = IMUDataManager(args.acquisition_dir, avg_window=avg_window)
     
     # initializing the graphics display
-    scene = OrientationScene(avg_window, display_triangles=True)
+    scene = OrientationScene(update_pause_time=avg_window, display_triangles=True)
     
     # updating the arrow display by feeding in IMU orientation data
     for i in range(len(imu_data)):

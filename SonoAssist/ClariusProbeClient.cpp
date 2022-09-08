@@ -119,7 +119,7 @@ void ClariusProbeClient::start_stream() {
         set_output_file(m_output_folder_path);
         m_output_imu_file.open(m_output_imu_file_str, std::fstream::app);
         
-        m_video = std::make_unique<cv::VideoWriter>(m_output_video_file_str, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+        m_video = cv::VideoWriter(m_output_video_file_str, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
             CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), true);
 
         // connecting to redis (if redis enabled)
@@ -158,8 +158,8 @@ void ClariusProbeClient::stop_stream() {
         }
 
         // closing the outputs
-        while (m_writing_ouput);
-        m_video->release();
+        while(m_writing_ouput);
+        m_video.release();
         m_output_imu_file.close();
         disconnect_from_redis();
 
@@ -167,7 +167,7 @@ void ClariusProbeClient::stop_stream() {
 
 }
 
-void ClariusProbeClient::set_output_file(std::string output_folder_path) {
+void ClariusProbeClient::set_output_file(const std::string& output_folder_path) {
 
     try {
 
@@ -225,7 +225,7 @@ void ClariusProbeClient::write_output_data() {
 
         // writing to the output files, after passthrough check
         if (!m_pass_through) {
-            if (m_video->isOpened()) m_video->write(m_video_img_mat);
+            if (m_video.isOpened()) m_video.write(m_video_img_mat);
             if (m_output_imu_file.is_open()) m_output_imu_file << imu_str;
         }
         

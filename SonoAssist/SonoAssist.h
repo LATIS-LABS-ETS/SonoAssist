@@ -1,5 +1,4 @@
-#ifndef SONOASSIST_H
-#define SONOASSIST_H
+#pragma once
 
 #include "ui_SonoAssist.h"
 
@@ -26,6 +25,9 @@
 #include "ClariusProbeClient.h"
 #include "MetaWearBluetoothClient.h"
 
+#include "CUGNModel.h"
+
+#include "MlModel.h"
 #include "SensorDevice.h"
 #include "process_management.h"
 
@@ -107,6 +109,38 @@ class SonoAssist : public QMainWindow {
 
 	private:
 
+		// graphical functions
+		void add_debug_text(const QString&);
+		void build_sensor_panel(void);
+		void set_acquisition_label(bool active);
+		void display_warning_message(const QString& title, const QString& message);
+
+		// graphics scene functions
+		void configure_normal_display(void);
+		void clean_preview_display(void);
+		void remove_preview_display(void);
+		void generate_preview_display(void);
+		void clean_normal_display(void);
+		void remove_normal_display(void);
+		void generate_normal_display(void);
+		void generate_eye_tracker_targets(void);
+
+		// utility functions
+		bool check_devices_streaming(void);
+		bool check_device_connections(void);
+		void configure_device_clients(void);
+
+		// param write/load functions
+		void write_output_params(void);
+		bool create_output_folder(void);
+		std::string create_log_folder(void);
+		bool load_config_file(const QString& param_file_path);
+
+		// time marker funcions
+		void clear_time_markers(void);
+
+	private:
+
 		Ui::MainWindow ui;
 
 		// main display vars
@@ -155,38 +189,10 @@ class SonoAssist : public QMainWindow {
 		std::vector<int> m_sensor_conn_updates;
 		std::vector<std::shared_ptr<SensorDevice>> m_sensor_devices;
 
+		// ML models
+		std::vector<std::shared_ptr<MLModel>> m_ml_models;
+
 		// redis process info
 		PROCESS_INFORMATION m_redis_process;
 
-		// graphical functions
-		void add_debug_text(QString);
-		void build_sensor_panel(void);
-		void set_acquisition_label(bool active);
-		void display_warning_message(QString title, QString message);
-
-		// graphics scene functions
-		void configure_normal_display(void);
-		void clean_preview_display(void);
-		void remove_preview_display(void);
-		void generate_preview_display(void);
-		void clean_normal_display(void);
-		void remove_normal_display(void);
-		void generate_normal_display(void);
-		void generate_eye_tracker_targets(void);
-
-		// utility functions
-		bool check_devices_streaming(void);
-		bool check_device_connections(void);
-		void configure_device_clients(void);
-
-		// param write/load functions
-		void write_output_params(void);
-		bool create_output_folder(void);
-		std::string create_log_folder(void);
-		bool load_config_file(QString param_file_path);
-
-		// time marker funcions
-		void clear_time_markers(void);
 };
-
-#endif

@@ -25,10 +25,27 @@
 	<us_image_main_display_width>1260</us_image_main_display_width>
 	<us_image_main_display_height>720</us_image_main_display_height>
 
+	<cugn_to_redis>false</cugn_to_redis>
+	<cugn_redis_entry>cugn_mov_pred</cugn_redis_entry>
+	<cugn_model_path>C:/Program Files (x86)/SonoAssist/resources/traced_cugn.pt</cugn_model_path>
+	<cugn_n_gru_cells>1</cugn_n_gru_cells>
+	<cugn_n_gru_neurons>500</cugn_n_gru_neurons>
+	<cugn_sequence_lenght>15</cugn_sequence_lenght>
+	<cugn_sample_frequency>7</cugn_sample_frequency>
+	<cugn_pixel_mean>0.2</cugn_pixel_mean>
+	<cugn_pixel_std_div>0.1853</cugn_pixel_std_div>
+	<cugn_sc_bbox_w>666</cugn_sc_bbox_w>
+	<cugn_sc_bbox_h>590</cugn_sc_bbox_h>
+	<cugn_sc_bbox_x>596</cugn_sc_bbox_x>
+	<cugn_sc_bbox_y>145</cugn_sc_bbox_y>
+	<cugn_sc_mask_path>C:/Program Files (x86)/SonoAssist/resources/cugn_mask.jpg</cugn_sc_mask_path>
+	<cugn_input_h>224</cugn_input_h>
+	<cugn_input_w>224</cugn_input_w>
+	
 	<redis_server_path>C:/Program Files (x86)/SonoAssist/redis-server.exe</redis_server_path>
 
 	<us_probe_ip_address>192.168.1.1</us_probe_ip_address>
-	<ext_imu_ble_address>F3:AC:8B:CE:E1:10</ext_imu_ble_address>
+	<ext_imu_ble_address>C2:EA:A7:71:8E:91</ext_imu_ble_address>
 
 	<eye_tracker_target_path>C:/Program Files (x86)/SonoAssist/resources/tracker_target.svg</eye_tracker_target_path>
 	<eye_tracker_crosshairs_path>C:/Program Files (x86)/SonoAssist/resources/tracker_crosshair.png</eye_tracker_crosshairs_path>
