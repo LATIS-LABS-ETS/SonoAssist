@@ -147,7 +147,7 @@ void RGBDCameraClient::collect_camera_data(void) {
 			cv::resize(color_frame, resized_color_frame, resized_color_frame.size(), 0, 0, cv::INTER_AREA);
 			cv::cvtColor(resized_color_frame, resized_color_frame, CV_BGR2RGB);
 
-			// emiting the frame and waiting
+			// emiting the frame and waiting 
 			emit new_video_frame(std::move(q_image.copy()));
 			std::this_thread::sleep_for(std::chrono::milliseconds(CAMERA_DISPLAY_THREAD_DELAY_MS));
 

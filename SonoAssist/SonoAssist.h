@@ -42,16 +42,16 @@
 #define US_DISPLAY_DEFAULT_HEIGHT 720
 
 // US probe display (preview)
-#define PREVIEW_US_DISPLAY_WIDTH 640
-#define PREVIEW_US_DISPLAY_HEIGHT 360
-#define PREVIEW_US_DISPLAY_X_OFFSET 650
-#define PREVIEW_US_DISPLAY_Y_OFFSET 0
+#define PREVIEW_RIGHT_DISPLAY_WIDTH 640
+#define PREVIEW_RIGHT_DISPLAY_HEIGHT 360
+#define PREVIEW_RIGHT_DISPLAY_X_OFFSET 650
+#define PREVIEW_RIGHT_DISPLAY_Y_OFFSET 0
 
 // RGB D camera display (preview)
-#define CAMERA_DISPLAY_WIDTH 640
-#define CAMERA_DISPLAY_HEIGHT 360
-#define CAMERA_DISPLAY_X_OFFSET 0
-#define CAMERA_DISPLAY_Y_OFFSET 0
+#define PREVIEW_LEFT_DISPLAY_WIDTH 640
+#define PREVIEW_LEFT_DISPLAY_HEIGHT 360
+#define PREVIEW_LEFT_DISPLAY_X_OFFSET 0
+#define PREVIEW_LEFT_DISPLAY_Y_OFFSET 0
 
 // Eyetracker crosshairs dimensions
 #define EYETRACKER_N_ACC_TARGETS 4
@@ -91,12 +91,15 @@ class SonoAssist : public QMainWindow {
 		void on_stop_acquisition_button_clicked(void);
 
 		// data acquisition slots
-		void on_new_camera_image(QImage);
+
+		void update_main_display(QImage);
 		void on_new_clarius_image(QImage);
-		void on_clarius_no_imu_data(void);
-		void on_new_gaze_point(float, float);
-		void on_new_us_screen_capture(QImage);
+		void update_left_preview_display(QImage);
+		void update_right_preview_display(QImage);
+
 		void on_new_os_key_detected(int);
+		void on_new_gaze_point(float, float);
+		void on_device_warning_message(const QString& title, const QString& message);
 
 		// loading file slots 
 		void on_param_file_browse_clicked(void);
@@ -116,19 +119,21 @@ class SonoAssist : public QMainWindow {
 		void display_warning_message(const QString& title, const QString& message);
 
 		// graphics scene functions
-		void configure_normal_display(void);
-		void clean_preview_display(void);
-		void remove_preview_display(void);
-		void generate_preview_display(void);
-		void clean_normal_display(void);
-		void remove_normal_display(void);
-		void generate_normal_display(void);
+
+		void clean_main_display(void);
+		void remove_main_display(void);
+		void generate_main_display(void);
+		void configure_main_display(void);
+
+		void clean_preview_displays(void);
+		void remove_preview_displays(void);
+		void generate_preview_displays(void);
+		
 		void generate_eye_tracker_targets(void);
 
 		// utility functions
 		bool check_devices_streaming(void);
 		bool check_device_connections(void);
-		void configure_device_clients(void);
 
 		// param write/load functions
 		void write_output_params(void);
@@ -144,24 +149,24 @@ class SonoAssist : public QMainWindow {
 		Ui::MainWindow ui;
 
 		// main display vars
+
 		std::unique_ptr<QGraphicsScene> m_main_scene_p;
 		int m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
 		int m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
 		
-		// US image display var (normal and preview)
-		std::unique_ptr<QGraphicsPixmapItem> m_us_pixmap_p;
-		// US normal placeholder display vars (normal)
-		std::unique_ptr<QPixmap> m_us_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_us_bg_p;
-		// eye tracker placeholder display vars (preview)
-		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_main_pixmap_p;
+		std::unique_ptr<QPixmap> m_main_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_main_bg_p;
 
-		// RGB D camera display vars (preview)
-		std::unique_ptr<QPixmap> m_camera_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_camera_bg_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
+		std::unique_ptr<QPixmap> m_preview_right_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_right_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_right_pixmap_p;
+
+		std::unique_ptr<QPixmap> m_preview_left_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_left_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_left_pixmap_p;
+
+		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// state check vars
 		bool m_stream_is_active = false;
