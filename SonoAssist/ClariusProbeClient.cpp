@@ -156,7 +156,7 @@ void ClariusProbeClient::stop_stream() {
         // stopping the acquisition
         if (clariusDisconnect(nullptr) == 0) {
             write_debug_output("ClariusProbeClient - disconnected\n");
-        }else {
+        } else {
             write_debug_output("ClariusProbeClient - failed to disconnect\n");
         }
 
@@ -210,8 +210,7 @@ void ClariusProbeClient::write_output_data() {
         std::string imu_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
         if (m_imu_data.size() == 0) {
             imu_str += " , , , , , , , , , , , , \n";
-        }
-        else {
+        } else {
             imu_str += m_imu_data[0] + "\n";
             for (int i = 1; i < m_imu_data.size(); i++)
                 imu_str += " , , ," + m_imu_data[i] + "\n";

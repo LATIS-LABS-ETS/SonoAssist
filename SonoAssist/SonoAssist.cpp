@@ -15,7 +15,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"us_image_main_display_height", ""}, {"us_image_main_display_width", ""},
         {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
         {"cugn_sample_frequency", ""}, {"cugn_sequence_lenght", ""},  {"cugn_n_gru_cells", ""}, {"cugn_n_gru_neurons", ""}, {"cugn_pixel_mean", ""}, {"cugn_pixel_std_div", ""},
-        {"cugn_sc_mask_path", ""}, {"cugn_input_h", "" }, { "cugn_input_w", "" }, {"cugn_sc_bbox_w", ""}, {"cugn_sc_bbox_h", ""}, {"cugn_sc_bbox_x", ""}, {"cugn_sc_bbox_y", ""}
+        {"cugn_us_template", ""}, {"cugn_input_h", "" }, {"cugn_input_w", ""}
     };
 
     // creating the log folder
@@ -66,7 +66,8 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
     m_ml_models.emplace_back(std::make_shared<CUGNModel>(m_ml_models.size(),
         "CUGN Model", "cugn_to_redis", "cugn_model_path", log_file_path, m_screen_recorder_client_p));
-
+    connect(m_ml_models[m_ml_models.size() - 1].get(), &CUGNModel::new_us_img_detection, this, &SonoAssist::update_main_display);
+    
     // connecting to the models (debug output) signal
     for (auto i = 0; i < m_ml_models.size(); i++) {
         connect(m_ml_models[i].get(), &MLModel::debug_output, this, &SonoAssist::add_debug_text, Qt::QueuedConnection);
@@ -128,30 +129,33 @@ SonoAssist::~SonoAssist(){
 
 void SonoAssist::update_main_display(QImage new_image) {
 
-    // creating a pix map from the incoming image
-    QPixmap new_pixmap = QPixmap::fromImage(new_image);
+    if (!m_preview_is_active) {
+    
+        // creating a pix map from the incoming image
+        QPixmap new_pixmap = QPixmap::fromImage(new_image);
 
-    // creating / updating the QGraphicsPixmapItem item
-    if (m_main_pixmap_p.get() != nullptr) {
-        m_main_pixmap_p->setPixmap(new_pixmap);
-    } else {
-        m_main_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
-        QPointF bg_img_pos = m_main_bg_p->pos();
-        m_main_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
-        m_main_scene_p->addItem(m_main_pixmap_p.get());
-    }
+        // creating / updating the QGraphicsPixmapItem item
+        if (m_main_pixmap_p.get() != nullptr) {
+            m_main_pixmap_p->setPixmap(new_pixmap);
+        } else {
+            m_main_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+            QPointF bg_img_pos = m_main_bg_p->pos();
+            m_main_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
+            m_main_scene_p->addItem(m_main_pixmap_p.get());
+        }
 
-    // when acquisition is stoped during display
-    if (!m_stream_is_active) {
-        m_main_scene_p->removeItem(m_main_pixmap_p.get());
-        m_main_pixmap_p.reset();
+        // when acquisition is stoped during display
+        if (!m_stream_is_active) {
+            m_main_scene_p->removeItem(m_main_pixmap_p.get());
+            m_main_pixmap_p.reset();
+        }
+    
     }
 
 }
 
 void SonoAssist::update_right_preview_display(QImage new_image) {
 
-    // should not be called in other mode anyways
     if (m_preview_is_active) {
 
         // creating a pix map from the incoming image
@@ -179,42 +183,50 @@ void SonoAssist::update_right_preview_display(QImage new_image) {
 
 void SonoAssist::update_left_preview_display(QImage new_image) {
 
-    // creating a pix map from the incoming image
-    QPixmap new_pixmap = QPixmap::fromImage(new_image);
+    if (m_preview_is_active) {
+    
+        // creating a pix map from the incoming image
+        QPixmap new_pixmap = QPixmap::fromImage(new_image);
 
-    // creating / updating the QGraphicsPixmapItem item
-    if (m_preview_left_pixmap_p.get() != nullptr) {
-        m_preview_left_pixmap_p->setPixmap(new_pixmap);
-    } else {
-        m_preview_left_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
-        m_preview_left_pixmap_p->setPos(PREVIEW_LEFT_DISPLAY_X_OFFSET, PREVIEW_LEFT_DISPLAY_Y_OFFSET);
-        m_preview_left_pixmap_p->setZValue(2);
-        m_main_scene_p->addItem(m_preview_left_pixmap_p.get());
-    }
+        // creating / updating the QGraphicsPixmapItem item
+        if (m_preview_left_pixmap_p.get() != nullptr) {
+            m_preview_left_pixmap_p->setPixmap(new_pixmap);
+        } else {
+            m_preview_left_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+            m_preview_left_pixmap_p->setPos(PREVIEW_LEFT_DISPLAY_X_OFFSET, PREVIEW_LEFT_DISPLAY_Y_OFFSET);
+            m_preview_left_pixmap_p->setZValue(2);
+            m_main_scene_p->addItem(m_preview_left_pixmap_p.get());
+        }
 
-    // when acquisition is stoped during display
-    if (!m_stream_is_active) {
-        m_main_scene_p->removeItem(m_preview_left_pixmap_p.get());
-        m_preview_left_pixmap_p.reset();
+        // when acquisition is stoped during display
+        if (!m_stream_is_active) {
+            m_main_scene_p->removeItem(m_preview_left_pixmap_p.get());
+            m_preview_left_pixmap_p.reset();
+        }
+    
     }
 
 }
 
 void SonoAssist::on_new_clarius_image(QImage new_image){
 
-    // dropping incoming image if display is locked
-    if (!m_us_probe_client_p->m_display_locked) {
+    if (!m_preview_is_active) {
     
-        m_us_probe_client_p->m_display_locked = true;
+        // dropping incoming image if display is locked
+        if (!m_us_probe_client_p->m_display_locked) {
 
-        update_main_display(new_image);
+            m_us_probe_client_p->m_display_locked = true;
 
-        // writing the output data
-        m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
-        m_us_probe_client_p->write_output_data();
+            update_main_display(new_image);
 
-        m_us_probe_client_p->m_handler_locked = false;
-        
+            // writing the output data
+            m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
+            m_us_probe_client_p->write_output_data();
+
+            m_us_probe_client_p->m_handler_locked = false;
+
+        }
+
     }
 
 }
@@ -691,8 +703,9 @@ void SonoAssist::build_sensor_panel(void) {
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
     
     QStringList sensor_descriptions;
-    for (auto i = 0; i < m_sensor_devices.size(); i++)
+    for (auto i = 0; i < m_sensor_devices.size(); i++) {
         sensor_descriptions.append(QString::fromStdString(m_sensor_devices[i]->get_device_description()));
+    }
     ui.sensor_status_table->setVerticalHeaderLabels(sensor_descriptions);
 
     // adding the widgets to the table
@@ -747,13 +760,13 @@ void SonoAssist::configure_main_display(void) {
     // loading the main display dimensions
     try {
         m_main_us_img_width = std::stoi((*m_app_params)["us_image_main_display_width"]);
-        if (m_main_us_img_width > US_DISPLAY_DEFAULT_WIDTH) m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
+        if (m_main_us_img_width > MAIN_DISPLAY_DEFAULT_WIDTH) m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
         m_main_us_img_height = std::stoi((*m_app_params)["us_image_main_display_height"]);
-        if (m_main_us_img_height > US_DISPLAY_DEFAULT_HEIGHT) m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+        if (m_main_us_img_height > MAIN_DISPLAY_DEFAULT_HEIGHT) m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
     }
     catch (...) {
-        m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
-        m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+        m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+        m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
     }
 
     // rebuild the main display

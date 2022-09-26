@@ -46,7 +46,7 @@ Note that the configuration parameters for the processing scripts are detailed i
 1. Install system dependencies
     1. Install the [conan](https://conan.io/) package manager via pip : `pip install conan`
     2. Install [Qt](https://www.qt.io/download-open-source?hsCtaTracking=9f6a2170-a938-42df-a8e2-a9f0b1d6cdce%7C6cb0de4f-9bb5-4778-ab02-bfb62735f3e5). This project is known to be compatible with Qt 5.14.
-    3. (Optional) Install the [RealSense SDK](https://www.intelrealsense.com/sdk-2/). The SonoAssist's RealSense build dependencies are handled by Conan, but the SDK comes with useful visualization tools.
+    3. Install the [RealSense SDK](https://www.intelrealsense.com/sdk-2/).
 
 2. Clone this repository and navigate to the source folder
     - `git clone ...`
@@ -56,7 +56,6 @@ Note that the configuration parameters for the processing scripts are detailed i
     - `..\Utils\dependencies-download.ps1`
 
 4. Run the following Conan install commands from the source folder
-    - `conan install . -s build_type=Debug -if=out/build/x64-Debug`
     - `conan install . -s build_type=Release -if=out/build/x64-Release`
 
 5. Update the `set(CMAKE_PREFIX_PATH C:/Qt/<Qt_version>/<compiler>)` statement in the `CMakeLists.txt` file to match your installed version of Qt.

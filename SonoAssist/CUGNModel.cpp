@@ -31,13 +31,6 @@ void CUGNModel::start_stream(void) {
 			m_sampling_period_ms = round((1 / sample_frequency) * 1000);
 			m_sequence_len = std::atoi((*m_config_ptr)["cugn_sequence_lenght"].c_str());
 
-			// defining the US image bounding box
-			int sc_roi_x = std::atoi((*m_config_ptr)["cugn_sc_bbox_x"].c_str());
-			int sc_roi_y = std::atoi((*m_config_ptr)["cugn_sc_bbox_y"].c_str());
-			int sc_roi_w = std::atoi((*m_config_ptr)["cugn_sc_bbox_w"].c_str());
-			int sc_roi_h = std::atoi((*m_config_ptr)["cugn_sc_bbox_h"].c_str());
-			m_sc_roi = cv::Rect(sc_roi_x, sc_roi_y, sc_roi_w, sc_roi_h);
-
 			// defining the model's image input dimensions + pixel values distribution
 			m_pix_mean = std::stof((*m_config_ptr)["cugn_pixel_mean"]) * PIXEL_MAX_VALUE;
 			m_pix_std_div = std::stof((*m_config_ptr)["cugn_pixel_std_div"]) * PIXEL_MAX_VALUE;
@@ -45,11 +38,9 @@ void CUGNModel::start_stream(void) {
 			int cugn_sc_in_w = std::atoi((*m_config_ptr)["cugn_input_w"].c_str());
 			m_cugn_sc_in_dims = cv::Size(cugn_sc_in_w, cugn_sc_in_h);
 
-			// loading / preparing the US image shape mask
+			// preparing the image handlingmats + automatic usimage detection
+			m_us_img_detector = USImgDetector((*m_config_ptr)["cugn_us_template"]);
 			m_sc_masked, m_sc_redim = cv::Mat::zeros(m_cugn_sc_in_dims, 0);
-			m_sc_mask = cv::imread((*m_config_ptr)["cugn_sc_mask_path"], cv::IMREAD_GRAYSCALE);
-			cv::resize(m_sc_mask, m_sc_mask, m_cugn_sc_in_dims, 0, 0, cv::INTER_AREA);
-			cv::threshold(m_sc_mask, m_sc_mask, 0, 255, cv::THRESH_BINARY);
 
 			// defining the model's starting hidden state input
 			int n_gru_cells = std::atoi((*m_config_ptr)["cugn_n_gru_cells"].c_str());
@@ -83,24 +74,29 @@ void CUGNModel::stop_stream(void) {
 
 void CUGNModel::eval() {
 
-	int input_counter = 0;
 	cv::Mat sc_input;
+	int input_counter = 0;
 	at::Tensor hx_tensor = m_start_hx_tensor;
+
+	detect_us_image();
 
     while (m_stream_status) {
 		
+		bool valid_preprocess = false;
 		auto eval_start = std::chrono::high_resolution_clock::now();
 
 		// preprocessing the screen recorder input
-		bool valid_preprocess = true;
 		try {
 
 			// fetching the capture, extracting the AOI and resizing
 			sc_input = m_sc_p->get_lastest_acquisition(m_sc_roi);
 			cv::cvtColor(sc_input, sc_input, CV_BGRA2GRAY);
 			cv::resize(sc_input, m_sc_redim, m_cugn_sc_in_dims, 0, 0, cv::INTER_AREA);
+				
 			// applying the US shape mask
 			m_sc_redim.copyTo(m_sc_masked, m_sc_mask);
+
+			valid_preprocess = true;
 
 		} catch (...) {
 			valid_preprocess = false;
@@ -157,5 +153,46 @@ void CUGNModel::eval() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(thread_wait_time));
 
     }
+
+}
+
+/* Deploys automatic US shell shape detection */
+void CUGNModel::detect_us_image(void) {
+
+	bool us_img_detected = false;
+	write_debug_output("US image detection - start");
+
+	while (m_stream_status && !us_img_detected) {
+	
+		// trying to detect a US image in the screen recorder stream
+		cv::Mat sc_input = m_sc_p->get_lastest_acquisition();
+		ImgDetectData detection_data = m_us_img_detector.detect(sc_input);
+
+		if (detection_data.detected) {
+
+			us_img_detected = true;
+			m_sc_roi = detection_data.bounding_box;
+
+			// formating the detected mask
+			m_sc_mask = detection_data.mask;
+			cv::resize(m_sc_mask, m_sc_mask, m_cugn_sc_in_dims, 0, 0, cv::INTER_AREA);
+			cv::threshold(m_sc_mask, m_sc_mask, 0, 255, cv::THRESH_BINARY);
+
+			// displaying the detection
+			cv::rectangle(sc_input, m_sc_roi, (0, 0, 255), 3);
+			QImage display_img = QImage(MODEL_DISPLAY_WIDTH, MODEL_DISPLAY_HEIGHT, QImage::Format_RGB888);
+			cv::Mat display_img_mat = cv::Mat(MODEL_DISPLAY_HEIGHT, MODEL_DISPLAY_WIDTH, CV_8UC3, display_img.bits(), display_img.bytesPerLine());
+			cv::resize(sc_input, display_img_mat, display_img_mat.size(), 0, 0, cv::INTER_AREA);
+			emit new_us_img_detection(std::move(display_img));
+
+			write_debug_output("US image detection : image detected");
+
+		} else {
+			std::this_thread::sleep_for(std::chrono::milliseconds(MODEL_DETECTION_DELAY_MS));
+		}
+
+	}
+
+	write_debug_output("US image detection - end");
 
 }

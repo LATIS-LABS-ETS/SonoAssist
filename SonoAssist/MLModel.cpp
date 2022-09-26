@@ -119,3 +119,103 @@ void MLModel::write_debug_output(const QString& debug_str) {
 	m_log_file << out_str.toStdString() << std::endl;
 
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////// US image detection
+
+USImgDetector::USImgDetector(const std::string& template_path) {
+
+	try {
+		m_template_img = cv::imread(template_path, cv::IMREAD_GRAYSCALE);
+	} catch (...) {}
+
+	m_horizontal_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(30, 1));
+	m_morph_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(9, 9), cv::Point(4, 4));
+	
+}
+
+void USImgDetector::find_large_contours(cv::Mat& img, std::vector<std::vector<cv::Point>>& contours) {
+
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours(img, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+
+	for (auto it = contours.begin(); it != contours.end();) {
+		
+		if ((*it).size() < m_min_contour_size) {
+			it = contours.erase(it);
+		} else {
+			it++;
+		}
+	
+	}
+
+}
+
+ImgDetectData USImgDetector::detect(const cv::Mat& img) {
+
+	ImgDetectData detection_data;
+	detection_data.detected = false;
+
+	if (img.cols != 0 && m_template_img.cols != 0) {
+
+		cv::Mat filter_img = cv::Mat::zeros(img.size(), CV_8UC1);
+		cv::Mat detection_img = cv::Mat::zeros(img.size(), CV_8UC1);
+
+		// smoothing + tresholding
+		cv::cvtColor(img, detection_img, CV_BGRA2GRAY);
+		cv::bilateralFilter(detection_img, filter_img, 7, 75, 75);
+		cv::adaptiveThreshold(filter_img, detection_img, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY_INV, 11, 2);
+
+		// removing horizontal lines
+		cv::Mat h_lines;
+		std::vector<cv::Vec4i> h_hierarchy;
+		std::vector<std::vector<cv::Point>> h_contours;
+		cv::morphologyEx(detection_img, h_lines, cv::MORPH_OPEN, m_horizontal_kernel, cv::Point(-1, -1), 3);
+		cv::findContours(h_lines, h_contours, h_hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+		cv::drawContours(detection_img, h_contours, -1, (0), cv::FILLED);
+
+		// morphology
+		cv::dilate(detection_img, detection_img, m_morph_kernel);
+		cv::erode(detection_img, detection_img, m_morph_kernel);
+
+		// detecting and going through large contours
+
+		std::vector<std::vector<cv::Point>> contours, sub_contours;
+		find_large_contours(detection_img, contours);
+
+		for (auto& contour : contours) {
+
+			// filling and eroding the current contour -> this will create subcontours
+			cv::Mat contour_img = cv::Mat::zeros(img.size(), CV_8UC1);
+			cv::drawContours(contour_img, std::vector<std::vector<cv::Point>>({ contour }), -1, (255), cv::FILLED);
+			cv::erode(contour_img, contour_img, m_morph_kernel);
+
+			// detecting and going through sub-contours
+			find_large_contours(contour_img, sub_contours);
+			for (auto& sub_contour : sub_contours) {
+
+				// isolating the current sub contour
+				cv::Mat sub_contour_img = cv::Mat::zeros(img.size(), CV_8UC1);
+				cv::drawContours(sub_contour_img, std::vector<std::vector<cv::Point>>({ sub_contour }), -1, (255), cv::FILLED);
+
+				// checking if the sub-contour matches the us template (detection)
+				float moments_d = cv::matchShapes(m_template_img, sub_contour_img, cv::CONTOURS_MATCH_I2, 0);
+				if (moments_d <= m_detection_tresh) {
+
+					detection_data.detected = true;
+					detection_data.score = moments_d;
+					detection_data.bounding_box = cv::boundingRect(sub_contour);
+					detection_data.mask = (sub_contour_img.clone())(detection_data.bounding_box);
+
+					break;
+
+				}
+
+			}
+
+		}
+
+	}
+
+	return detection_data;
+
+}

@@ -37,17 +37,17 @@
 #define ACTIVE_SENSOR_FIELD_COLOR "#D3D3D3"
 #define INACTIVE_SENSOR_FIELD_COLOR "#ffffff"
 
-// US probe display (normal)
-#define US_DISPLAY_DEFAULT_WIDTH 1260
-#define US_DISPLAY_DEFAULT_HEIGHT 720
+// main display
+#define MAIN_DISPLAY_DEFAULT_WIDTH 1260
+#define MAIN_DISPLAY_DEFAULT_HEIGHT 720
 
-// US probe display (preview)
+// right preview display
 #define PREVIEW_RIGHT_DISPLAY_WIDTH 640
 #define PREVIEW_RIGHT_DISPLAY_HEIGHT 360
 #define PREVIEW_RIGHT_DISPLAY_X_OFFSET 650
 #define PREVIEW_RIGHT_DISPLAY_Y_OFFSET 0
 
-// RGB D camera display (preview)
+// left preview display
 #define PREVIEW_LEFT_DISPLAY_WIDTH 640
 #define PREVIEW_LEFT_DISPLAY_HEIGHT 360
 #define PREVIEW_LEFT_DISPLAY_X_OFFSET 0
@@ -151,8 +151,8 @@ class SonoAssist : public QMainWindow {
 		// main display vars
 
 		std::unique_ptr<QGraphicsScene> m_main_scene_p;
-		int m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
-		int m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+		int m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+		int m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
 		
 		std::unique_ptr<QGraphicsPixmapItem> m_main_pixmap_p;
 		std::unique_ptr<QPixmap> m_main_bg_i_p;

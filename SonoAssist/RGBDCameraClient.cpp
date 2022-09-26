@@ -14,17 +14,17 @@ void RGBDCameraClient::connect_device(void) {
 		write_debug_output("RGBDCameraClient - testing the connection to the camera");
 
 		// testing connection with the camera
-		try {
+		try {			
 			rs2::pipeline p;
 			p.start();
 			p.stop();
 			m_device_connected = true;
+			write_debug_output("RGBDCameraClient - successfully connected to the camera");
 		} catch (...) {
 			m_device_connected = false;
 			write_debug_output("RGBDCameraClient - failed to connect to the camera");
 		}
 
-		write_debug_output("RGBDCameraClient - successfully connected to the camera");
 		emit device_status_change(m_device_id, m_device_connected);
 	
 	}
@@ -148,7 +148,7 @@ void RGBDCameraClient::collect_camera_data(void) {
 			cv::cvtColor(resized_color_frame, resized_color_frame, CV_BGR2RGB);
 
 			// emiting the frame and waiting 
-			emit new_video_frame(std::move(q_image.copy()));
+			emit new_video_frame(q_image.copy());
 			std::this_thread::sleep_for(std::chrono::milliseconds(CAMERA_DISPLAY_THREAD_DELAY_MS));
 
 		}
@@ -163,7 +163,6 @@ void RGBDCameraClient::collect_camera_data(void) {
 
 		}
 		
-
 	}
 
 }

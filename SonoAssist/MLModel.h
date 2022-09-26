@@ -2,18 +2,24 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include <fstream>
 #include <exception>
 
-#include <QObject>
 #include<QDebug>
+#include <QImage>
+#include <QObject>
 
 #undef slots
 #include <torch/script.h>
 #define slots Q_SLOTS
+#include <opencv2/opencv.hpp>
 #include <sw/redis++/redis++.h>
 
 #include "SensorDevice.h"
+
+#define MODEL_DISPLAY_WIDTH 1260
+#define MODEL_DISPLAY_HEIGHT 720
 
 /*
 * Interface for the implementation ML models loaded from torch scripts
@@ -68,5 +74,37 @@ class MLModel : public QObject {
 
 	signals:
 		void debug_output(QString debug_str);
+		void new_us_img_detection(QImage image);
+
+};
+
+
+/*Encapsulates US image detection return data*/
+struct ImgDetectData {
+	bool detected;
+	float score;
+	cv::Mat mask;
+	cv::Rect bounding_box;
+};
+
+
+/* Implements automatic US shell shape detection */
+class USImgDetector {
+
+	public:
+		USImgDetector(){};
+		USImgDetector(const std::string& template_path);
+		ImgDetectData detect(const cv::Mat& img);
+
+	private:
+		void find_large_contours(cv::Mat& img, std::vector<std::vector<cv::Point>>& contours);
+
+	private:
+
+		int m_min_contour_size = 500;
+		float m_detection_tresh = 0.002;
+
+		cv::Mat m_template_img;
+		cv::Mat m_morph_kernel, m_horizontal_kernel;
 
 };

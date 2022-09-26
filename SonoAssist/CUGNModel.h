@@ -15,6 +15,7 @@
 #include "ScreenRecorder.h"
 
 #define PIXEL_MAX_VALUE 255
+#define MODEL_DETECTION_DELAY_MS 1000
 
 /*
 Class for the real time evaluation of the CUGN model
@@ -26,10 +27,13 @@ class CUGNModel : public MLModel {
 		CUGNModel(int, const std::string&, const std::string&, const std::string&, 
 			const std::string&, std::shared_ptr<ScreenRecorder>);
 
-		// interface methods
+		// MLModel interface methods
 		void eval(void);
 		void start_stream(void);
 		void stop_stream(void);
+
+	private:
+		void detect_us_image(void);
 
 	private:
 
@@ -38,12 +42,16 @@ class CUGNModel : public MLModel {
 		std::shared_ptr<ScreenRecorder> m_sc_p = nullptr;
 
 		// screen recorder img preprocessing
+		
+		USImgDetector m_us_img_detector;
+		
 		cv::Rect m_sc_roi;
 		cv::Size m_cugn_sc_in_dims;
 		cv::Mat m_sc_mask, m_sc_masked, m_sc_redim;
+		
 		int m_sequence_len = 0;
 		float m_pix_mean, m_pix_std_div = 0;
-
+		
 		// model inputs
 		at::Tensor m_start_hx_tensor, m_default_mov_tensor;
 

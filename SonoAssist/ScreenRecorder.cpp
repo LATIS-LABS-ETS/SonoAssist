@@ -199,7 +199,7 @@ void ScreenRecorder::collect_window_captures(void) {
         // in preview mode, resizing an sending the image to UI (low resolution display)
         if (m_stream_preview) {
             cv::resize(m_capture_cvt_mat, m_preview_img_mat, m_preview_img_mat.size(), 0, 0, cv::INTER_AREA);
-            emit new_window_capture(m_preview_img);
+            emit new_window_capture(m_preview_img.copy());
             std::this_thread::sleep_for(std::chrono::milliseconds(CAPTURE_DISPLAY_THREAD_DELAY_MS));
         }
         
