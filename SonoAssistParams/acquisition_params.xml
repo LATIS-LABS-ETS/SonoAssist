@@ -25,6 +25,7 @@
 	<us_image_main_display_width>1260</us_image_main_display_width>
 	<us_image_main_display_height>720</us_image_main_display_height>
 
+	<cugn_active>true</cugn_active>
 	<cugn_to_redis>true</cugn_to_redis>
 	<cugn_redis_entry>cugn_mov_pred</cugn_redis_entry>
 	<cugn_model_path>C:/Program Files (x86)/SonoAssist/resources/traced_cugn.pt</cugn_model_path>

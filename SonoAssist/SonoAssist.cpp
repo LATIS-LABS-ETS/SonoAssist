@@ -13,7 +13,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"redis_server_path", ""},
         {"eye_tracker_crosshairs_path", ""}, {"eye_tracker_target_path", ""},
         {"us_image_main_display_height", ""}, {"us_image_main_display_width", ""},
-        {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
+        {"cugn_active", ""}, {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
         {"cugn_sample_frequency", ""}, {"cugn_sequence_lenght", ""},  {"cugn_n_gru_cells", ""}, {"cugn_n_gru_neurons", ""}, {"cugn_pixel_mean", ""}, {"cugn_pixel_std_div", ""},
         {"cugn_us_template", ""}, {"cugn_input_h", "" }, {"cugn_input_w", ""}
     };
@@ -65,7 +65,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_ml_models = std::vector<std::shared_ptr<MLModel>>();
 
     m_ml_models.emplace_back(std::make_shared<CUGNModel>(m_ml_models.size(),
-        "CUGN Model", "cugn_to_redis", "cugn_model_path", log_file_path, m_screen_recorder_client_p));
+        "CUGN Model", "cugn_active", "cugn_to_redis", "cugn_model_path", log_file_path, m_screen_recorder_client_p));
     connect(m_ml_models[m_ml_models.size() - 1].get(), &CUGNModel::new_us_img_detection, this, &SonoAssist::update_main_display);
     
     // connecting to the models (debug output) signal

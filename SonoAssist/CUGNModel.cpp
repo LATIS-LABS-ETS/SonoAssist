@@ -1,8 +1,8 @@
 #include "CUGNModel.h"
 
-CUGNModel::CUGNModel(int model_id, const std::string& model_description, const std::string& redis_state_entry, 
-	const std::string& model_path_entry, const std::string& log_file_path, std::shared_ptr<ScreenRecorder> sc_p):
-	MLModel(model_id, model_description, redis_state_entry, model_path_entry, log_file_path){
+CUGNModel::CUGNModel(int model_id, std::string model_description, std::string model_status_entry,
+	std::string redis_state_entry, std::string model_path_entry, std::string log_file_path, std::shared_ptr<ScreenRecorder> sc_p):
+	MLModel(model_id, model_description, model_status_entry, redis_state_entry, model_path_entry, log_file_path){
 
 	m_sc_p = sc_p;
 

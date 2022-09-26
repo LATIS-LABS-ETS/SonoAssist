@@ -30,7 +30,8 @@ class MLModel : public QObject {
 
 	public:
 
-		MLModel(int, const std::string&, const std::string&, const std::string&, const std::string&);
+		MLModel(int model_id, std::string model_description, std::string model_status_entry,
+			std::string redis_state_entry, std::string model_path_entry, std::string log_file_path);
 		virtual ~MLModel();
 
 		// interface methods (virtual)
@@ -61,9 +62,9 @@ class MLModel : public QObject {
 
 		// configs vars
 		bool m_config_loaded = false;
-		std::string m_model_path_entry;
 		std::shared_ptr<config_map> m_config_ptr;
-
+		std::string m_model_status_entry, m_model_path_entry;
+		
 		// redis vars
 		bool m_redis_state = false;
 		std::string m_redis_state_entry;

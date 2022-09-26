@@ -2,9 +2,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
 
-MLModel::MLModel(int model_id, const std::string& model_description, 
-	const std::string& redis_state_entry, const std::string& model_path_entry, const std::string& log_file_path):
-	m_model_id(model_id), m_model_description(model_description), m_redis_state_entry(redis_state_entry), m_model_path_entry(model_path_entry){
+MLModel::MLModel(int model_id, std::string model_description, std::string model_status_entry,
+	std::string redis_state_entry, std::string model_path_entry, std::string log_file_path):
+	m_model_id(model_id), m_model_status_entry(model_status_entry), 
+	m_model_description(model_description), m_redis_state_entry(redis_state_entry), m_model_path_entry(model_path_entry){
 
 	if (log_file_path != "") {
 		m_log_file.open(log_file_path, std::fstream::app);
@@ -30,18 +31,10 @@ void MLModel::set_configuration(std::shared_ptr<config_map> config_ptr) {
 
 	m_config_ptr = config_ptr;
 
-	// getting the redis status (is the device expected to connect to redis)
+	// loading the specified pytorch model + model status
 	try {
-		m_redis_state = (*m_config_ptr)[m_redis_state_entry] == "true";
-	} catch (...) {
-		m_redis_state = false;
-		write_debug_output("Failed to load redis status from config");
-	}
-
-	// loading the specified pytorch model
-	try {
+		m_model_status = (*m_config_ptr)[m_model_status_entry] == "true";
 		m_model = torch::jit::load((*m_config_ptr)[m_model_path_entry]);
-		m_model_status = true;
 	} 
 	catch (const c10::Error& e) {
 		m_model_status = false;
@@ -50,6 +43,15 @@ void MLModel::set_configuration(std::shared_ptr<config_map> config_ptr) {
 	catch (...) {
 		m_model_status = false;
 		write_debug_output("Failed to load model from torch script file");
+	}
+
+	// getting the redis status (is the device expected to connect to redis)
+	try {
+		m_redis_state = (*m_config_ptr)[m_redis_state_entry] == "true";
+	}
+	catch (...) {
+		m_redis_state = false;
+		write_debug_output("Failed to load redis status from config");
 	}
 
 	m_config_loaded = true;

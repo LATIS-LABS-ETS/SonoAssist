@@ -2,8 +2,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
 
-SensorDevice::SensorDevice(int device_id, const std::string& device_description, 
-	const std::string& redis_state_entry, const std::string& log_file_path):
+SensorDevice::SensorDevice(int device_id, std::string device_description, 
+	std::string redis_state_entry, std::string log_file_path):
 	m_device_id(device_id), m_device_description(device_description), m_redis_state_entry(redis_state_entry){
 
 	if (log_file_path != "") {
