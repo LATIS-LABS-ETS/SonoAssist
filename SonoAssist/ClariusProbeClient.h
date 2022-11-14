@@ -123,7 +123,8 @@ class ClariusProbeClient : public SensorDevice {
 		int m_udp_port = 0;
 
 	signals:
-		void no_imu_data(void);
 		void new_us_image(QImage image);
+		void new_us_preview_image(QImage image);
+		void no_imu_data(QString title, QString message);
 
 };

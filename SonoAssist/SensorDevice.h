@@ -30,8 +30,8 @@ class SensorDevice : public QObject {
 
 	public: 
 
-		SensorDevice(int device_id, const std::string& device_description, 
-			const std::string& redis_state_entry, const std::string& log_file_path);
+		SensorDevice(int device_id,  std::string device_description, 
+			std::string redis_state_entry,  std::string log_file_path);
 		virtual ~SensorDevice();
 
 		int get_device_id(void) const;

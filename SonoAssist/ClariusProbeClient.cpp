@@ -1,6 +1,6 @@
 #include "ClariusProbeClient.h"
 
-// global pointers (for the Clarius callback(s))
+// global pointer (for the Clarius callback(s))
 ClariusProbeClient* probe_client_p = nullptr;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// acquisition callback
@@ -22,10 +22,10 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
          // notification message for missing IMU data
          if ((npos < 1) && !probe_client_p->m_imu_missing) {
              probe_client_p->m_imu_missing = true;
-             emit probe_client_p->no_imu_data();
+             emit probe_client_p->no_imu_data("Check clarius probe settings", "No incoming IMU data from the clarius probe.");
          }
         
-         // mapping the incoming image to a cv::Mat + gray scale conversion
+         // mapping the incoming image to a Mat + gray scale conversion
          probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
          cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
          cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
@@ -49,7 +49,11 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 
          // image is passed by reference to the display
          probe_client_p->m_display_locked = false;
-         emit probe_client_p->new_us_image(probe_client_p->m_output_img);
+         if (probe_client_p->get_stream_preview_status()) {
+             emit probe_client_p->new_us_preview_image(probe_client_p->m_output_img);
+         } else {
+             emit probe_client_p->new_us_image(probe_client_p->m_output_img);
+         }
 
      }
 
@@ -67,7 +71,7 @@ void ClariusProbeClient::connect_device() {
         // global instance pointer (for the clarius callbacks)
         if (probe_client_p == nullptr) probe_client_p = this;
 
-        // mapping the listener's events to Qt application level events
+        // setting up the clarius listener + registering the new probe image callback
         if (clariusInitListener(0, nullptr, 
                 QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
                 new_processed_image_callback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -118,7 +122,6 @@ void ClariusProbeClient::start_stream() {
         // preparing the writing of data
         set_output_file(m_output_folder_path);
         m_output_imu_file.open(m_output_imu_file_str, std::fstream::app);
-        
         m_video = cv::VideoWriter(m_output_video_file_str, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
             CLARIUS_VIDEO_FPS, cv::Size(m_out_img_width, m_out_img_height), true);
 
@@ -153,7 +156,7 @@ void ClariusProbeClient::stop_stream() {
         // stopping the acquisition
         if (clariusDisconnect(nullptr) == 0) {
             write_debug_output("ClariusProbeClient - disconnected\n");
-        }else {
+        } else {
             write_debug_output("ClariusProbeClient - failed to disconnect\n");
         }
 
@@ -207,8 +210,7 @@ void ClariusProbeClient::write_output_data() {
         std::string imu_str = m_reception_time + "," + m_display_time + "," + m_onboard_time + ",";
         if (m_imu_data.size() == 0) {
             imu_str += " , , , , , , , , , , , , \n";
-        }
-        else {
+        } else {
             imu_str += m_imu_data[0] + "\n";
             for (int i = 1; i < m_imu_data.size(); i++)
                 imu_str += " , , ," + m_imu_data[i] + "\n";

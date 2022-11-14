@@ -11,7 +11,7 @@
 #include <QImage>
 #include <opencv2/opencv.hpp>
 
-// SR_PREVIEW_RESIZE_FACTOR : to fit a (360 x 640) px display
+// resize factor to fit a target display of (360 x 640) px
 #define SR_PREVIEW_RESIZE_FACTOR 3
 #define REDIS_RESIZE_FACTOR 2
 
