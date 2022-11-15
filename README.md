@@ -24,7 +24,7 @@ Supported sensors
 ## User interface
 
 ### Main mode
-Interface used during acquisitions.
+Interface used during acquisitions (Clarius probe imaging).
 ![](Media/main_mode.jpg)
 
 ### Preview mode
@@ -66,4 +66,8 @@ Note that the configuration parameters for the processing scripts are detailed i
 
 ## Extensibility
 
-The [add-sensor-example](https://github.com/LATIS-ETS/SonoAssist/tree/add-sensor-example) branch covers the development steps required to add support for additional sensors. 
+The [add-sensor-example](https://github.com/LATIS-ETS/SonoAssist/tree/add-sensor-example) branch covers the development steps required to add support for additional sensors.
+
+## Ultrasound probe guidance (coming soon)
+
+[![Watch the video](Media/guidance_thumb.png)](https://youtu.be/SEznr8eQr8c)
