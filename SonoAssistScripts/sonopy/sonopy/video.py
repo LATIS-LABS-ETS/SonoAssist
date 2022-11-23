@@ -3,8 +3,8 @@ from enum import Enum
 
 import cv2
 import numpy as np
-import pyrealsense2 as rs
-
+try: import pyrealsense2 as rs
+except: print("Failed to import pyrealsense2")
 from sonopy.file_management import SonoFolderManager
 
 

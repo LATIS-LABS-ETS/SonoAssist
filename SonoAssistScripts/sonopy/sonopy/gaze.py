@@ -38,7 +38,6 @@ class GazeDataManager():
             self.config_manager = ConfigurationManager(config_file_path, acquisition_dir_path)
         
         self.saliency_map_width = self.config_manager["saliency_map_width"]
-        self.saliency_point_max_reach = self.config_manager["saliency_point_max_reach"]
 
         # loading data from the acquisition folder
         self.folder_manager = SonoFolderManager(acquisition_dir_path)
@@ -47,7 +46,6 @@ class GazeDataManager():
         # calulating saliency map generation params
         self.saliency_size_factor = self.saliency_map_width / self.config_manager["display_width"]
         self.saliency_map_height = int(self.config_manager["display_height"] * self.saliency_size_factor)
-        self.saliency_point_px_range = int(self.saliency_point_max_reach / self.saliency_size_factor)
 
         # converting timestamps from str to numeric
         if not self.head_pos_data is None:
@@ -63,7 +61,6 @@ class GazeDataManager():
         self.n_head_acquisitions = len(self.head_pos_data.index) if not (self.head_pos_data is None) else 0
 
         # defining data containers
-        self.avg_head_positions = []
         self.avg_v_angle_distances = []
         self.gaze_point_gaussians = []
         
@@ -120,13 +117,10 @@ class GazeDataManager():
     def _calculate_avg_position_stats(self):
 
         ''' 
-        Calculates : 
-            - user's average head position (m)
+        For all head position slices, calculates: 
             - distance (m) associated with 1 degree of visual angle for each head position
             - 2D gaussian distribution representing a gaze point for each head position
-            * head position averages are calculated for every 10% slice of data
-            * when no head position data is available, the avgs are set to "default_head_position" for 10% slices of
-              the gaze data.
+            * when no head position data is available, the avgs are set to "default_head_position" for all slices of the gaze data.
         '''
 
         # calculating the size of the slices for averaging
@@ -137,6 +131,7 @@ class GazeDataManager():
             slice_size = self.n_gaze_acquisitions // n_slices
 
         # calulating avg head positions
+        avg_head_distances = []
         for slice_i in range(n_slices):
 
             avg_data = [None, None]
@@ -144,7 +139,6 @@ class GazeDataManager():
 
             # handling the last slice
             if slice_i == n_slices-1:
-                
                 if not self.head_pos_data is None:
                     avg_data[0] = np.mean(self.head_pos_data.loc[start_index : , "Z"]) / 1000
                     avg_data[1] = self.head_pos_data.loc[self.n_head_acquisitions-1, self.os_acquisition_time]
@@ -154,7 +148,6 @@ class GazeDataManager():
             
             # handling regular slices
             else :
-                
                 if not self.head_pos_data is None:
                     end_index = start_index + slice_size
                     avg_data[0] = np.mean(self.head_pos_data.loc[start_index : end_index, "Z"]) / 1000
@@ -164,37 +157,32 @@ class GazeDataManager():
                     avg_data[0] = self.config_manager["default_head_position"]
                     avg_data[1] = self.gaze_data.loc[end_index, self.os_acquisition_time]
 
-            self.avg_head_positions.append(tuple(avg_data))
+            avg_head_distances.append(tuple(avg_data))
 
-        # calculating avg values of 1 deg of visual angle
-        for avg_head_pos_data in self.avg_head_positions:
-            angle_data = [None , None]
-            angle_data[0] = 2 * math.tan(math.radians(1) / 2) * avg_head_pos_data[0]
-            angle_data[1] = avg_head_pos_data[1]
-            self.avg_v_angle_distances.append(tuple(angle_data))
-
-        # defining a gaze point gaussian template for all head position values
-        for v_angle_data in self.avg_v_angle_distances:
-
-            gaussian_data = [None, None]
-            gaussian_data[1] = v_angle_data[1]
-
-            # defining the gaussian function grid edges
-            if not (self.saliency_point_px_range % 2): self.saliency_point_px_range -= 1
-            grid_max = self.saliency_point_px_range // 2
-            grid_min = - (self.saliency_point_px_range // 2)
+        # for all head position slices, calculating the avg value of 1 deg of visual angle + the associated gaze point gaussian template
+        for head_d, timestamp in avg_head_distances:
+            
+            # distance associated with 1 degree of visual angle (m)
+            v_distance = 2 * math.tan(math.radians(1) / 2) * head_d
+            
+            # sigma for the gaussian distribution (saliency map units)
+            sigma = round(v_distance * (self.config_manager["screen_width"] / self.config_manager["phys_screen_width"]) * self.saliency_size_factor)
+            
+            # span of the gaussian distribution on the saliency map (saliency map units)
+            gaussian_span = 6 * sigma
+            if gaussian_span % 2 == 0: gaussian_span -= 1
             
             # defining the gaussian function grid
+            grid_max = gaussian_span // 2
+            grid_min = - gaussian_span // 2
             x, y = np.meshgrid(
-                np.linspace(grid_min, grid_max, self.saliency_point_max_reach), 
-                np.linspace(grid_min, grid_max, self.saliency_point_max_reach))
+                np.linspace(grid_min, grid_max, gaussian_span), 
+                np.linspace(grid_min, grid_max, gaussian_span))
 
-            # calculating the visual angle (1 degree) size in pixels
-            sigma = (v_angle_data[0] / self.config_manager["phys_screen_width"]) * self.config_manager["display_width"]
-
-            # defining the gaussian function
-            gaussian_data[0] = np.exp(-(x*x+y*y) / (2.0 * sigma**2))
-            self.gaze_point_gaussians.append(gaussian_data)
+            gaussian_dist = np.exp(-(x*x+y*y) / (2.0 * sigma**2))
+            
+            self.gaze_point_gaussians.append((gaussian_dist, timestamp))
+            self.avg_v_angle_distances.append((v_distance, timestamp))
 
 
     def _filter_gaze_speed(self):
@@ -300,7 +288,7 @@ class GazeDataManager():
 
         ''' 
         Generates a saliency map with the gaze data around the provided timestamp.
-        This function should only be called if gaze data was filtered beforehand.
+        ** This function should only be called if gaze data was filtered beforehand.
 
         Parameters
         ----------
@@ -334,18 +322,19 @@ class GazeDataManager():
                     break
             
             # generating the saliency map
+            
             for gaze_i in gaze_point_indexes:
 
                 # getting the top left corner of the gaussian in saliency map coordinates
                 gaze_point = self.gaze_data.iloc[gaze_i]
                 x_display_position = int(round(gaze_point[self.x_display_coord] * self.saliency_map_width))
                 y_display_position = int(round(gaze_point[self.y_display_coord] * self.saliency_map_height))
-                corner_top = y_display_position - (self.saliency_point_max_reach - 1) // 2
-                corner_left = x_display_position - (self.saliency_point_max_reach - 1) // 2
+                corner_top = y_display_position - gaussian_point.shape[0] // 2
+                corner_left = x_display_position - gaussian_point.shape[1] // 2
 
-                # placing the gaussian nf the saliency map
-                for gauss_x, x in enumerate(range(corner_left, corner_left + self.saliency_point_max_reach)):
-                    for gauss_y, y in enumerate(range(corner_top, corner_top + self.saliency_point_max_reach)):
+                # placing the gaussian on the saliency map
+                for gauss_x, x in enumerate(range(corner_left, corner_left + gaussian_point.shape[1])):
+                    for gauss_y, y in enumerate(range(corner_top, corner_top + gaussian_point.shape[0])):
                         if ((x >= 0) and (x < self.saliency_map_width)) and ((y >= 0) and (y < self.saliency_map_height)):
                             saliency_map[y, x] += gaussian_point[gauss_y, gauss_x]
 
