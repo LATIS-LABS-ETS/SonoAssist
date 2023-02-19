@@ -23,10 +23,14 @@ class GazeDataManager():
         ''' 
         Parameters
         ----------
-        acquisition_dir_path (str) : path to the acquisition directory
-        config_file_path (str) : path to the configuration (.json) file
-        filter_gaze_data (bool) : when true, the loaded gaze data is filtered in the constructor (speed and position)
-        config_manager (sonopy.Configuration Manager) : predefine config manager for the class to handle, instead of loading from the files
+        acquisition_dir_path: str
+            path to the acquisition directory
+        config_file_path: str
+            path to the configuration (.json) file
+        filter_gaze_data: bool)
+            When true, the loaded gaze data is filtered in the constructor (speed and position)
+        config_manager: sonopy.ConfigurationManager
+            Predefined config manager for the class to handle, instead of loading from the files
         '''
 
         self.filter_gaze_data = filter_gaze_data
@@ -265,11 +269,13 @@ class GazeDataManager():
 
         Parameters
         ----------
-        target_time (int) : timestamp (us)
+        target_time: int
+            timestamp (us)
 
         Returns
         -------
-        list((dict)) : gaze data for the relevant samples
+        gaze_data: list(dict)
+            gaze data for the relevant samples
         '''
 
         gaze_data = []
@@ -292,12 +298,14 @@ class GazeDataManager():
 
         Parameters
         ----------
-        timestamp (int) : (us) the os timestamp arround which to get the gaze data
-        time_span (int) : (us) the span of time around the provided timestamp considered
+        timestamp: int
+            the os timestamp (us) arround which to get the gaze data
+        time_span: int
+            the span of time (us) around the provided timestamp considered
 
         Returns
         -------
-        (np.array) : saliency map
+        saliency_map: np.array
         '''
 
         # making sure gaze data was filtered

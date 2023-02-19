@@ -24,8 +24,10 @@ def measure_acquisition_rate_stats(data_frame, time_col_name="Time (us)"):
 
     Parameters
     ----------
-    data_frame (pandas.DataFrame) : acquisition data
-    time_col_name (str) : name of the dataframe column containing the time stamps foreach entry
+    data_frame: pandas.DataFrame
+        acquisition data
+    time_col_name: str
+        name of the dataframe column containing the time stamps foreach entry
 
     Returns
     -------

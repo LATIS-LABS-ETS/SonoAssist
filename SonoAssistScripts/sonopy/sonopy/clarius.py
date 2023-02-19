@@ -18,8 +18,10 @@ class ClariusDataManager():
         ''' 
         Parameters
         ----------
-        acquisition_dir_path (str) : path to the acquisition directory
-        imu_available (bool) : when True, collected IMU data along side the probe images will be processed
+        acquisition_dir_path: str
+            path to the acquisition directory
+        imu_available: bool
+            When True, collected IMU data along side the probe images will be processed
         '''
 
         # loading clarius data from the acquisition folder
@@ -124,12 +126,15 @@ class ClariusDataManager():
 
         Parameters
         ----------
-        target_time (int) : timestamp (us)
-        time_col_name (str) : identifier for the column to use for the timestamp calculations
+        target_time: int
+            timestamp (us)
+        time_col_name: str
+            identifier for the column to use for the timestamp calculations
 
         Returns
         -------
-        (int) : index for the nearest video frame and IMU acquisitions
+        nearest_index: int
+            index for the nearest video frame and IMU acquisitions
         '''
 
         after_index = -1
@@ -179,13 +184,16 @@ class ClariusDataManager():
 
         Parameters
         ----------
-        index (int) : clarius acquisition data index
-        time_span (int) : (us) the time span used for the probe displacement calculation
+        index: int
+            clarius acquisition data index
+        time_span: int
+            the time span (us) used for the probe displacement calculation
 
         Returns
         -------
-        when imu_available = True, (np.array) : US frame
-        when imu_available = False, tuple or None: 
+        
+        us_frame: np.array, when (imu_available = True), 
+        clarius_data: tuple or None, when (imu_available = False) 
             0 : (np.array) : US frame
             1 : (tuple) : (dx, dy, dz) position variation (m)
             2 : (tuple) : (droll, dpitch, dyaw) angular variation (degrees)
@@ -229,8 +237,8 @@ class ClariusDataManager():
     def quaternion_to_euler_angle(w, x, y, z):
 
         ''' 
-        quaternion to euler angles conversion function
-        X  : Roll , Y : Pitch, Z : Yaw
+        Quaternion to euler angles conversion function
+        (X : Roll , Y: Pitch, Z: Yaw
         source : https://stackoverflow.com/questions/56207448/efficient-quaternions-to-euler-transformation 
         '''
 

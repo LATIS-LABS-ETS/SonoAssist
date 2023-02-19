@@ -33,7 +33,8 @@ class CUGNRedisModel:
 
         Returns
         -------
-        pred_data (list([yaw, pitch, roll])) : probe movement prediction (in degrees) or None
+        pred_data: list([yaw, pitch, roll])
+            probe movement prediction (in degrees) or None
         '''
 
         pred_data = None

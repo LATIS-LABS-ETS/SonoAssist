@@ -5,32 +5,35 @@ from sonopy.file_management import SonoFolderManager
 
 class ConfigurationManager():
 
-    ''' Allows to acces all configuration data from one object '''
+    ''' Allows the access to all configuration data from one object '''
 
 
-    def __init__(self, config_file_path, acquisition_dir_path=None):
+    def __init__(self, config_file_path="", acquisition_dir_path=None):
 
         '''
         Params
         ------
-        config_path (str) : path to the configuration file
-        acquisition_dir_path (str) : path to the acquisition directory
+        config_path: str
+            path to the configuration file
+        acquisition_dir_path: str
+            path to the acquisition directory
         '''
 
         self.config_file_path = config_file_path
         self.acquisition_dir_path = acquisition_dir_path
 
-        self.config_data = None
+        self.config_data = {}
 
         # loading config from sources
-        self.load_config_file()
+        if not config_file_path == "":
+            self.load_config_file()
         if acquisition_dir_path is not None: 
             self.load_acquisition_output_file()
         
 
     def load_config_file(self):
 
-        ''' loads configuration data from specified file '''
+        ''' Loads the configuration data from specified file '''
 
         with open(self.config_file_path) as config_f:
             self.config_data = json.load(config_f)
@@ -39,7 +42,7 @@ class ConfigurationManager():
 
     def load_acquisition_output_file(self):
         
-        ''' Loads configuration from the output parameters file of the acquisition tool '''
+        ''' Loads the configuration from the output parameters file of the acquisition tool '''
         
         folder_manager = SonoFolderManager(self.acquisition_dir_path)
         self.config_data = {**self.config_data, **folder_manager.load_output_params()}

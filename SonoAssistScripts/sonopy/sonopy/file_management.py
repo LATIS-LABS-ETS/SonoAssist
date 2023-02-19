@@ -30,7 +30,8 @@ class SonoFolderManager:
         '''
         Parameters
         ----------
-        acq_folder_path (str) : path to acquisition folder
+        acq_folder_path: str
+            path to acquisition folder
         '''
 
         self.acq_folder_path = acq_folder_path
@@ -65,9 +66,7 @@ class SonoFolderManager:
 
     def load_eye_tracker_data(self):
         
-        gaze_data = None
-        head_data = None
-
+        gaze_data, head_data = None, None
         try:
             gaze_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["eyetracker_gaze"]))
             head_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["eyetracker_head"]))
@@ -78,8 +77,7 @@ class SonoFolderManager:
 
     def load_ext_imu_data(self):
 
-        acc_data = None 
-        ori_data = None
+        acc_data, ori_data = None, None
         try :
             ori_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["ext_imu_ori"]))
             acc_data = self.check_loaded_data(pd.read_csv(self.folder_file_paths["ext_imu_acc"]))
