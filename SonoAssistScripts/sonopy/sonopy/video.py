@@ -3,14 +3,15 @@ from enum import Enum
 
 import cv2
 import numpy as np
-import pyrealsense2 as rs
-
+try: import pyrealsense2 as rs
+except: print("Failed to import pyrealsense2")
 from sonopy.file_management import SonoFolderManager
 
 
 class VideoSource(Enum):
 
     ''' Enum for different video sources '''
+    
     VIDEO_FILE = 0
     REAL_SENS_BAG = 1
 
@@ -39,9 +40,12 @@ class VideoManager:
         '''
         Parameters
         ----------
-        video_file_path (str) : path to the video file to be loaded
-        video_source_type (VideoSource - enum) : source of the target video
-        acq_folder_path (str) : path to the acquisition folder (required for indexing frames via timestamps - screen recorder)
+        video_file_path: str
+            path to the video file to be loaded
+        video_source_type: VideoSource
+            source of the target video
+        acq_folder_path: str
+            path to the acquisition folder (required for indexing frames via timestamps - screen recorder)
         '''
 
         self.video_file_path = video_file_path
@@ -77,9 +81,9 @@ class VideoManager:
     def _get_video_source(self):
 
         '''
-        Gets the appropriate frame source, depends on the "video_source" constructor param
-            VideoSource.VIDEO_FILE : (cv2.VideoCapture)
-            VideoSource.REAL_SENS_BAG : (pyrealsense2.pipeline)
+        Gets the appropriate frame source, depends on the "video_source_type" parameter
+            - When video_source_type = VideoSource.VIDEO_FILE: (cv2.VideoCapture)
+            - When video_source_type = VideoSource.REAL_SENS_BAG: (pyrealsense2.pipeline)
         '''
 
         try :       
@@ -110,15 +114,19 @@ class VideoManager:
 
         ''' 
         Returns the index associated to the acquisition closest to the provided timestamp
+        ** Reminder: requires the (acq_folder_path) to be specified to the constructor
 
         Parameters
         ----------
-        target_time (int) : timestamp (us)
-        time_col_name (str) : identifier for the column to use for the timestamp calculations
+        target_time: int
+            target timestamp (us)
+        time_col_name: str
+            identifier for the column to use for the timestamp calculations
 
         Returns
         -------
-        (int) : index for the nearest video frame and IMU acquisitions
+        nearest_index: int
+            index for the nearest video frame and IMU acquisitions
         '''
 
         nearest_index = None
@@ -170,8 +178,8 @@ class VideoManager:
         
         Returns
         -------
-        VideoSource.VIDEO_FILE : tuple (frame (np.array), None)
-        VideoSource.REAL_SENS_BAG : tuple(color frame (pyrealsense2.video_frame), depth frame (pyrealsense2.depth_frame))
+        frames: (np.array, None), when VideoSource.VIDEO_FILE
+        frames: (pyrealsense2.video_frame, pyrealsense2.depth_frame), when VideoSource.REAL_SENS_BAG
         '''
 
         frames = [None, None]
@@ -205,11 +213,12 @@ class VideoManager:
         
         Parameters
         ----------
-        key (int) : clarius acquisition index
+        key: int
+            target video frame index
 
         Returns
         -------
-        (np.array) : US frame
+        frame: np.array
         '''
 
         if not isinstance(key, int):
@@ -228,11 +237,12 @@ class VideoManager:
     def count_video_frames(self):
 
         '''
-        Counts the frames in the provided vide source
+        Counts the frames in the provided video source
 
         Returns
         -------
-        (int) : number of frames in the video
+        frame_count: int
+            number of frames in the video
         '''
         
         if self.frame_count is None:
@@ -274,15 +284,17 @@ class VideoManager:
 
         ''' 
         Returns the video frame associated to the acquisition closest to the provided timestamp
-        Requires the (acq_folder_path) to be specified to the constructor
+        **Reminder: requires the (acq_folder_path) to be specified to the constructor
 
         Parameters
         ----------
-        target_time (int) : timestamp (us)
+        target_time: int
+            target timestamp (us)
 
         Returns
         -------
-        np.array : video frame for the nearest video frame and IMU acquisitions
+        frame: np.array
+            video frame nearest to the provided timestamp
         '''
 
         return self.__getitem__(self._get_nearest_index(target_time))
