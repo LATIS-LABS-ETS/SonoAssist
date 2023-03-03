@@ -1,6 +1,8 @@
 #include "SensorExample.h"
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// SensorExample public methods
+/*******************************************************************************
+* SENSOR DEVICE OVERRIDES
+******************************************************************************/
 
 void SensorExample::connect_device() {
 
@@ -78,7 +80,7 @@ void SensorExample::stop_stream() {
 
 }
 
-void SensorExample::set_output_file(std::string output_folder_path) {
+void SensorExample::set_output_file(const std::string& output_folder_path) {
 
     try {
 
@@ -103,12 +105,10 @@ void SensorExample::set_output_file(std::string output_folder_path) {
 
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// data collection function
+/*******************************************************************************
+* DATA COLLECTION METHODS
+******************************************************************************/
 
-/*
-* Collects the most recent screen capture and makes it available to the main window.
-* This function is meant to be executed in a seperate thread.
-*/
 void SensorExample::collect_sensor_data(void) {
 
     while (m_collect_data) {

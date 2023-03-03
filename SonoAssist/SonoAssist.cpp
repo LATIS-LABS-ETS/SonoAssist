@@ -10,16 +10,16 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_app_params = std::make_shared<config_map>();
     *m_app_params = {
         
-        /*
-        * STEP #3: Define the proper configuration entries for your sensor
+        /**
+        * STEP #3: Define the proper configuration entries for your sensor.
         *
-        *   You will need to define the following entries to support a Redis connection
-        *       - (sensor name)_to_redis
-        *       - (sensor name)_redis_entry
-        *       - (sensor name)_redis_rate_div
-        *       Other Redis related entries might need to be defied depending on your implementation
-        *
-        *   Any other configuration entries related to your sensor should be defined here.
+        * You will need to define the following entries to support a Redis connection.
+        *   - (sensor name)_to_redis
+        *   - (sensor name)_redis_entry
+        *   - (sensor name)_redis_rate_div
+        * 
+        *   - Other Redis related entries might need to be defied depending on your implementation. Any other
+        *     configuration entries related to your sensor should be defined here.
         */
         {"example_to_redis", ""}, {"example_redis_entry", ""}, {"example_redis_rate_div", ""},
         
@@ -71,8 +71,6 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     /* STEP #5: Instantiate your sensor (via a shared pointer) and add it to the "m_sensor_devices" list */
     m_example_client_p = std::make_shared<SensorExample>(m_sensor_devices.size(), "Example Sensor", "example_to_redis", log_file_path);
     m_sensor_devices.push_back(m_example_client_p);
-
-    // creating the sensor devices ... end
 
     // filling the connection state update counter list
     // connecting to the sensors (debug output) signals and sensors status change signals
