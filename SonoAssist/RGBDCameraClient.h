@@ -24,7 +24,7 @@
 #define CAMERA_DISPLAY_RESIZE_FACTOR 3
 #define CAMERA_DISPLAY_THREAD_DELAY_MS 150
 
-/*
+/**
 * Class to enable communication with the Intel Realsens D435 camera
 */
 class RGBDCameraClient : public SensorDevice {
@@ -38,18 +38,19 @@ class RGBDCameraClient : public SensorDevice {
 			SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 		~RGBDCameraClient();
 
-		// SensorDevice interface functions
-		void stop_stream(void);
-		void start_stream(void);
-		void connect_device(void);
-		void disconnect_device(void);
-		void set_output_file(const std::string& output_folder);
+		void stop_stream(void) override;
+		void start_stream(void) override;
+		void connect_device(void) override;
+		void disconnect_device(void) override;
+		void set_output_file(const std::string& output_folder) override;
 
 	private:
-		// threaded data collection function
+		
+		/**
+		* Collects frames from the camera stream to saves and make them available to the main window.
+		* This function is meant to be executed in a seperate thread.
+		*/
 		void collect_camera_data(void);
-
-	private:
 
 		// camera communication vars
 		rs2::config m_camera_cfg;

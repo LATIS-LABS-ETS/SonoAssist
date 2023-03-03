@@ -18,7 +18,14 @@
 #define MODEL_DETECTION_DELAY_MS 500
 
 /*
-Class for the real time evaluation of the CUGN model
+* Class for the real time evaluation of the Cardiac Ultrasound GuideNet (CUGN) model
+* Model inputs :
+*	xt: The (t)th captured ultrasound image
+*	ht-1: The previous hidden state (for the GRU)
+* Model outputs :
+*	ot: The predicted absolute value of the rotation, in Euler angles and expressed in radians, between the probe's
+*		orientation at image (xt) and its orientation at the standard view (xf).
+*	at: The predicted visual saliency map associated with (xt)
 */
 class CUGNModel : public MLModel {
 
@@ -27,15 +34,24 @@ class CUGNModel : public MLModel {
 		CUGNModel(int model_id, std::string model_description, std::string model_status_entry,
 			std::string redis_state_entry, std::string model_path_entry, std::string log_file_path, std::shared_ptr<ScreenRecorder> sc_p);
 
-		// MLModel interface methods
+		void start_stream(void) override;
+		void stop_stream(void) override;
+
+	private:
+
+		/**
+		* Executes the prediction pipeline with the following steps:
+		*	1) US image position detection via (detect_us_image)
+		*	2) Image capture and processing: cropping, color conversion, resizing & masking
+		*	3) Model inferance
+		* This method is meant to run in a seperate thread
+		*/
 		void eval(void);
-		void start_stream(void);
-		void stop_stream(void);
 
-	private:
+		/**
+		* Deploys automatic US shell shape detection
+		*/
 		void detect_us_image(void);
-
-	private:
 
 		std::thread m_eval_thread;
 		int m_sampling_period_ms = 100;

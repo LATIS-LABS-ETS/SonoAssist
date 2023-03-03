@@ -1,4 +1,5 @@
-#include "main.h"
+#include "SonoAssist.h"
+#include <QtWidgets/QApplication>
 
 int main(int argc, char *argv[]){
 
