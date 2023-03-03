@@ -11,6 +11,10 @@
 #define OS_A_KEY 1
 #define OS_D_KEY 2
 
+/*
+* Class for the detection of key presses ('A' and 'D' keys for now)
+* The key presses can be detected even when the main application window is out of focus or minimized
+*/
 class OSKeyDetector : public SensorDevice {
 
 	Q_OBJECT
@@ -21,19 +25,20 @@ class OSKeyDetector : public SensorDevice {
 			const std::string& redis_state_entry, const std::string& log_file_path): 
 			SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 
-		// SensorDevice interface functions
-		void stop_stream(void);
-		void start_stream(void);
-		void connect_device(void);
-		void disconnect_device(void);
-		void set_output_file(const std::string& output_folder) {};
+		void stop_stream(void) override;
+		void start_stream(void) override;
+		void connect_device(void) override;
+		void disconnect_device(void) override;
+		void set_output_file(const std::string& output_folder) override {};
 
 	private:
-		// threaded key detection function
+
+		/**
+		* Detects and emits key presses (for the 'A' and 'D' keys) to the main window
+		* This method is meant to run in a seperate thread
+		*/
 		void detect_keys(void);
 
-	protected:
-		// thread vars
 		bool m_listen = false;
 		std::thread m_listener_thread;
 

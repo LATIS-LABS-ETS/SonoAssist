@@ -1,5 +1,9 @@
 #include "SonoAssist.h"
 
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
+
 SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
     // predefining the parameters in the config file
@@ -26,15 +30,16 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"redis_server_path", ""},
         {"eye_tracker_crosshairs_path", ""}, {"eye_tracker_target_path", ""},
         {"us_image_main_display_height", ""}, {"us_image_main_display_width", ""},
-        {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
+        {"cugn_active", ""}, {"cugn_model_path", ""}, {"cugn_to_redis", ""}, {"cugn_redis_entry", ""},
         {"cugn_sample_frequency", ""}, {"cugn_sequence_lenght", ""},  {"cugn_n_gru_cells", ""}, {"cugn_n_gru_neurons", ""}, {"cugn_pixel_mean", ""}, {"cugn_pixel_std_div", ""},
-        {"cugn_sc_mask_path", ""}, {"cugn_input_h", "" }, { "cugn_input_w", "" }, {"cugn_sc_bbox_w", ""}, {"cugn_sc_bbox_h", ""}, {"cugn_sc_bbox_x", ""}, {"cugn_sc_bbox_y", ""}
+        {"cugn_us_template", ""}, {"cugn_input_h", "" }, {"cugn_input_w", ""}
     };
 
-    // creating the log folder
     std::string log_file_path = create_log_folder();
 
-    // creating the sensor devices ... begin
+    /*******************************************************************************
+    * CREATING THE SENSOR DEVICES (BEGIN)
+    ******************************************************************************/
 
     m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>();
     
@@ -43,7 +48,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     m_sensor_devices.push_back(m_gaze_tracker_client_p);
     
     m_camera_client_p = std::make_shared<RGBDCameraClient>(m_sensor_devices.size(), "RGBD Camera", "", log_file_path);
-    connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame, this, &SonoAssist::on_new_camera_image);
+    connect(m_camera_client_p.get(), &RGBDCameraClient::new_video_frame, this, &SonoAssist::update_left_preview_display);
     m_sensor_devices.push_back(m_camera_client_p);
     
     m_metawear_client_p = std::make_shared<MetaWearBluetoothClient>(m_sensor_devices.size(), "External IMU", "ext_imu_to_redis", log_file_path);
@@ -51,11 +56,12 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     
     m_us_probe_client_p = std::make_shared<ClariusProbeClient>(m_sensor_devices.size(), "Clarius Probe", "us_probe_to_redis", log_file_path);
     connect(m_us_probe_client_p.get(), &ClariusProbeClient::new_us_image, this, &SonoAssist::on_new_clarius_image);
-    connect(m_us_probe_client_p.get(), &ClariusProbeClient::no_imu_data, this, &SonoAssist::on_clarius_no_imu_data);
+    connect(m_us_probe_client_p.get(), &ClariusProbeClient::new_us_preview_image, this, &SonoAssist::update_right_preview_display);
+    connect(m_us_probe_client_p.get(), &ClariusProbeClient::no_imu_data, this, &SonoAssist::on_device_warning_message);
     m_sensor_devices.push_back(m_us_probe_client_p);
     
     m_screen_recorder_client_p = std::make_shared<ScreenRecorder>(m_sensor_devices.size(), "Screen Recorder", "sc_to_redis", log_file_path);
-    connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture, this, &SonoAssist::on_new_us_screen_capture);
+    connect(m_screen_recorder_client_p.get(), &ScreenRecorder::new_window_capture, this, &SonoAssist::update_right_preview_display);
     m_sensor_devices.push_back(m_screen_recorder_client_p);
 
     m_key_detector_client_p = std::make_shared<OSKeyDetector>(m_sensor_devices.size(), "OS key detector", "", log_file_path);
@@ -76,23 +82,30 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         connect(m_sensor_devices[i].get(), &SensorDevice::device_status_change, this, &SonoAssist::set_device_status);
     }
 
-    // creating the sensor devices ... end
+    /*******************************************************************************
+    * CREATING THE SENSOR DEVICES (END)
+    ******************************************************************************/
 
-    // creating the ML Models ... begin
+    /*******************************************************************************
+    * CREATING THE ML MODELS (BEGIN)
+    ******************************************************************************/
 
     m_ml_models = std::vector<std::shared_ptr<MLModel>>();
 
     m_ml_models.emplace_back(std::make_shared<CUGNModel>(m_ml_models.size(),
-        "CUGN Model", "cugn_to_redis", "cugn_model_path", log_file_path, m_screen_recorder_client_p));
-
+        "CUGN Model", "cugn_active", "cugn_to_redis", "cugn_model_path", log_file_path, m_screen_recorder_client_p));
+    connect(m_ml_models[m_ml_models.size() - 1].get(), &CUGNModel::new_us_img_detection, this, &SonoAssist::update_main_display);
+    
     // connecting to the models (debug output) signal
     for (auto i = 0; i < m_ml_models.size(); i++) {
         connect(m_ml_models[i].get(), &MLModel::debug_output, this, &SonoAssist::add_debug_text, Qt::QueuedConnection);
     }
 
-    // creating the ML Models ... end
+    /*******************************************************************************
+    * CREATING THE ML MODELS (END)
+    ******************************************************************************/
 	
-    // setting up the gui
+    // setting up the graphical interface
     ui.setupUi(this);
     build_sensor_panel();
     set_acquisition_label(false);
@@ -100,7 +113,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
     // setting up the image display
     m_main_scene_p = std::make_unique<QGraphicsScene>(ui.graphicsView);
     ui.graphicsView->setScene(m_main_scene_p.get());
-    generate_normal_display();
+    generate_main_display();
 
     // writting screen dimensions to the output params
     int screen_width = 0, screen_height = 0;
@@ -133,8 +146,8 @@ SonoAssist::~SonoAssist(){
             }
         }
 
-        remove_normal_display();
-        remove_preview_display();
+        remove_main_display();
+        remove_preview_displays();
 
     } catch (...) {
         qDebug() << "\nSonoAssist - failed to stop the devices from treaming (in destructor)";
@@ -142,125 +155,116 @@ SonoAssist::~SonoAssist(){
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// slots
+/*******************************************************************************
+* DISPLAY RELATED SLOTS
+******************************************************************************/
 
-void SonoAssist::on_new_clarius_image(QImage new_image){
+void SonoAssist::update_main_display(QImage new_image) {
 
-    // dropping incoming image if display is locked
-    if (!m_us_probe_client_p->m_display_locked) {
+    if (!m_preview_is_active) {
     
-        m_us_probe_client_p->m_display_locked = true;
-
         // creating a pix map from the incoming image
         QPixmap new_pixmap = QPixmap::fromImage(new_image);
 
-        // updating the QGraphicsPixmapItem item
-        if (m_us_pixmap_p.get() != nullptr) {
-            m_us_pixmap_p->setPixmap(new_pixmap);
-            m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
+        // creating / updating the QGraphicsPixmapItem item
+        if (m_main_pixmap_p.get() != nullptr) {
+            m_main_pixmap_p->setPixmap(new_pixmap);
+        } else {
+            m_main_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+            QPointF bg_img_pos = m_main_bg_p->pos();
+            m_main_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
+            m_main_scene_p->addItem(m_main_pixmap_p.get());
         }
-
-        // creating the QGraphicsPixmapItem from scratch (fisrt time)
-        else {
-        
-            m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
-
-            // defining the position for the appropriate mode (preview or normal)
-            if (m_preview_is_active) {
-                m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
-                m_us_pixmap_p->setZValue(2);
-            } else {
-                QPointF bg_img_pos = m_us_bg_p->pos();
-                m_us_pixmap_p->setPos(bg_img_pos.x(), bg_img_pos.y());
-            }
-
-            // displaying the image
-            m_main_scene_p->addItem(m_us_pixmap_p.get());
-            m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
-            
-        }
-        
-        // writing the output data
-        m_us_probe_client_p->write_output_data();
 
         // when acquisition is stoped during display
         if (!m_stream_is_active) {
-            m_main_scene_p->removeItem(m_us_pixmap_p.get());
-            m_us_pixmap_p.reset();
+            m_main_scene_p->removeItem(m_main_pixmap_p.get());
+            m_main_pixmap_p.reset();
         }
-
-        m_us_probe_client_p->m_handler_locked = false;
-        
+    
     }
 
 }
 
-void SonoAssist::on_clarius_no_imu_data(void) {
+void SonoAssist::update_right_preview_display(QImage new_image) {
 
-    // notifying the user about missing IMU data
-    QString title = "Check clarius probe settings";
-    QString message = "No incoming IMU data from the clarius probe.";
-    display_warning_message(title, message);
-
-}
-
-void SonoAssist::on_new_us_screen_capture(QImage new_image) {
-
-    // displaying the US image only in preview mode
-    // should not be called in other mode anyways
     if (m_preview_is_active) {
 
         // creating a pix map from the incoming image
         QPixmap new_pixmap = QPixmap::fromImage(new_image);
 
-        // updating the QGraphicsPixmapItem item
-        if (m_us_pixmap_p.get() != nullptr) m_us_pixmap_p->setPixmap(new_pixmap);
-
-        // creating the QGraphicsPixmapItem from scratch (fisrt time)
-        else {
-            m_us_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
-            m_us_pixmap_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
-            m_us_pixmap_p->setZValue(2);
-            m_main_scene_p->addItem(m_us_pixmap_p.get());
+        // creating / updating the QGraphicsPixmapItem item
+        if (m_preview_right_pixmap_p.get() != nullptr) {
+            m_preview_right_pixmap_p->setPixmap(new_pixmap);
+        } else {
+            m_preview_right_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+            m_preview_right_pixmap_p->setPos(PREVIEW_RIGHT_DISPLAY_X_OFFSET, PREVIEW_RIGHT_DISPLAY_Y_OFFSET);
+            m_preview_right_pixmap_p->setZValue(2);
+            m_main_scene_p->addItem(m_preview_right_pixmap_p.get());
         }
 
         // when acquisition is stoped during display
         if (!m_stream_is_active) {
-            m_main_scene_p->removeItem(m_us_pixmap_p.get());
-            m_us_pixmap_p.reset();
+            m_main_scene_p->removeItem(m_preview_right_pixmap_p.get());
+            m_preview_right_pixmap_p.reset();
         }
 
     }
 
 }
 
-void SonoAssist::on_new_camera_image(QImage new_image) {
-   
-    // creating a pix map from the incoming image
-    QPixmap new_pixmap = QPixmap::fromImage(new_image);
+void SonoAssist::update_left_preview_display(QImage new_image) {
 
-    // removing the old image
-    if (m_camera_pixmap_p.get() != nullptr) m_camera_pixmap_p->setPixmap(new_pixmap);
+    if (m_preview_is_active) {
+    
+        // creating a pix map from the incoming image
+        QPixmap new_pixmap = QPixmap::fromImage(new_image);
 
-    // creating the QGraphicsPixmapItem from scratch (fisrt time)
-    else {
-        m_camera_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
-        m_camera_pixmap_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
-        m_camera_pixmap_p->setZValue(2);
-        m_main_scene_p->addItem(m_camera_pixmap_p.get());
+        // creating / updating the QGraphicsPixmapItem item
+        if (m_preview_left_pixmap_p.get() != nullptr) {
+            m_preview_left_pixmap_p->setPixmap(new_pixmap);
+        } else {
+            m_preview_left_pixmap_p = std::make_unique<QGraphicsPixmapItem>(new_pixmap);
+            m_preview_left_pixmap_p->setPos(PREVIEW_LEFT_DISPLAY_X_OFFSET, PREVIEW_LEFT_DISPLAY_Y_OFFSET);
+            m_preview_left_pixmap_p->setZValue(2);
+            m_main_scene_p->addItem(m_preview_left_pixmap_p.get());
+        }
+
+        // when acquisition is stoped during display
+        if (!m_stream_is_active) {
+            m_main_scene_p->removeItem(m_preview_left_pixmap_p.get());
+            m_preview_left_pixmap_p.reset();
+        }
+    
     }
 
-    // when acquisition is stoped during display
-    if (!m_stream_is_active) {
-        m_main_scene_p->removeItem(m_camera_pixmap_p.get());
-        m_camera_pixmap_p.reset();
+}
+
+void SonoAssist::on_new_clarius_image(QImage new_image){
+
+    if (!m_preview_is_active) {
+    
+        // dropping incoming image if display is locked
+        if (!m_us_probe_client_p->m_display_locked) {
+
+            m_us_probe_client_p->m_display_locked = true;
+
+            update_main_display(new_image);
+
+            // writing the output data
+            m_us_probe_client_p->m_display_time = m_us_probe_client_p->get_micro_timestamp();
+            m_us_probe_client_p->write_output_data();
+
+            m_us_probe_client_p->m_handler_locked = false;
+
+        }
+
     }
-  
+
 }
 
 void SonoAssist::on_new_gaze_point(float x, float y) {
 
-    // processing incoming coordinates
     if (x > 1) x = 1;
     if (x < 0) x = 0;
     if (y > 1) y = 1;
@@ -268,12 +272,20 @@ void SonoAssist::on_new_gaze_point(float x, float y) {
 
     // updating the eyetracker crosshair position
     if (m_eyetracker_crosshair_p != nullptr) {
-        int x_pos = PREVIEW_US_DISPLAY_X_OFFSET + (PREVIEW_US_DISPLAY_WIDTH * x) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-        int y_pos = PREVIEW_US_DISPLAY_Y_OFFSET + (PREVIEW_US_DISPLAY_HEIGHT * y) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+        int x_pos = PREVIEW_RIGHT_DISPLAY_X_OFFSET + (PREVIEW_RIGHT_DISPLAY_WIDTH * x) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+        int y_pos = PREVIEW_RIGHT_DISPLAY_Y_OFFSET + (PREVIEW_RIGHT_DISPLAY_HEIGHT * y) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
         m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
     }
     
 }
+
+void SonoAssist::on_device_warning_message(const QString& title, const QString& message) {
+    display_warning_message(title, message);
+}
+
+/*******************************************************************************
+* USER INPUT RELATED SLOTS
+******************************************************************************/
 
 void SonoAssist::on_sensor_connect_button_clicked(){
     
@@ -287,13 +299,19 @@ void SonoAssist::on_sensor_connect_button_clicked(){
         }
 
         // preventing multiple connection button clicks
+
         int n_sensors_used = 0;
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             m_sensor_conn_updates[i] = 0;
-            if (m_sensor_devices[i]->get_sensor_used()) n_sensors_used ++;
+            if (m_sensor_devices[i]->get_sensor_used()) {
+                n_sensors_used++;
+            }
         }
-        if (n_sensors_used > 0) ui.sensor_connect_button->setEnabled(false);
-
+        
+        if (n_sensors_used > 0) {
+            ui.sensor_connect_button->setEnabled(false);
+        }
+        
         // connecting the devices
         ui.debug_text_edit->clear();
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
@@ -325,11 +343,11 @@ void SonoAssist::on_acquisition_preview_box_clicked() {
 
         // toggling between the 2 display types
         if (m_preview_is_active) {
-            remove_normal_display();
-            generate_preview_display();
+            remove_main_display();
+            generate_preview_displays();
         } else {
-            remove_preview_display();
-            generate_normal_display();
+            remove_preview_displays();
+            generate_main_display();
         }
   
     } else {
@@ -352,8 +370,8 @@ void SonoAssist::on_eye_t_targets_box_clicked() {
         // updating the UI
         m_eye_tracker_targets = ui.eye_t_targets_box->isChecked();
         if (!m_preview_is_active) {
-            remove_normal_display();
-            generate_normal_display();
+            remove_main_display();
+            generate_main_display();
         }
 
     } else {
@@ -409,6 +427,8 @@ void SonoAssist::on_start_acquisition_button_clicked() {
 
             // graying out the (start acquisition button while streaming)
             ui.start_acquisition_button->setEnabled(false);
+
+            // launching the sensors and models
 
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
                 if (m_sensor_devices[i]->get_sensor_used()) {
@@ -469,6 +489,8 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         m_stream_is_active = false;
         set_acquisition_label(false);
 
+        // stopping the sensors and models
+
         for (auto i = 0; i < m_ml_models.size(); i++) {
             if (m_ml_models[i]->get_model_status()) {
                 m_ml_models[i]->stop_stream();
@@ -485,8 +507,8 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         if (!m_preview_is_active) write_output_params();
 
         // cleaning the appropriate display
-        if (m_preview_is_active) clean_preview_display();
-        else clean_normal_display();
+        if (m_preview_is_active) clean_preview_displays();
+        else clean_main_display();
 
         // enabling the start acquisition button
         ui.start_acquisition_button->setEnabled(true);
@@ -525,9 +547,9 @@ void SonoAssist::on_param_file_apply_clicked() {
             }
 
             // applying config changes to the UI
-            configure_normal_display();
+            configure_main_display();
 
-            // launching redis server
+            // launching redis server, if required
             if (entities_with_redis > 0) {
                 if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
                     QString debug_str = "\nSonoAssist - failed to launch redis server";
@@ -575,7 +597,6 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
 
 }
 
-// inserting the port in the config map
 void SonoAssist::on_udp_port_input_editingFinished(void) {
     m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());    
 }
@@ -627,40 +648,47 @@ void SonoAssist::sensor_panel_selection_handler(int row, int column) {
 
 }
 
+/*******************************************************************************
+* STATUS RELATED SLOTS
+******************************************************************************/
+
 void SonoAssist::set_device_status(int device_id, bool device_status) {
 
     // pointing to the target table entry
     QTableWidgetItem* device_field = ui.sensor_status_table->item(device_id, 0);
 
-    // preparing widget text and color
+    // applying changes to the UI (sensor table)
+
     QString color_str = "";
     QString status_str = "";
     if (device_status) {
         status_str += "connected";
         color_str = QString(GREEN_TEXT);
-    }
-    else {
+    } else {
         status_str += "disconnected";
         color_str = QString(RED_TEXT);
     }
 
-    // applying changes to the widget
     device_field->setText(status_str);
     device_field->setForeground(QBrush(QColor(color_str)));
 
     if (m_sensor_conn_updates.size() > device_id) {
 
-        // taking note of the state update
+        // taking note of the device state update
         m_sensor_conn_updates[device_id] ++;
 
         // checking if all used devices have produced a state update
+
         bool updates_complete = true;
         for (auto i = 0; i < m_sensor_conn_updates.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 updates_complete = updates_complete && (m_sensor_conn_updates[i] > 0);
             }
         }
-        if (updates_complete) ui.sensor_connect_button->setEnabled(true);
+
+        if (updates_complete) {
+            ui.sensor_connect_button->setEnabled(true);
+        }
 
     }
 
@@ -670,34 +698,40 @@ void SonoAssist::add_debug_text(const QString& debug_str) {
     ui.debug_text_edit->setText(ui.debug_text_edit->toPlainText() + "\n" + debug_str);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// time marker handling
+/*******************************************************************************
+* TIME MARKER HANDLING
+******************************************************************************/
 
-/*
-Using the key press handler to detect "a" and "d" presses for the creation and deletion of time markers
-*/
 void SonoAssist::on_new_os_key_detected(int key) {
 
     if (m_stream_is_active) {
 
-        // adding a time marker7
+        // adding a time marker
         if (key == OS_A_KEY) {
+
             // adding the marker to the display list + json time marker list
-            QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) + " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
+            QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) +
+                " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
             ui.time_marker_list->addItem(new QListWidgetItem(marker_str));
             m_time_markers_json.push_back(QJsonValue(marker_str));
+            
             // updating the output params
             m_output_params["time_markers"] = m_time_markers_json;
+
         }
 
         // removing a time marker
         else if (key == OS_D_KEY) {
+
             // removing the latest time marker
             if (ui.time_marker_list->count() > 0) {
                 m_time_markers_json.pop_back();
                 delete ui.time_marker_list->takeItem(ui.time_marker_list->count() - 1);
             }
+            
             // updating the output params
             m_output_params["time_markers"] = m_time_markers_json;
+
         }
 
     }
@@ -712,7 +746,9 @@ void SonoAssist::clear_time_markers(void) {
     
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// graphical functions
+/*******************************************************************************
+* GRAPHICAL FUNCTIONS
+******************************************************************************/
 
 void SonoAssist::build_sensor_panel(void) {
 
@@ -723,8 +759,9 @@ void SonoAssist::build_sensor_panel(void) {
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
     
     QStringList sensor_descriptions;
-    for (auto i = 0; i < m_sensor_devices.size(); i++)
+    for (auto i = 0; i < m_sensor_devices.size(); i++) {
         sensor_descriptions.append(QString::fromStdString(m_sensor_devices[i]->get_device_description()));
+    }
     ui.sensor_status_table->setVerticalHeaderLabels(sensor_descriptions);
 
     // adding the widgets to the table
@@ -772,119 +809,56 @@ void SonoAssist::display_warning_message(const QString& title, const QString& me
     QMessageBox::warning(this, title, message);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// Graphics scene functions
+/*******************************************************************************
+* GRAPHICS SCENCE FUNCTIONS
+******************************************************************************/
 
-/*
-Configures the normal US image display
-*/
-void SonoAssist::configure_normal_display(void) {
+void SonoAssist::configure_main_display(void) {
 
-    // loading the normal normal display dimensions
+    // loading the main display dimensions
     try {
+
         m_main_us_img_width = std::stoi((*m_app_params)["us_image_main_display_width"]);
-        if (m_main_us_img_width > US_DISPLAY_DEFAULT_WIDTH) m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
+        if (m_main_us_img_width > MAIN_DISPLAY_DEFAULT_WIDTH) {
+            m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+        }
+
         m_main_us_img_height = std::stoi((*m_app_params)["us_image_main_display_height"]);
-        if (m_main_us_img_height > US_DISPLAY_DEFAULT_HEIGHT) m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+        if (m_main_us_img_height > MAIN_DISPLAY_DEFAULT_HEIGHT) {
+            m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
+        }
+    
     } catch (...) {
-        m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
-        m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+        m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+        m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
     }
 
-    // rebuild the normal display
+    // rebuild the main display
     if (!m_preview_is_active) {
-        remove_normal_display();
-        generate_normal_display();
+        remove_main_display();
+        generate_main_display();
     }
 
 }
 
-void SonoAssist::generate_preview_display(void) {
+void SonoAssist::generate_main_display(void) {
 
-    // creating the placeholder image for the camera viewfinder
-    m_camera_bg_i_p = std::make_unique<QPixmap>(CAMERA_DISPLAY_WIDTH, CAMERA_DISPLAY_HEIGHT);
-    m_camera_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
-    m_camera_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_camera_bg_i_p.get()));
-    m_main_scene_p->addItem(m_camera_bg_p.get());
-    m_camera_bg_p->setPos(CAMERA_DISPLAY_X_OFFSET, CAMERA_DISPLAY_Y_OFFSET);
-    m_camera_bg_p->setZValue(1);
+    // creating the main background
+    m_main_bg_i_p = std::make_unique<QPixmap>(m_main_us_img_width, m_main_us_img_height);
+    m_main_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
+    m_main_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_main_bg_i_p.get()));
+    m_main_scene_p->addItem(m_main_bg_p.get());
 
-    // creating the backgroud image for the (probe image / gaze point) display
-    m_eye_tracker_bg_i_p = std::make_unique<QPixmap>(PREVIEW_US_DISPLAY_WIDTH, PREVIEW_US_DISPLAY_HEIGHT);
-    m_eye_tracker_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
-    m_eye_tracker_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_eye_tracker_bg_i_p.get()));
-    m_main_scene_p->addItem(m_eye_tracker_bg_p.get());
-    m_eye_tracker_bg_p->setPos(PREVIEW_US_DISPLAY_X_OFFSET, PREVIEW_US_DISPLAY_Y_OFFSET);
-    m_eye_tracker_bg_p->setZValue(1);
-
-    // loading the eyetracking crosshair
-    QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_crosshairs_path"].c_str()));
-    crosshair_img = crosshair_img.scaled(EYETRACKER_CROSSHAIRS_WIDTH, EYETRACKER_CROSSHAIRS_HEIGHT, Qt::KeepAspectRatio);
-    m_eyetracker_crosshair_p = std::make_unique<QGraphicsPixmapItem>(crosshair_img);
-
-    // placing the crosshair in the middle of the display
-    int x_pos = PREVIEW_US_DISPLAY_X_OFFSET + (PREVIEW_US_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-    int y_pos = PREVIEW_US_DISPLAY_Y_OFFSET + (PREVIEW_US_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
-    m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
-    m_eyetracker_crosshair_p->setZValue(3);
-    m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
-
-}
-
-void SonoAssist::remove_preview_display(void) {
-    
-    // placeholders + crosshairs
-    m_camera_bg_p.release();
-    m_eye_tracker_bg_p.release();
-    m_eyetracker_crosshair_p.release();
-    
-    // images
-    m_camera_pixmap_p.release();
-    m_us_pixmap_p.release();
-    
-    m_main_scene_p->clear();
-}
-
-void SonoAssist::clean_preview_display() {
-
-    // removing the last camera image
-    if (m_camera_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_camera_pixmap_p.get());
-        m_camera_pixmap_p.reset();
-    }
-    // removing the last US image
-    if (m_us_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_us_pixmap_p.get());
-        m_us_pixmap_p.reset();
-    }
-    // recentering the gaze crosshairs
-    if (m_eyetracker_crosshair_p.get() != nullptr) {
-        int x_pos = PREVIEW_US_DISPLAY_X_OFFSET + (PREVIEW_US_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
-        int y_pos = PREVIEW_US_DISPLAY_Y_OFFSET + (PREVIEW_US_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
-        m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
-    }
-
-}
-
-void SonoAssist::generate_normal_display(void) {
-
-    // creating the placeholder image US image
-    m_us_bg_i_p = std::make_unique<QPixmap>(m_main_us_img_width, m_main_us_img_height);
-    m_us_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
-    m_us_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_us_bg_i_p.get()));
-    m_main_scene_p->addItem(m_us_bg_p.get());
-
-    // centering the placeholder
+    // centering the background
     int x_pos = (m_main_scene_p->width() / 2) - (m_main_us_img_width / 2);
     int y_pos = (m_main_scene_p->height() / 2) - (m_main_us_img_height / 2);
-    m_us_bg_p->setPos(x_pos, y_pos);
+    m_main_bg_p->setPos(x_pos, y_pos);
 
-    // generating eyetracker targets
     generate_eye_tracker_targets();
 
-    // getting the placeholder position (screen coordinates)
-    QPoint view_point = ui.graphicsView->mapFromScene(m_us_bg_p->pos());
+    // writing the background position (screen coordinates) to the output params
+    QPoint view_point = ui.graphicsView->mapFromScene(m_main_bg_p->pos());
     QPoint screen_point = ui.graphicsView->viewport()->mapToGlobal(view_point);
-    
     m_output_params["display_x"] = screen_point.x();
     m_output_params["display_y"] = screen_point.y();
     m_output_params["display_width"] = m_main_us_img_width;
@@ -892,20 +866,88 @@ void SonoAssist::generate_normal_display(void) {
 
 }
 
-void SonoAssist::remove_normal_display(void) {
-    m_us_bg_p.release();
-    m_us_pixmap_p.release();
+void SonoAssist::remove_main_display(void) {
+
+    m_main_bg_p.release();
+    m_main_pixmap_p.release();
+    m_main_scene_p->clear();
+
+}
+
+void SonoAssist::clean_main_display(void) {
+
+    if (m_main_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_main_pixmap_p.get());
+        m_main_pixmap_p.reset();
+    }
+
+}
+
+void SonoAssist::generate_preview_displays(void) {
+
+    // creating the background for the left preview image
+    m_preview_left_bg_i_p = std::make_unique<QPixmap>(PREVIEW_LEFT_DISPLAY_WIDTH, PREVIEW_LEFT_DISPLAY_HEIGHT);
+    m_preview_left_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
+    m_preview_left_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_preview_left_bg_i_p.get()));
+    m_main_scene_p->addItem(m_preview_left_bg_p.get());
+    m_preview_left_bg_p->setPos(PREVIEW_LEFT_DISPLAY_X_OFFSET, PREVIEW_LEFT_DISPLAY_Y_OFFSET);
+    m_preview_left_bg_p->setZValue(1);
+
+    // creating the backgroud for the right preview image
+    m_preview_right_bg_i_p = std::make_unique<QPixmap>(PREVIEW_RIGHT_DISPLAY_WIDTH, PREVIEW_RIGHT_DISPLAY_HEIGHT);
+    m_preview_right_bg_i_p->fill(QColor(IMG_PLACE_HOLDER_COLOR));
+    m_preview_right_bg_p = std::make_unique<QGraphicsPixmapItem>(*(m_preview_right_bg_i_p.get()));
+    m_main_scene_p->addItem(m_preview_right_bg_p.get());
+    m_preview_right_bg_p->setPos(PREVIEW_RIGHT_DISPLAY_X_OFFSET, PREVIEW_RIGHT_DISPLAY_Y_OFFSET);
+    m_preview_right_bg_p->setZValue(1);
+
+    // loading the eyetracking crosshair
+    QPixmap crosshair_img(QString((*m_app_params)["eye_tracker_crosshairs_path"].c_str()));
+    crosshair_img = crosshair_img.scaled(EYETRACKER_CROSSHAIRS_WIDTH, EYETRACKER_CROSSHAIRS_HEIGHT, Qt::KeepAspectRatio);
+    m_eyetracker_crosshair_p = std::make_unique<QGraphicsPixmapItem>(crosshair_img);
+
+    // placing the crosshair in the middle of the display
+    int x_pos = PREVIEW_RIGHT_DISPLAY_X_OFFSET + (PREVIEW_RIGHT_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+    int y_pos = PREVIEW_RIGHT_DISPLAY_Y_OFFSET + (PREVIEW_RIGHT_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+    m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
+    m_eyetracker_crosshair_p->setZValue(3);
+    m_main_scene_p->addItem(m_eyetracker_crosshair_p.get());
+
+}
+
+void SonoAssist::remove_preview_displays(void) {
+    
+    // removing background + crosshairs
+    m_preview_left_bg_p.release();
+    m_preview_right_bg_p.release();
+    m_eyetracker_crosshair_p.release();
+    
+    // removing images
+    m_preview_left_pixmap_p.release();
+    m_preview_right_pixmap_p.release();
+    
     m_main_scene_p->clear();
 }
 
-void SonoAssist::clean_normal_display(void) {
+void SonoAssist::clean_preview_displays() {
 
-    // removing the last US image
-    if (m_us_pixmap_p.get() != nullptr) {
-        m_main_scene_p->removeItem(m_us_pixmap_p.get());
-        m_us_pixmap_p.reset();
+    // removing the left preview
+    if (m_preview_left_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_preview_left_pixmap_p.get());
+        m_preview_left_pixmap_p.reset();
     }
- 
+    // removing the right preview
+    if (m_preview_right_pixmap_p.get() != nullptr) {
+        m_main_scene_p->removeItem(m_preview_right_pixmap_p.get());
+        m_preview_right_pixmap_p.reset();
+    }
+    // recentering the gaze crosshairs
+    if (m_eyetracker_crosshair_p.get() != nullptr) {
+        int x_pos = PREVIEW_RIGHT_DISPLAY_X_OFFSET + (PREVIEW_RIGHT_DISPLAY_WIDTH / 2) - (EYETRACKER_CROSSHAIRS_WIDTH / 2);
+        int y_pos = PREVIEW_RIGHT_DISPLAY_Y_OFFSET + (PREVIEW_RIGHT_DISPLAY_HEIGHT / 2) - (EYETRACKER_CROSSHAIRS_HEIGHT / 2);
+        m_eyetracker_crosshair_p->setPos(x_pos, y_pos);
+    }
+
 }
 
 void SonoAssist::generate_eye_tracker_targets() {
@@ -914,7 +956,7 @@ void SonoAssist::generate_eye_tracker_targets() {
     if (m_eye_tracker_targets) {
 
         // getting main display coordinates
-        QPointF display_pos = m_us_bg_p->pos();
+        QPointF display_pos = m_main_bg_p->pos();
         int display_x_pos = display_pos.x();
         int display_y_pos = display_pos.y();
 
@@ -961,12 +1003,10 @@ void SonoAssist::generate_eye_tracker_targets() {
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// input / output params
+/*******************************************************************************
+* PARAMETER LOADING & WRITING FUNCTIONS
+******************************************************************************/
 
-/*
-Creates the logging directory according to DEFAULT_LOG_PATH
-Returns the path to the log file
-*/
 std::string SonoAssist::create_log_folder(void) {
 
     std::string log_file_path = "";
@@ -1098,11 +1138,10 @@ void SonoAssist::write_output_params(void) {
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
+/*******************************************************************************
+* UTILITY FUNCTIONS
+******************************************************************************/
 
-/*
-* Checks if all used devices are ready for acquisition
-*/
 bool SonoAssist::check_device_connections() {
     
     int n_used_devices = 0;
@@ -1119,9 +1158,6 @@ bool SonoAssist::check_device_connections() {
     return used_devices_connected && (n_used_devices > 0);
 }
 
-/*
-* Checks if all used devices are streaming
-*/
 bool SonoAssist::check_devices_streaming() {
 
     int n_used_devices = 0;

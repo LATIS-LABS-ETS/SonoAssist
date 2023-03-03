@@ -26,10 +26,14 @@ class IMUDataManager:
         ''' 
         Parameters
         ----------
-        acquisition_dir_path (str) : path to the acquisition directory
-        quaternions (bool) : when True, entries to express the sensor's orientation in quaternions are added to every sample
-        avg_data (bool) : when True, imu data is averaged in (avg_window) intervals
-        avg_window (float): time window in seconds for the averaging
+        acquisition_dir_path: str
+            path to the acquisition directory
+        quaternions: bool
+            When True, entries to express the sensor's orientation in quaternions are added to every sample
+        avg_data: bool
+            When True, imu data is averaged in (avg_window) intervals
+        avg_window: float
+            time window in seconds for the averaging
         '''
 
         self.avg_window = avg_window
@@ -56,12 +60,15 @@ class IMUDataManager:
 
         Parameters
         ----------
-        target_time (int) : timestamp (us)
-        time_col_name (str) : identifier for the column to use for the timestamp calculations
+        target_time: int
+            timestamp (us)
+        time_col_name: str
+            identifier for the column to use for the timestamp calculations
 
         Returns
         -------
-        (int) : index for the nearest video frame and IMU acquisitions
+        nearest_index: int
+            index for the nearest video frame and IMU acquisitions
         '''
 
         nearest_index = None
@@ -160,11 +167,13 @@ class IMUDataManager:
         
         Parameters
         ----------
-        key (int) : acquisition index
+        key: int
+            acquisition index
 
         Returns
         -------
-        (dict) : IMU orientation data (angles are in degrees)
+        indexed_data: dict
+            IMU orientation data (angles are in degrees)
         '''
 
         if not isinstance(key, int):
@@ -192,11 +201,13 @@ class IMUDataManager:
 
         Parameters
         ----------
-        target_time (int) : timestamp (us)
+        target_time: int
+            timestamp (us)
 
         Returns
         -------
-        (dict) : IMU orientation data
+        orientation_data: dict
+            IMU orientation data nearest to the provided timestamp
         '''
         
         return self[self._get_nearest_index(target_time)]
@@ -232,10 +243,14 @@ class OrientationScene:
         '''
         Parameters
         ----------
-        n_dynamic_arrows (int) : number of dynamic arrows drawn in the scene
-        update_pause_time (float) : time (in seconds) between graphic updates
-        display_triangles (bool) : when True, a plane (3 arrows) is displayed instead of an axis (1 arrow)
-        fig_title (string) : title to be set for the animated figure
+        n_dynamic_arrows: int 
+            number of dynamic arrows drawn in the scene
+        update_pause_time: float
+            time (in seconds) between graphic updates
+        display_triangles: bool
+            When True, a plane (3 arrows) is displayed instead of an axis (1 arrow)
+        fig_title: str
+            title to be set for the animated figure
         '''
 
         self.n_dynamic_arrows = n_dynamic_arrows
@@ -273,7 +288,10 @@ class OrientationScene:
 
     def update_dynamic_arrow(self, roll, pitch, yaw, index=0):
         
-        ''' Provided angles must be in degrees '''
+        ''' 
+        Updates the orientation of the dynamic arrow at the provided index
+        **Provided angles must be in degrees 
+        '''
 
         if index < 0 or index >= self.n_dynamic_arrows:
             raise ValueError("Invalid arrow index provided.")
@@ -284,7 +302,10 @@ class OrientationScene:
 
     def update_static_arrow(self, roll, pitch, yaw):
         
-        ''' Provided angles must be in degrees '''
+        ''' 
+        Updates the orientation of the static arrow
+        **Provided angles must be in degrees 
+        '''
 
         self.static_arrow = self._update_arrow(self.arrow_starting_pos, roll, pitch, yaw)
         self.static_support_arrow = self._update_arrow(self.support_starting_pos, roll, pitch, yaw)

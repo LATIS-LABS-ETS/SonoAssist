@@ -19,7 +19,6 @@
 	#pragma warning(pop)
 #endif
 
-#include "main.h"
 #include "SensorDevice.h"
 
 #include <listen/listen.h>
@@ -43,14 +42,8 @@
 
 #define CLARIUS_VIDEO_FPS 20
 
-// required by the ClariusProbeClient
-class SonoAssist;
-
-/*
+/**
 * Class to enable communication with a Clarius ultrasound probe
-* 
-* The output IMU file also serves as a index (timestamp) for US images since IMU data
-* is received with the probe images.
 */
 class ClariusProbeClient : public SensorDevice {
 
@@ -63,17 +56,18 @@ class ClariusProbeClient : public SensorDevice {
 			const std::string& redis_state_entry, const std::string& log_file_path):
 			SensorDevice(device_id, device_description, redis_state_entry, log_file_path) {};
 
-        // SensorDevice interface functions
-        void stop_stream(void);
-        void start_stream(void);
-        void connect_device(void);
-        void disconnect_device(void);
-        void set_output_file(const std::string& output_folder_path);
+        void stop_stream(void) override;
+        void start_stream(void) override;
+        void connect_device(void) override;
+        void disconnect_device(void) override;
+        void set_output_file(const std::string& output_folder_path) override;
 
 		void set_udp_port(int port);
-		void write_output_data(void);
 
-	public:
+		/**
+		* Writes collected data (imu data + images the appropriate output files)
+		*/
+		void write_output_data(void);
 		
 		// ouput image dimensions (accessed from callback)
 		int m_out_img_width = CLARIUS_NORMAL_DEFAULT_WIDTH;
@@ -100,11 +94,13 @@ class ClariusProbeClient : public SensorDevice {
 		std::atomic<bool> m_handler_locked = false;
 
 	private:
-		// helper functions
-		void initialize_img_handling(void);
-		void configure_img_acquisition(void);
 
-	private:
+		void initialize_img_handling(void);
+
+		/**
+		* Loads the configurations for the generation of output images
+		*/
+		void configure_img_acquisition(void);
 
 		// output vars
 		bool m_output_file_loaded = false;
@@ -123,7 +119,8 @@ class ClariusProbeClient : public SensorDevice {
 		int m_udp_port = 0;
 
 	signals:
-		void no_imu_data(void);
 		void new_us_image(QImage image);
+		void new_us_preview_image(QImage image);
+		void no_imu_data(QString title, QString message);
 
 };

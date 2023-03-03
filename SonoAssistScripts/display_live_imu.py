@@ -35,8 +35,8 @@ class IMUProbeRedisModel:
 
         ''' 
         Returns timestamps and imu readings corresponding to one acquisition point
-            - timestamps : (reception time, onboard time)
-            - orientation_data : (in degrees) : (heading, yaw, pitch, roll)
+            - timestamps: (reception time, onboard time)
+            - orientation_data: (heading, yaw, pitch, roll) - (in degrees)
         '''
 
         times = None

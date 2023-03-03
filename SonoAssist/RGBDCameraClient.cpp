@@ -1,30 +1,35 @@
 #include "RGBDCameraClient.h"
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// GazeTracker public methods
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
 
 RGBDCameraClient::~RGBDCameraClient() {
 	disconnect_device();
 }
 
+/*******************************************************************************
+* SENSOR DEVICE OVERRIDES
+******************************************************************************/
+
 void RGBDCameraClient::connect_device(void) {
 
-	// making sure requirements are filled
 	if (m_config_loaded && m_sensor_used) {
 	
 		write_debug_output("RGBDCameraClient - testing the connection to the camera");
 
 		// testing connection with the camera
-		try {
+		try {			
 			rs2::pipeline p;
 			p.start();
 			p.stop();
 			m_device_connected = true;
+			write_debug_output("RGBDCameraClient - successfully connected to the camera");
 		} catch (...) {
 			m_device_connected = false;
 			write_debug_output("RGBDCameraClient - failed to connect to the camera");
 		}
 
-		write_debug_output("RGBDCameraClient - successfully connected to the camera");
 		emit device_status_change(m_device_id, m_device_connected);
 	
 	}
@@ -40,7 +45,6 @@ void RGBDCameraClient::disconnect_device(void) {
 
 void RGBDCameraClient::start_stream() {
 
-	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
 		// setting the base recording configurations
@@ -116,12 +120,10 @@ void RGBDCameraClient::set_output_file(const std::string& output_folder_path) {
 	
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// collection function
+/*******************************************************************************
+* DATA COLLECTION FUNCTIONS
+******************************************************************************/
 
-/*
-* Collects frames from the camera stream and makes them available to the main window.
-* This function is meant to be executed in a seperate thread.
-*/
 void RGBDCameraClient::collect_camera_data(void) {
 
 	void* frame_data_p = nullptr;
@@ -147,8 +149,8 @@ void RGBDCameraClient::collect_camera_data(void) {
 			cv::resize(color_frame, resized_color_frame, resized_color_frame.size(), 0, 0, cv::INTER_AREA);
 			cv::cvtColor(resized_color_frame, resized_color_frame, CV_BGR2RGB);
 
-			// emiting the frame and waiting
-			emit new_video_frame(std::move(q_image.copy()));
+			// emiting the frame and waiting 
+			emit new_video_frame(q_image.copy());
 			std::this_thread::sleep_for(std::chrono::milliseconds(CAMERA_DISPLAY_THREAD_DELAY_MS));
 
 		}
@@ -163,7 +165,6 @@ void RGBDCameraClient::collect_camera_data(void) {
 
 		}
 		
-
 	}
 
 }

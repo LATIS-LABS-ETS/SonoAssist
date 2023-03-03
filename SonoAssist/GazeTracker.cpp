@@ -1,10 +1,9 @@
 #include "GazeTracker.h"
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helper / callback functions
+/*******************************************************************************
+* HELPER & CALLBACK FUNCTIONS
+******************************************************************************/
 
-/*
-* Copies the url in to the user data
-*/
 void url_receiver(char const* url, void* user_data){
 	
 	char* buffer = (char*) user_data;
@@ -15,14 +14,6 @@ void url_receiver(char const* url, void* user_data){
 		strcpy(buffer, url);
 }
 
-/*
-* Callback function for the collection of gaze point data ( relative (x, y) coordinates on the screen)
-* This function is called by the collection thread every time a new gaze point is available
-*
-* @param [in] gaze_point structure containing the gaze point data
-* @param [in] user_data voided context variable which was passed to the API upon callback registration. 
-			  Pointer to the GazeTracker object interfacing with the eyetracker.
-*/
 void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) {
 	
 	int64_t tobii_time;
@@ -62,14 +53,6 @@ void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data) 
 
 }
 
-/*
-* Callback function for the collection of head position data (x, y, z coordinates (mm) from the center of the screen)
-* This function is called by the collection thread every time a new measure is available
-*
-* @param [in] gaze_point structure containing the head pose data
-* @param [in] user_data voided context variable which was passed to the API upon callback registration.
-			  Pointer to the GazeTracker object interfacing with the eyetracker.
-*/
 void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 
 	int64_t tobii_time;
@@ -99,7 +82,9 @@ void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data) {
 
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// GazeTracker public methods
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
 
 GazeTracker::GazeTracker(int device_id, const std::string& device_description, 
 	const std::string& redis_state_entry, const std::string& log_file_path): 
@@ -119,12 +104,15 @@ GazeTracker::~GazeTracker() {
 
 }
 
+/*******************************************************************************
+* SENSOR DEVICE OVERRIDES
+******************************************************************************/
+
 void GazeTracker::connect_device(void) {
 
 	tobii_error_t error;
 	char url[256] = { 0 };
 
-	// making sure requirements are filled
 	if (m_tobii_api_valid && m_config_loaded && m_sensor_used) {
 
 		// making sure device is disconnected
@@ -169,7 +157,6 @@ void GazeTracker::disconnect_device(void) {
 
 void GazeTracker::start_stream() {
 
-	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
 		// opening the output files
@@ -195,7 +182,6 @@ void GazeTracker::start_stream() {
 
 void GazeTracker::stop_stream() {
 	
-	// making sure requirements are filled
 	if (m_device_connected && m_device_streaming) {
 	
 		// stop the streaming thread
@@ -243,11 +229,10 @@ void GazeTracker::set_output_file(const std::string& output_folder_path) {
 
 }
 
-/*
-* Eye tracker data collection function
-* This function is meant to be ran in a seperate thread. It waits for data to be available to the callbacks then
-* triggers a call to the appropriate one via the "tobii_device_process_callbacks" function.
-*/
+/*******************************************************************************
+* DATA COLLECTION FUNCTIONS
+******************************************************************************/
+
 void GazeTracker::collect_data(void) {
 
 	// continuously wait for data and call callbacks

@@ -33,6 +33,7 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 include_directories(
 	${DEPENDENCIES_INCLUDES} 
 	${DEPENDENCIES_DIR}/libtorch/include
+	"C:/Program\ Files\ (x86)/Intel\ RealSense\ SDK\ 2.0/include"
 )
 
 find_package(Torch REQUIRED)
@@ -57,7 +58,7 @@ add_executable(SonoAssist WIN32
 	"MLModel.cpp" "MLModel.h"
 	"CUGNModel.h" "CUGNModel.cpp"
 	"SonoAssist.cpp" "SonoAssist.h"
-	"main.cpp" "main.h"
+	"main.cpp" 
 	"SonoAssist.rc"
  )
 
@@ -65,5 +66,6 @@ target_link_libraries(SonoAssist
 	${CONAN_LIBS} 
 	${DEPENDENCIES_LIBS} 
 	${TORCH_LIBRARIES}
+	"C:/Program\ Files\ (x86)/Intel\ RealSense\ SDK\ 2.0/lib/x64/realsense2.lib"
 	Qt5::Widgets Qt5::Xml Qt5::Bluetooth
 )

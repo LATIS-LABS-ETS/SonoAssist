@@ -16,13 +16,13 @@
 #define REDIS_PORT 6379
 #define REDIS_ADDRESS "127.0.0.1"
 
-typedef std::map<std::string, std::string> config_map;
+using config_map = std::map<std::string, std::string>;
 
 /*
-* Interface for the implementation of sensor devices
+* Abstract class for the implementation of custom sensor devices.
 *
-* Classes which communicate with sesnors to pull data from them must implement this interface.
-* It provides practical functions and public functions which will allow simple integration to the UI.
+* To be compatible with SonoAssist, classes which acquire data from sensors must be derived from this class
+* and implement (at least) the pure virtual functions.
 */
 class SensorDevice : public QObject {
 
@@ -30,9 +30,13 @@ class SensorDevice : public QObject {
 
 	public: 
 
-		SensorDevice(int device_id, const std::string& device_description, 
-			const std::string& redis_state_entry, const std::string& log_file_path);
+		SensorDevice(int device_id,  std::string device_description, 
+			std::string redis_state_entry,  std::string log_file_path);
 		virtual ~SensorDevice();
+
+		/*******************************************************************************
+		* GETTERS & SETTERS
+		******************************************************************************/
 
 		int get_device_id(void) const;
 		std::string get_device_description(void) const;
@@ -50,26 +54,94 @@ class SensorDevice : public QObject {
 		void set_stream_preview_status(bool state);
 		void set_configuration(std::shared_ptr<config_map> config_ptr);
 
+		/*******************************************************************************
+		* REDIS METHODS
+		******************************************************************************/
+
+		/**
+		* Creates a connection to the local running Redis DB and deletes the provided entry identifiers.
+		* Note that if there is no running Redis DB, this no connection will be created (m_redis_state=false) and
+		* error message will be printed to the console.
+		* 
+		* \param redis_entries The Redis entries to be deleted / reset.
+		*/
+		virtual void connect_to_redis(const std::vector<std::string>&& redis_entries = {});
+		
+		/**
+		* Closes the existing Redis connection.
+		*/
+		virtual void disconnect_from_redis(void);
+
+		/**
+		* Once every (m_redis_rate_div) call, the provided data string is appended to the specified redis list.
+		* 
+		* \param redis_entry The identifier for the Redis list to which the provided string will be appended.
+		* \param data_str The string to append.
+		*/
+		virtual void write_str_to_redis(const std::string& redis_entry, std::string data_str);
+		
+		/**
+		* Once every (m_redis_rate_div) function call, the provided image overwrites the specified redis entry.
+		* 
+		* \param redis_entry The identifier to the Redis variable to overwrite with the provided image data.
+		* \param img The image data.
+		*/
+		virtual void write_img_to_redis(const std::string& redis_entry, const cv::Mat& img);
+
+		/*******************************************************************************
+		* HELPERS
+		******************************************************************************/
+
+		/**
+		* Generates a micro second precision timestamp
+		*
+		* \returns string of micro second count since epoch
+		*/
 		static std::string get_micro_timestamp(void);
 
-		// redis communication functions
-		virtual void connect_to_redis(const std::vector<std::string> && = {});
-		virtual void disconnect_from_redis(void);
-		virtual void write_str_to_redis(const std::string&, std::string);
-		virtual void write_img_to_redis(const std::string&, const cv::Mat&);
-
-		// interface methods (virtual)
-		// all interface functions must be non-bloking
-		virtual void stop_stream(void) = 0;
-		virtual void start_stream(void) = 0;
+		/*******************************************************************************
+		* PURE VIRTUAL METHODS
+		* When implemented, all of the following methods must be non-bloking
+		******************************************************************************/
+		
+		/**
+		* Establishes a connection with the custom sensor.
+		*/
 		virtual void connect_device(void) = 0;
+
+		/**
+		* Ends the connection with the custom sensor.
+		*/
 		virtual void disconnect_device(void) = 0;
+
+		/**
+		* Launches the data acquisition and writing in an other thread.
+		* Must be non-blocking.
+		*/
+		virtual void start_stream(void) = 0;
+
+		/**
+		* Ends the data acquisition process.
+		*/
+		virtual void stop_stream(void) = 0;
+
+		/**
+		* Prepares the writing of the output file(s), given the provided output folder path
+		* 
+		* \param putput_folder The path to the output folder.
+		*/
 		virtual void set_output_file(const std::string& ouput_folder) = 0;
 
 	protected:
-		void write_debug_output(const QString&);
 
-	protected:
+		/*******************************************************************************
+		* HELPERS
+		******************************************************************************/
+
+		/**
+		* Writes debug output to QDebug (the debug console) and the debug output window
+		*/
+		void write_debug_output(const QString&);
 
 		// device identification vars
 		int m_device_id;

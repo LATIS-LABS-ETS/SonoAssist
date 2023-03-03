@@ -40,23 +40,23 @@
 #define ACTIVE_SENSOR_FIELD_COLOR "#D3D3D3"
 #define INACTIVE_SENSOR_FIELD_COLOR "#ffffff"
 
-// US probe display (normal)
-#define US_DISPLAY_DEFAULT_WIDTH 1260
-#define US_DISPLAY_DEFAULT_HEIGHT 720
+// main display constants
+#define MAIN_DISPLAY_DEFAULT_WIDTH 1260
+#define MAIN_DISPLAY_DEFAULT_HEIGHT 720
 
-// US probe display (preview)
-#define PREVIEW_US_DISPLAY_WIDTH 640
-#define PREVIEW_US_DISPLAY_HEIGHT 360
-#define PREVIEW_US_DISPLAY_X_OFFSET 650
-#define PREVIEW_US_DISPLAY_Y_OFFSET 0
+// right preview display constants
+#define PREVIEW_RIGHT_DISPLAY_WIDTH 640
+#define PREVIEW_RIGHT_DISPLAY_HEIGHT 360
+#define PREVIEW_RIGHT_DISPLAY_X_OFFSET 650
+#define PREVIEW_RIGHT_DISPLAY_Y_OFFSET 0
 
-// RGB D camera display (preview)
-#define CAMERA_DISPLAY_WIDTH 640
-#define CAMERA_DISPLAY_HEIGHT 360
-#define CAMERA_DISPLAY_X_OFFSET 0
-#define CAMERA_DISPLAY_Y_OFFSET 0
+// left preview display constants
+#define PREVIEW_LEFT_DISPLAY_WIDTH 640
+#define PREVIEW_LEFT_DISPLAY_HEIGHT 360
+#define PREVIEW_LEFT_DISPLAY_X_OFFSET 0
+#define PREVIEW_LEFT_DISPLAY_Y_OFFSET 0
 
-// Eyetracker crosshairs dimensions
+// Eyetracker crosshairs dimensions constants
 #define EYETRACKER_N_ACC_TARGETS 4
 #define EYETRACKER_ACC_TARGET_WIDTH 20
 #define EYETRACKER_ACC_TARGET_HEIGHT 20
@@ -67,10 +67,12 @@
 #define DEFAULT_LOG_PATH "C:/Users/<username>/AppData/SonoAssist/"
 #define DEFAULT_CONFIG_PATH "C:/Program Files (x86)/SonoAssist/resources/params.xml"
 
-typedef std::map<std::string, std::string> config_map;
+using config_map = std::map<std::string, std::string>;
 
-class ClariusProbeClient;
 
+/**
+* Main graphical window class handling user interaction
+*/
 class SonoAssist : public QMainWindow {
 	
 	Q_OBJECT
@@ -82,89 +84,137 @@ class SonoAssist : public QMainWindow {
 
 	public slots:
 		
-		// device connection
-		void on_sensor_connect_button_clicked(void);
-		void set_device_status(int device_id, bool device_status);
+		/*******************************************************************************
+		* DISPLAY RELATED SLOTS
+		******************************************************************************/
 
-		// data streaming
+		void update_main_display(QImage);
+		void on_new_clarius_image(QImage);
+		void update_left_preview_display(QImage);
+		void update_right_preview_display(QImage);
+
+		void on_new_gaze_point(float, float);
+		void on_device_warning_message(const QString& title, const QString& message);
+
+		/*******************************************************************************
+		* USER INPUT RELATED SLOTS
+		******************************************************************************/
+		 
 		void on_pass_through_box_clicked(void);
 		void on_eye_t_targets_box_clicked(void);
 		void on_acquisition_preview_box_clicked(void);
 		void on_start_acquisition_button_clicked(void);
 		void on_stop_acquisition_button_clicked(void);
-
-		// data acquisition slots
-		void on_new_camera_image(QImage);
-		void on_new_clarius_image(QImage);
-		void on_clarius_no_imu_data(void);
-		void on_new_gaze_point(float, float);
-		void on_new_us_screen_capture(QImage);
-		void on_new_os_key_detected(int);
-
-		// loading file slots 
+		void on_sensor_connect_button_clicked(void);
+		 
 		void on_param_file_browse_clicked(void);
 		void on_output_folder_browse_clicked(void);
 		void on_param_file_apply_clicked();
-
-		// other slots
+		
 		void on_udp_port_input_editingFinished(void);
 		void sensor_panel_selection_handler(int row, int column);
 
+		/*******************************************************************************
+		* STATUS RELATED SLOTS
+		******************************************************************************/
+
+		void add_debug_text(const QString&);
+		void set_device_status(int device_id, bool device_status);
+
+		/*******************************************************************************
+		* TIME MARKER HANDLING SLOTS
+		******************************************************************************/
+
+		/*
+		* This method captures the key press codes emited by the (OSKeyDetector) SensorDevice instance
+		* and creates (A) / deletes (D) time markers based on the presses. 
+		*
+		* \param key The key code emitedby the (OSKeyDetector).
+		*/
+		void on_new_os_key_detected(int key);
+		
 	private:
 
-		// graphical functions
-		void add_debug_text(const QString&);
+		/*******************************************************************************
+		* GRAPHICAL FUNCTIONS
+		******************************************************************************/
+		
 		void build_sensor_panel(void);
 		void set_acquisition_label(bool active);
 		void display_warning_message(const QString& title, const QString& message);
 
-		// graphics scene functions
-		void configure_normal_display(void);
-		void clean_preview_display(void);
-		void remove_preview_display(void);
-		void generate_preview_display(void);
-		void clean_normal_display(void);
-		void remove_normal_display(void);
-		void generate_normal_display(void);
+		/*******************************************************************************
+		* GRAPHICS SCENCE FUNCTIONS
+		******************************************************************************/
+
+		void clean_main_display(void);
+		void remove_main_display(void);
+		void generate_main_display(void);
+		void configure_main_display(void);
+
+		void clean_preview_displays(void);
+		void remove_preview_displays(void);
+		void generate_preview_displays(void);
+		
 		void generate_eye_tracker_targets(void);
 
-		// utility functions
-		bool check_devices_streaming(void);
-		bool check_device_connections(void);
-		void configure_device_clients(void);
+		/*******************************************************************************
+		* PARAMETER LOADING & WRITING FUNCTIONS
+		******************************************************************************/
 
-		// param write/load functions
+		/**
+		* Creates the logging directory according to (DEFAULT_LOG_PATH).
+		* \return The path to the log file.
+		*/
+		std::string create_log_folder(void);
+
 		void write_output_params(void);
 		bool create_output_folder(void);
-		std::string create_log_folder(void);
 		bool load_config_file(const QString& param_file_path);
 
-		// time marker funcions
+		/*******************************************************************************
+		* UTILITY FUNCTIONS
+		******************************************************************************/
+
+		/**
+		* Checks if all used devices are ready for acquisition.
+		* \return (true) if all used devices are connected.
+		*/
+		bool check_devices_streaming(void);
+		
+		/**
+		* Checks if all used devices are streaming.
+		* \return (true) id all used devices are streaming.
+		*/
+		bool check_device_connections(void);
+
+		/*******************************************************************************
+		* TIME MARKER HANDLING SLOTS
+		******************************************************************************/
+
 		void clear_time_markers(void);
 
-	private:
+		// MAIN DISPLAY VARS
 
 		Ui::MainWindow ui;
 
-		// main display vars
 		std::unique_ptr<QGraphicsScene> m_main_scene_p;
-		int m_main_us_img_width = US_DISPLAY_DEFAULT_WIDTH;
-		int m_main_us_img_height = US_DISPLAY_DEFAULT_HEIGHT;
+		int m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+		int m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
 		
-		// US image display var (normal and preview)
-		std::unique_ptr<QGraphicsPixmapItem> m_us_pixmap_p;
-		// US normal placeholder display vars (normal)
-		std::unique_ptr<QPixmap> m_us_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_us_bg_p;
-		// eye tracker placeholder display vars (preview)
-		std::unique_ptr<QPixmap> m_eye_tracker_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eye_tracker_bg_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_main_pixmap_p;
+		std::unique_ptr<QPixmap> m_main_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_main_bg_p;
 
-		// RGB D camera display vars (preview)
-		std::unique_ptr<QPixmap> m_camera_bg_i_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_camera_bg_p;
-		std::unique_ptr<QGraphicsPixmapItem> m_camera_pixmap_p;
+		std::unique_ptr<QPixmap> m_preview_right_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_right_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_right_pixmap_p;
+
+		std::unique_ptr<QPixmap> m_preview_left_bg_i_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_left_bg_p;
+		std::unique_ptr<QGraphicsPixmapItem> m_preview_left_pixmap_p;
+
+		std::unique_ptr<QGraphicsPixmapItem> m_eyetracker_crosshair_p;
 
 		// state check vars
 		bool m_stream_is_active = false;

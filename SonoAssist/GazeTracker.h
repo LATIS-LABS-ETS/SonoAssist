@@ -23,14 +23,11 @@ class GazeTracker : public SensorDevice {
 			const std::string& redis_state_entry, const std::string& log_file_path);
 		~GazeTracker();
 
-		// SensorDevice interface functions
-		void stop_stream(void);
-		void start_stream(void);
-		void connect_device(void);
-		void disconnect_device(void);
-		void set_output_file(const std::string& output_folder);
-
-	public:
+		void stop_stream(void) override;
+		void start_stream(void) override;
+		void connect_device(void) override;
+		void disconnect_device(void) override;
+		void set_output_file(const std::string& output_folder) override;
 		
 		// tobii communication vars (accessed from callbacks)
 		bool m_tobii_api_valid = false;
@@ -43,10 +40,13 @@ class GazeTracker : public SensorDevice {
 		std::ofstream m_output_head_file;
 
 	private:
-		// threaded collection method and callback
-		void collect_data(void);
 
-	private:
+		/**
+		* Eye tracker data collection function
+		* This function is meant to be ran in a seperate thread. It waits for data to be available to the callbacks then
+		* triggers a call to the appropriate one via the "tobii_device_process_callbacks" function.
+		*/
+		void collect_data(void);
 
 		// output file vars
 		bool m_output_file_loaded = false;
@@ -61,7 +61,32 @@ class GazeTracker : public SensorDevice {
 		void new_gaze_point(float x, float y);
 };
 
-// helper and call back function prototypes
+
+/*******************************************************************************
+* HELPER & CALLBACK FUNCTIONS
+******************************************************************************/
+
+/**
+* Copies the url in to the user data
+*/
 void url_receiver(char const* url, void* user_data);
+
+/**
+* Callback function for the collection of head position data (x, y, z coordinates (mm) from the center of the screen)
+* This function is called by the collection thread every time a new measure is available
+*
+* \param gaze_point structure containing the head pose data
+* \param user_data voided context variable which was passed to the API upon callback registration.
+*		 Pointer to the GazeTracker object interfacing with the eyetracker.
+*/
 void head_pose_callback(tobii_head_pose_t const* head_pose, void* user_data);
+
+/**
+* Callback function for the collection of gaze point data ( relative (x, y) coordinates on the screen)
+* This function is called by the collection thread every time a new gaze point is available
+*
+* \param gaze_point structure containing the gaze point data
+* \param user_data voided context variable which was passed to the API upon callback registration. Pointer
+*		 to the GazeTracker object interfacing with the eyetracker.
+*/
 void gaze_point_callback(tobii_gaze_point_t const* gaze_point, void* user_data);

@@ -1,6 +1,8 @@
 #include "ScreenRecorder.h"
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ScreenRecorder public methods
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
 
 ScreenRecorder::ScreenRecorder(int device_id, const std::string& device_description, 
     const std::string& redis_state_entry, const std::string& log_file_path):
@@ -50,6 +52,10 @@ ScreenRecorder::~ScreenRecorder() {
     ReleaseDC(m_window_handle, m_hwindowDC);
 
 }
+
+/*******************************************************************************
+* SENSOR DEVICE OVERRIDES
+******************************************************************************/
 
 void ScreenRecorder::connect_device() {
 
@@ -148,12 +154,15 @@ void ScreenRecorder::set_output_file(const std::string& output_folder_path) {
 
         m_output_file_loaded = true;
 
-    }
-    catch (...) {
+    } catch (...) {
         write_debug_output("ClariusProbeClient - error occured while setting the output file");
     }
 
 }
+
+/*******************************************************************************
+* DATA COLLECTION & UTILITY FUNCTIONS
+******************************************************************************/
 
 cv::Mat ScreenRecorder::get_lastest_acquisition(cv::Rect aoi) {
 
@@ -176,17 +185,11 @@ void ScreenRecorder::get_screen_dimensions(int& screen_width, int& screen_height
     screen_height = m_window_rc.bottom;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// data collection function
-
-/*
-* Collects the most recent screen capture and makes it available to the main window.
-* This function is meant to be executed in a seperate thread.
-*/
 void ScreenRecorder::collect_window_captures(void) {
   
 	while (m_collect_data) {
 	
-        // performing the window capture : copy from the window device context to the bitmap device context
+        // performing the window capture: copy from the window device context to the bitmap device context
         // Source: https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat/14167433#14167433
         StretchBlt(m_hwindowCompatibleDC, 0, 0, m_window_rc.right, m_window_rc.bottom, m_hwindowDC, 0, 0, m_window_rc.right, m_window_rc.bottom, SRCCOPY);
         GetDIBits(m_hwindowCompatibleDC, m_hbwindow, 0, m_window_rc.bottom, m_capture_mat.data, (BITMAPINFO*)&m_bi, DIB_RGB_COLORS);
@@ -199,7 +202,7 @@ void ScreenRecorder::collect_window_captures(void) {
         // in preview mode, resizing an sending the image to UI (low resolution display)
         if (m_stream_preview) {
             cv::resize(m_capture_cvt_mat, m_preview_img_mat, m_preview_img_mat.size(), 0, 0, cv::INTER_AREA);
-            emit new_window_capture(m_preview_img);
+            emit new_window_capture(m_preview_img.copy());
             std::this_thread::sleep_for(std::chrono::milliseconds(CAPTURE_DISPLAY_THREAD_DELAY_MS));
         }
         

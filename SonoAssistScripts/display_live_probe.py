@@ -41,8 +41,8 @@ class USProbeRedisModel:
 
         ''' 
         Returns timestamps and imu readings corresponding to one acquisition point
-            - timestamps : (reception time, display time, onboard time)
-            - imu readings : [(gx, gy, gz, ax, ay, az, mx, my, mz, qw, qx, qy, qz), ... ]
+            - timestamps: (reception time, display time, onboard time)
+            - imu_readings: [(gx, gy, gz, ax, ay, az, mx, my, mz, qw, qx, qy, qz), ... ]
         '''
 
         times = None
