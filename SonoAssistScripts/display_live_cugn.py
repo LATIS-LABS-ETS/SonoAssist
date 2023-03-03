@@ -43,7 +43,7 @@ class CUGNRedisModel:
             data_str = self.r_connection.lpop(self.data_key).decode('UTF-8')
             pred_data = [math.degrees(float(entry.strip())) for entry in data_str.split(",")]
             print(pred_data)
-            pred_data = [2*element for element in pred_data]
+            #pred_data = [2*element for element in pred_data]
         except: pass
 
         return pred_data

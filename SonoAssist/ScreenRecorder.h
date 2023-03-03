@@ -28,20 +28,22 @@ class ScreenRecorder : public SensorDevice {
 			const std::string& redis_state_entry, const std::string& log_file_path);
 		~ScreenRecorder();
 
-		// SensorDevice interface functions
-		void stop_stream(void);
-		void start_stream(void);
-		void connect_device(void);
-		void disconnect_device(void);
-		void set_output_file(const std::string& output_folder);
+		void stop_stream(void) override;
+		void start_stream(void) override;
+		void connect_device(void) override;
+		void disconnect_device(void) override;
+		void set_output_file(const std::string& output_folder) override;
 	
 		cv::Mat get_lastest_acquisition(cv::Rect aoi=cv::Rect(0, 0, 0, 0));
 		void get_screen_dimensions(int&, int&) const;
 
 	private:
-		void collect_window_captures(void);
 
-	private:
+		/**
+		* Collects the most recent screen capture to save it and makes it available to the main window.
+		* This function is meant to be executed in a seperate thread.
+		*/
+		void collect_window_captures(void);
 
 		// window capture vars
 		RECT m_window_rc;

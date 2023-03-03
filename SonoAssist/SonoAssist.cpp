@@ -1,5 +1,9 @@
 #include "SonoAssist.h"
 
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
+
 SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
     // predefining the parameters in the config file
@@ -18,10 +22,11 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         {"cugn_us_template", ""}, {"cugn_input_h", "" }, {"cugn_input_w", ""}
     };
 
-    // creating the log folder
     std::string log_file_path = create_log_folder();
 
-    // creating the sensor devices ... begin
+    /*******************************************************************************
+    * CREATING THE SENSOR DEVICES (BEGIN)
+    ******************************************************************************/
 
     m_sensor_devices = std::vector<std::shared_ptr<SensorDevice>>();
     
@@ -58,9 +63,13 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         connect(m_sensor_devices[i].get(), &SensorDevice::device_status_change, this, &SonoAssist::set_device_status);
     }
 
-    // creating the sensor devices ... end
+    /*******************************************************************************
+    * CREATING THE SENSOR DEVICES (END)
+    ******************************************************************************/
 
-    // creating the ML Models ... begin
+    /*******************************************************************************
+    * CREATING THE ML MODELS (BEGIN)
+    ******************************************************************************/
 
     m_ml_models = std::vector<std::shared_ptr<MLModel>>();
 
@@ -73,9 +82,11 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
         connect(m_ml_models[i].get(), &MLModel::debug_output, this, &SonoAssist::add_debug_text, Qt::QueuedConnection);
     }
 
-    // creating the ML Models ... end
+    /*******************************************************************************
+    * CREATING THE ML MODELS (END)
+    ******************************************************************************/
 	
-    // setting up the gui
+    // setting up the graphical interface
     ui.setupUi(this);
     build_sensor_panel();
     set_acquisition_label(false);
@@ -125,7 +136,9 @@ SonoAssist::~SonoAssist(){
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// display related slots
+/*******************************************************************************
+* DISPLAY RELATED SLOTS
+******************************************************************************/
 
 void SonoAssist::update_main_display(QImage new_image) {
 
@@ -233,7 +246,6 @@ void SonoAssist::on_new_clarius_image(QImage new_image){
 
 void SonoAssist::on_new_gaze_point(float x, float y) {
 
-    // processing incoming coordinates
     if (x > 1) x = 1;
     if (x < 0) x = 0;
     if (y > 1) y = 1;
@@ -252,7 +264,9 @@ void SonoAssist::on_device_warning_message(const QString& title, const QString& 
     display_warning_message(title, message);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// input related slots
+/*******************************************************************************
+* USER INPUT RELATED SLOTS
+******************************************************************************/
 
 void SonoAssist::on_sensor_connect_button_clicked(){
     
@@ -266,13 +280,19 @@ void SonoAssist::on_sensor_connect_button_clicked(){
         }
 
         // preventing multiple connection button clicks
+
         int n_sensors_used = 0;
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
             m_sensor_conn_updates[i] = 0;
-            if (m_sensor_devices[i]->get_sensor_used()) n_sensors_used ++;
+            if (m_sensor_devices[i]->get_sensor_used()) {
+                n_sensors_used++;
+            }
         }
-        if (n_sensors_used > 0) ui.sensor_connect_button->setEnabled(false);
-
+        
+        if (n_sensors_used > 0) {
+            ui.sensor_connect_button->setEnabled(false);
+        }
+        
         // connecting the devices
         ui.debug_text_edit->clear();
         for (auto i = 0; i < m_sensor_devices.size(); i++) {
@@ -389,6 +409,8 @@ void SonoAssist::on_start_acquisition_button_clicked() {
             // graying out the (start acquisition button while streaming)
             ui.start_acquisition_button->setEnabled(false);
 
+            // launching the sensors and models
+
             for (auto i = 0; i < m_sensor_devices.size(); i++) {
                 if (m_sensor_devices[i]->get_sensor_used()) {
                     n_used_sensors++;
@@ -448,6 +470,8 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
         m_stream_is_active = false;
         set_acquisition_label(false);
 
+        // stopping the sensors and models
+
         for (auto i = 0; i < m_ml_models.size(); i++) {
             if (m_ml_models[i]->get_model_status()) {
                 m_ml_models[i]->stop_stream();
@@ -506,7 +530,7 @@ void SonoAssist::on_param_file_apply_clicked() {
             // applying config changes to the UI
             configure_main_display();
 
-            // launching redis server
+            // launching redis server, if required
             if (entities_with_redis > 0) {
                 if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
                     QString debug_str = "\nSonoAssist - failed to launch redis server";
@@ -554,7 +578,6 @@ void SonoAssist::on_output_folder_browse_clicked(void) {
 
 }
 
-// inserting the port in the config map
 void SonoAssist::on_udp_port_input_editingFinished(void) {
     m_us_probe_client_p->set_udp_port(ui.udp_port_input->text().toInt());    
 }
@@ -606,14 +629,17 @@ void SonoAssist::sensor_panel_selection_handler(int row, int column) {
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// status related slots
+/*******************************************************************************
+* STATUS RELATED SLOTS
+******************************************************************************/
 
 void SonoAssist::set_device_status(int device_id, bool device_status) {
 
     // pointing to the target table entry
     QTableWidgetItem* device_field = ui.sensor_status_table->item(device_id, 0);
 
-    // preparing widget text and color
+    // applying changes to the UI (sensor table)
+
     QString color_str = "";
     QString status_str = "";
     if (device_status) {
@@ -624,23 +650,26 @@ void SonoAssist::set_device_status(int device_id, bool device_status) {
         color_str = QString(RED_TEXT);
     }
 
-    // applying changes to the widget
     device_field->setText(status_str);
     device_field->setForeground(QBrush(QColor(color_str)));
 
     if (m_sensor_conn_updates.size() > device_id) {
 
-        // taking note of the state update
+        // taking note of the device state update
         m_sensor_conn_updates[device_id] ++;
 
         // checking if all used devices have produced a state update
+
         bool updates_complete = true;
         for (auto i = 0; i < m_sensor_conn_updates.size(); i++) {
             if (m_sensor_devices[i]->get_sensor_used()) {
                 updates_complete = updates_complete && (m_sensor_conn_updates[i] > 0);
             }
         }
-        if (updates_complete) ui.sensor_connect_button->setEnabled(true);
+
+        if (updates_complete) {
+            ui.sensor_connect_button->setEnabled(true);
+        }
 
     }
 
@@ -650,34 +679,40 @@ void SonoAssist::add_debug_text(const QString& debug_str) {
     ui.debug_text_edit->setText(ui.debug_text_edit->toPlainText() + "\n" + debug_str);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// time marker handling
+/*******************************************************************************
+* TIME MARKER HANDLING
+******************************************************************************/
 
-/*
-Using the key press handler to detect "a" and "d" presses for the creation and deletion of time markers
-*/
 void SonoAssist::on_new_os_key_detected(int key) {
 
     if (m_stream_is_active) {
 
-        // adding a time marker7
+        // adding a time marker
         if (key == OS_A_KEY) {
+
             // adding the marker to the display list + json time marker list
-            QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) + " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
+            QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) +
+                " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
             ui.time_marker_list->addItem(new QListWidgetItem(marker_str));
             m_time_markers_json.push_back(QJsonValue(marker_str));
+            
             // updating the output params
             m_output_params["time_markers"] = m_time_markers_json;
+
         }
 
         // removing a time marker
         else if (key == OS_D_KEY) {
+
             // removing the latest time marker
             if (ui.time_marker_list->count() > 0) {
                 m_time_markers_json.pop_back();
                 delete ui.time_marker_list->takeItem(ui.time_marker_list->count() - 1);
             }
+            
             // updating the output params
             m_output_params["time_markers"] = m_time_markers_json;
+
         }
 
     }
@@ -692,7 +727,9 @@ void SonoAssist::clear_time_markers(void) {
     
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// graphical functions
+/*******************************************************************************
+* GRAPHICAL FUNCTIONS
+******************************************************************************/
 
 void SonoAssist::build_sensor_panel(void) {
 
@@ -753,18 +790,26 @@ void SonoAssist::display_warning_message(const QString& title, const QString& me
     QMessageBox::warning(this, title, message);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// Graphics scene functions
+/*******************************************************************************
+* GRAPHICS SCENCE FUNCTIONS
+******************************************************************************/
 
 void SonoAssist::configure_main_display(void) {
 
     // loading the main display dimensions
     try {
+
         m_main_us_img_width = std::stoi((*m_app_params)["us_image_main_display_width"]);
-        if (m_main_us_img_width > MAIN_DISPLAY_DEFAULT_WIDTH) m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+        if (m_main_us_img_width > MAIN_DISPLAY_DEFAULT_WIDTH) {
+            m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
+        }
+
         m_main_us_img_height = std::stoi((*m_app_params)["us_image_main_display_height"]);
-        if (m_main_us_img_height > MAIN_DISPLAY_DEFAULT_HEIGHT) m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
-    }
-    catch (...) {
+        if (m_main_us_img_height > MAIN_DISPLAY_DEFAULT_HEIGHT) {
+            m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
+        }
+    
+    } catch (...) {
         m_main_us_img_width = MAIN_DISPLAY_DEFAULT_WIDTH;
         m_main_us_img_height = MAIN_DISPLAY_DEFAULT_HEIGHT;
     }
@@ -790,7 +835,6 @@ void SonoAssist::generate_main_display(void) {
     int y_pos = (m_main_scene_p->height() / 2) - (m_main_us_img_height / 2);
     m_main_bg_p->setPos(x_pos, y_pos);
 
-    // generating eyetracker targets
     generate_eye_tracker_targets();
 
     // writing the background position (screen coordinates) to the output params
@@ -804,9 +848,11 @@ void SonoAssist::generate_main_display(void) {
 }
 
 void SonoAssist::remove_main_display(void) {
+
     m_main_bg_p.release();
     m_main_pixmap_p.release();
     m_main_scene_p->clear();
+
 }
 
 void SonoAssist::clean_main_display(void) {
@@ -938,12 +984,10 @@ void SonoAssist::generate_eye_tracker_targets() {
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// input / output params
+/*******************************************************************************
+* PARAMETER LOADING & WRITING FUNCTIONS
+******************************************************************************/
 
-/*
-Creates the logging directory according to DEFAULT_LOG_PATH
-Returns the path to the log file
-*/
 std::string SonoAssist::create_log_folder(void) {
 
     std::string log_file_path = "";
@@ -1075,11 +1119,10 @@ void SonoAssist::write_output_params(void) {
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////// utility functions
+/*******************************************************************************
+* UTILITY FUNCTIONS
+******************************************************************************/
 
-/*
-* Checks if all used devices are ready for acquisition
-*/
 bool SonoAssist::check_device_connections() {
     
     int n_used_devices = 0;
@@ -1096,9 +1139,6 @@ bool SonoAssist::check_device_connections() {
     return used_devices_connected && (n_used_devices > 0);
 }
 
-/*
-* Checks if all used devices are streaming
-*/
 bool SonoAssist::check_devices_streaming() {
 
     int n_used_devices = 0;

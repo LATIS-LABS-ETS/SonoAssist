@@ -1,14 +1,19 @@
 #include "RGBDCameraClient.h"
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// GazeTracker public methods
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
 
 RGBDCameraClient::~RGBDCameraClient() {
 	disconnect_device();
 }
 
+/*******************************************************************************
+* SENSOR DEVICE OVERRIDES
+******************************************************************************/
+
 void RGBDCameraClient::connect_device(void) {
 
-	// making sure requirements are filled
 	if (m_config_loaded && m_sensor_used) {
 	
 		write_debug_output("RGBDCameraClient - testing the connection to the camera");
@@ -40,7 +45,6 @@ void RGBDCameraClient::disconnect_device(void) {
 
 void RGBDCameraClient::start_stream() {
 
-	// making sure requirements are filled
 	if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
 	
 		// setting the base recording configurations
@@ -116,12 +120,10 @@ void RGBDCameraClient::set_output_file(const std::string& output_folder_path) {
 	
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// collection function
+/*******************************************************************************
+* DATA COLLECTION FUNCTIONS
+******************************************************************************/
 
-/*
-* Collects frames from the camera stream and makes them available to the main window.
-* This function is meant to be executed in a seperate thread.
-*/
 void RGBDCameraClient::collect_camera_data(void) {
 
 	void* frame_data_p = nullptr;

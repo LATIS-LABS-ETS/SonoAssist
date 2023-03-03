@@ -56,7 +56,7 @@ add_executable(SonoAssist WIN32
 	"MLModel.cpp" "MLModel.h"
 	"CUGNModel.h" "CUGNModel.cpp"
 	"SonoAssist.cpp" "SonoAssist.h"
-	"main.cpp" "main.h"
+	"main.cpp" 
 	"SonoAssist.rc"
  )
 

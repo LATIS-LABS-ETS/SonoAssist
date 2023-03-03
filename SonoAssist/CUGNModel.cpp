@@ -11,6 +11,10 @@ CUGNModel::CUGNModel(int model_id, std::string model_description, std::string mo
 
 }
 
+/*******************************************************************************
+* MLMODEL OVERRIDES
+******************************************************************************/
+
 void CUGNModel::start_stream(void) {
 
 	bool valid_params = true;
@@ -71,6 +75,10 @@ void CUGNModel::stop_stream(void) {
     }
 
 }
+
+/*******************************************************************************
+* MODEL INFERANCE AND US IMAGE DETECTION
+******************************************************************************/
 
 void CUGNModel::eval() {
 
@@ -156,7 +164,6 @@ void CUGNModel::eval() {
 
 }
 
-/* Deploys automatic US shell shape detection */
 void CUGNModel::detect_us_image(void) {
 
 	bool us_img_detected = false;

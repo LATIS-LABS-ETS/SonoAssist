@@ -1,13 +1,15 @@
 #include "ClariusProbeClient.h"
 
-// global pointer (for the Clarius callback(s))
-ClariusProbeClient* probe_client_p = nullptr;
+// global pointer for the Clarius callback(s)
+static ClariusProbeClient* probe_client_p = nullptr;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// acquisition callback
+/*******************************************************************************
+* ACQUISITION CALLBACK
+******************************************************************************/
 
-/*
-Callback function for incoming processed images (as displayed on the tablet) from the Clarius probe
-Writes acquired data (IMU and images) to outputfiles and displays the images on the UI 
+/**
+* Callback function for incoming processed images (as displayed on the tablet) from the Clarius probe
+* Writes acquired data (IMU and images) to output files and emits the US images to the main window
 */
  void new_processed_image_callback(const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos) {
        
@@ -25,7 +27,7 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
              emit probe_client_p->no_imu_data("Check clarius probe settings", "No incoming IMU data from the clarius probe.");
          }
         
-         // mapping the incoming image to a Mat + gray scale conversion
+         // mapping the incoming image to a Mat (no copy) + gray scale conversion
          probe_client_p->m_input_img_mat.data = static_cast<uchar*>(const_cast<void*>(img));
          cv::cvtColor(probe_client_p->m_input_img_mat, probe_client_p->m_cvt_mat, CV_BGRA2GRAY);
          cv::resize(probe_client_p->m_cvt_mat, probe_client_p->m_output_img_mat,
@@ -47,7 +49,7 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 
          }
 
-         // image is passed by reference to the display
+         // passing the image to the diplay (pass by copy because the image is needed elsewhere)
          probe_client_p->m_display_locked = false;
          if (probe_client_p->get_stream_preview_status()) {
              emit probe_client_p->new_us_preview_image(probe_client_p->m_output_img);
@@ -59,11 +61,12 @@ Writes acquired data (IMU and images) to outputfiles and displays the images on 
 
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ClariusProbeClient public methods
+ /*******************************************************************************
+ * SENSOR DEVICE OVERRIDES
+ ******************************************************************************/
 
 void ClariusProbeClient::connect_device() {
 
-    // making sure requirements are filled
     if (m_config_loaded && m_sensor_used) {
 
         clariusDestroyListener();
@@ -75,14 +78,12 @@ void ClariusProbeClient::connect_device() {
         if (clariusInitListener(0, nullptr, 
                 QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
                 new_processed_image_callback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                CLARIUS_NORMAL_DEFAULT_WIDTH, CLARIUS_NORMAL_DEFAULT_HEIGHT) == 0)
-        {
+                CLARIUS_NORMAL_DEFAULT_WIDTH, CLARIUS_NORMAL_DEFAULT_HEIGHT) == 0){
+            
             m_device_connected = true;
             write_debug_output("ClariusProbeClient - successfully connected\n");
-        } 
         
-        // failure to map events
-        else {
+        } else {
             write_debug_output("ClariusProbeClient - failed to connect\n");
         }
 
@@ -107,7 +108,6 @@ void ClariusProbeClient::disconnect_device() {
 
 void ClariusProbeClient::start_stream() {
     
-    // making sure requirements are filled
     if (m_device_connected && !m_device_streaming && m_output_file_loaded) {
         
         // preparing the US image callback
@@ -194,14 +194,14 @@ void ClariusProbeClient::set_output_file(const std::string& output_folder_path) 
 
 }
 
+/*******************************************************************************
+* UTILITY & HELPER METHODS
+******************************************************************************/
+
 void ClariusProbeClient::set_udp_port(int port) {
     m_udp_port = port;
 }
 
-
-/*
-Writes collected data (imu data + images the appropriate output files)
-*/
 void ClariusProbeClient::write_output_data() {
 
     try {
@@ -240,8 +240,6 @@ void ClariusProbeClient::write_output_data() {
 
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helper functions
-
 void ClariusProbeClient::initialize_img_handling() {
 
     // initializing the input containers
@@ -258,9 +256,6 @@ void ClariusProbeClient::initialize_img_handling() {
 
 }
 
-/*
-Loads the configurations for the generation of output images
-*/
 void ClariusProbeClient::configure_img_acquisition(void) {
 
     // defining output image dimensions (normal and preview) mode

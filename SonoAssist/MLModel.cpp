@@ -1,6 +1,8 @@
 #include "MLModel.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// constructor && destructor
+/*******************************************************************************
+* CONSTRUCTOR & DESTRUCTOR
+******************************************************************************/
 
 MLModel::MLModel(int model_id, std::string model_description, std::string model_status_entry,
 	std::string redis_state_entry, std::string model_path_entry, std::string log_file_path):
@@ -17,7 +19,9 @@ MLModel::~MLModel() {
 	m_log_file.close();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// getters and setters
+/*******************************************************************************
+* GETTERS & SETTERS
+******************************************************************************/
 
 bool MLModel::get_model_status(void) const {
 	return m_model_status;
@@ -48,8 +52,7 @@ void MLModel::set_configuration(std::shared_ptr<config_map> config_ptr) {
 	// getting the redis status (is the device expected to connect to redis)
 	try {
 		m_redis_state = (*m_config_ptr)[m_redis_state_entry] == "true";
-	}
-	catch (...) {
+	} catch (...) {
 		m_redis_state = false;
 		write_debug_output("Failed to load redis status from config");
 	}
@@ -58,7 +61,9 @@ void MLModel::set_configuration(std::shared_ptr<config_map> config_ptr) {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// redis methods
+/*******************************************************************************
+* REDIS METHODS
+******************************************************************************/
 
 void MLModel::connect_to_redis(const std::vector<std::string>&& redis_entries) {
 
@@ -104,7 +109,9 @@ void MLModel::write_str_to_redis(const std::string& redis_entry, std::string dat
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// helpers
+/*******************************************************************************
+* HELPERS
+******************************************************************************/
 
 /*
 * Writes debug output to QDebug (the debug console) and the debug output window
@@ -122,7 +129,9 @@ void MLModel::write_debug_output(const QString& debug_str) {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////// US image detection
+/*******************************************************************************
+* US IMAGE DETECTION
+******************************************************************************/
 
 USImgDetector::USImgDetector(const std::string& template_path) {
 
