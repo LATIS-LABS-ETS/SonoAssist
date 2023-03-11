@@ -104,7 +104,7 @@ SonoAssist::SonoAssist(QWidget *parent) : QMainWindow(parent){
 
     // filling in the default config path
     ui.param_file_input->setText(QString(DEFAULT_CONFIG_PATH));
-    on_param_file_apply_clicked();
+    on_param_file_reload_clicked();
 
 }
 
@@ -502,42 +502,18 @@ void SonoAssist::on_stop_acquisition_button_clicked() {
     
 }
 
-void SonoAssist::on_param_file_apply_clicked() {
-
-    int entities_with_redis = 0;
+void SonoAssist::on_param_file_reload_clicked() {
 
     // making sure devices arent streaming
     if (!m_stream_is_active) {
 
+        // a successful load updates all sensors and models
+
         m_config_is_loaded = load_config_file(ui.param_file_input->text());
 
-        // a successful load updates all sensors and models
         if (m_config_is_loaded) {
 
-            for (auto i = 0; i < m_sensor_devices.size(); i++) {
-                if (m_sensor_devices[i]->get_connection_status()) {
-                    m_sensor_devices[i]->disconnect_device();
-                }
-                m_sensor_devices[i]->set_configuration(m_app_params);
-                if (m_sensor_devices[i]->get_redis_state()) entities_with_redis++;
-            }
-
-            for (auto i = 0; i < m_ml_models.size(); i++) {
-                m_ml_models[i]->set_configuration(m_app_params);
-                if (m_ml_models[i]->get_redis_state()) entities_with_redis++;
-            }
-
-            // applying config changes to the UI
-            configure_main_display();
-
-            // launching redis server, if required
-            if (entities_with_redis > 0) {
-                if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
-                    QString debug_str = "\nSonoAssist - failed to launch redis server";
-                    qDebug() << debug_str << GetLastError();
-                    add_debug_text(debug_str);
-                }
-            }
+            apply_config();
             
         } else {
             QString title = "Parameters were not loaded";
@@ -565,6 +541,16 @@ void SonoAssist::on_param_file_browse_clicked(){
     }
 
 }
+
+void SonoAssist::on_param_edit_clicked(void) {
+
+    ParamEditor config_editor(*m_app_params, this);
+    config_editor.exec();
+
+    apply_config();
+
+}
+
 
 void SonoAssist::on_output_folder_browse_clicked(void) {
    
@@ -692,7 +678,7 @@ void SonoAssist::on_new_os_key_detected(int key) {
 
             // adding the marker to the display list + json time marker list
             QString marker_str = "Time marker #" + QString::number(ui.time_marker_list->count()) +
-                " - " + QString::fromUtf8(SensorDevice::get_micro_timestamp().c_str());
+                " - " + QString(SensorDevice::get_micro_timestamp().c_str());
             ui.time_marker_list->addItem(new QListWidgetItem(marker_str));
             m_time_markers_json.push_back(QJsonValue(marker_str));
             
@@ -734,9 +720,9 @@ void SonoAssist::clear_time_markers(void) {
 void SonoAssist::build_sensor_panel(void) {
 
     // defining table dimensions and headers
-   
-    ui.sensor_status_table->setRowCount(m_sensor_devices.size());
+
     ui.sensor_status_table->setColumnCount(1);
+    ui.sensor_status_table->setRowCount(m_sensor_devices.size());
     ui.sensor_status_table->setHorizontalHeaderLabels(QStringList{"Sensor status"});
     
     QStringList sensor_descriptions;
@@ -1099,6 +1085,37 @@ bool SonoAssist::load_config_file(const QString& param_file_path) {
     }
 
     return true;
+
+}
+
+void SonoAssist::apply_config(void) {
+
+    int entities_with_redis = 0;
+
+    for (auto i = 0; i < m_sensor_devices.size(); i++) {
+        if (m_sensor_devices[i]->get_connection_status()) {
+            m_sensor_devices[i]->disconnect_device();
+        }
+        m_sensor_devices[i]->set_configuration(m_app_params);
+        if (m_sensor_devices[i]->get_redis_state()) entities_with_redis++;
+    }
+
+    for (auto i = 0; i < m_ml_models.size(); i++) {
+        m_ml_models[i]->set_configuration(m_app_params);
+        if (m_ml_models[i]->get_redis_state()) entities_with_redis++;
+    }
+
+    // applying config changes to the UI
+    configure_main_display();
+
+    // launching redis server, if required
+    if (entities_with_redis > 0) {
+        if (!process_startup((*m_app_params)["redis_server_path"], m_redis_process)) {
+            QString debug_str = "\nSonoAssist - failed to launch redis server";
+            qDebug() << debug_str << GetLastError();
+            add_debug_text(debug_str);
+        }
+    }
 
 }
 

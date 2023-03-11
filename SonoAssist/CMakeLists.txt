@@ -44,7 +44,7 @@ find_package(Qt5 COMPONENTS Bluetooth REQUIRED)
 conan_basic_setup()
 
 add_executable(SonoAssist WIN32
-	"SonoAssist.ui"
+	"SonoAssist.ui" "ParamEditor.ui"
 	"SensorDevice.cpp" "SensorDevice.h"
 	"GazeTracker.cpp" "GazeTracker.h"
 	"OSKeyDetector.cpp" "OSKeyDetector.h"
@@ -55,6 +55,7 @@ add_executable(SonoAssist WIN32
 	"ClariusProbeClient.cpp" "ClariusProbeClient.h"
 	"MLModel.cpp" "MLModel.h"
 	"CUGNModel.h" "CUGNModel.cpp"
+	"ParamEditor.h" "ParamEditor.cpp"
 	"SonoAssist.cpp" "SonoAssist.h"
 	"main.cpp" 
 	"SonoAssist.rc"

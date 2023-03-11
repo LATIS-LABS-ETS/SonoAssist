@@ -4,6 +4,7 @@
 
 #include <tuple>
 #include <memory>
+#include <string>
 #include <vector>
 #include <windows.h>
 #include <Lmcons.h>
@@ -30,6 +31,7 @@
 #include "MlModel.h"
 #include "SensorDevice.h"
 #include "process_management.h"
+#include "ParamEditor.h"
 
 #define RED_TEXT "#cc0000"
 #define GREEN_TEXT "#008000"
@@ -94,24 +96,6 @@ class SonoAssist : public QMainWindow {
 		void on_device_warning_message(const QString& title, const QString& message);
 
 		/*******************************************************************************
-		* USER INPUT RELATED SLOTS
-		******************************************************************************/
-		 
-		void on_pass_through_box_clicked(void);
-		void on_eye_t_targets_box_clicked(void);
-		void on_acquisition_preview_box_clicked(void);
-		void on_start_acquisition_button_clicked(void);
-		void on_stop_acquisition_button_clicked(void);
-		void on_sensor_connect_button_clicked(void);
-		 
-		void on_param_file_browse_clicked(void);
-		void on_output_folder_browse_clicked(void);
-		void on_param_file_apply_clicked();
-		
-		void on_udp_port_input_editingFinished(void);
-		void sensor_panel_selection_handler(int row, int column);
-
-		/*******************************************************************************
 		* STATUS RELATED SLOTS
 		******************************************************************************/
 
@@ -124,11 +108,33 @@ class SonoAssist : public QMainWindow {
 
 		/*
 		* This method captures the key press codes emited by the (OSKeyDetector) SensorDevice instance
-		* and creates (A) / deletes (D) time markers based on the presses. 
+		* and creates (A) / deletes (D) time markers based on the presses.
 		*
 		* \param key The key code emitedby the (OSKeyDetector).
 		*/
 		void on_new_os_key_detected(int key);
+
+	private slots:
+
+		/*******************************************************************************
+		* USER INPUT RELATED SLOTS
+		******************************************************************************/
+		 
+		void on_pass_through_box_clicked(void);
+		void on_eye_t_targets_box_clicked(void);
+		void on_acquisition_preview_box_clicked(void);
+		void on_start_acquisition_button_clicked(void);
+		void on_stop_acquisition_button_clicked(void);
+		void on_sensor_connect_button_clicked(void);
+		 
+
+		void on_param_edit_clicked(void);
+		void on_param_file_reload_clicked(void);
+		void on_param_file_browse_clicked(void);
+		void on_output_folder_browse_clicked(void);
+
+		void on_udp_port_input_editingFinished(void);
+		void sensor_panel_selection_handler(int row, int column);
 		
 	private:
 
@@ -167,6 +173,7 @@ class SonoAssist : public QMainWindow {
 
 		void write_output_params(void);
 		bool create_output_folder(void);
+		void apply_config(void);
 		bool load_config_file(const QString& param_file_path);
 
 		/*******************************************************************************
