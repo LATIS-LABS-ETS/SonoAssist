@@ -18,7 +18,7 @@
 
 using config_map = std::map<std::string, std::string>;
 
-/*
+/**
 * Abstract class for the implementation of custom sensor devices.
 *
 * To be compatible with SonoAssist, classes which acquire data from sensors must be derived from this class
