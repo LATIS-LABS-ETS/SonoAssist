@@ -63,12 +63,12 @@ class MLModel : public QObject {
 		*
 		* \param redis_entries The Redis entries to be deleted / reset.
 		*/
-		void connect_to_redis(const std::vector<std::string>&& redis_entries = {});
+		virtual void connect_to_redis(const std::vector<std::string>&& redis_entries = {});
 		
 		/**
 		* Closes the existing Redis connection.
 		*/
-		void disconnect_from_redis(void);
+		virtual void disconnect_from_redis(void);
 
 		/**
 		* Appends the provided data string to the specified redis list.
@@ -76,7 +76,7 @@ class MLModel : public QObject {
 		* \param redis_entry The identifier for the Redis list to which the provided string will be appended.
 		* \param data_str The string to append.
 		*/
-		void write_str_to_redis(const std::string& redis_entry, std::string data_str);
+		virtual void write_str_to_redis(const std::string& redis_entry, std::string data_str);
 
 		/*******************************************************************************
 		* PURE VIRTUAL METHODS

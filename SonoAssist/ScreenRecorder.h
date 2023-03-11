@@ -45,6 +45,8 @@ class ScreenRecorder : public SensorDevice {
 		*/
 		void collect_window_captures(void);
 
+		void initialize_capture(void);
+
 		// window capture vars
 		RECT m_window_rc;
 		HWND m_window_handle;

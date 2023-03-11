@@ -118,7 +118,7 @@ void MLModel::write_str_to_redis(const std::string& redis_entry, std::string dat
 */
 void MLModel::write_debug_output(const QString& debug_str) {
 
-	QString out_str = QString::fromUtf8(m_model_description.c_str()) + " - " + debug_str;
+	QString out_str = QString(m_model_description.c_str()) + " - " + debug_str;
 
 	// sending msg to the application and vs debug windows
 	qDebug() << "\n" + out_str;

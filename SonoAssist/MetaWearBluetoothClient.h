@@ -152,7 +152,7 @@ class MetaWearBluetoothClient : public SensorDevice {
 	private slots:
 
 		/*******************************************************************************
-		* (MetaWearBluetoothClient) PRIVATE SLOTS
+		* (MetaWearBluetoothClient) SLOTS
 		******************************************************************************/
 
 		// ble device slots

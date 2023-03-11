@@ -45,7 +45,7 @@ conan_basic_setup()
 
 # STEP #6: Add the .cpp and .h files to the add_executable command
 add_executable(SonoAssist WIN32
-	"SonoAssist.ui"
+	"SonoAssist.ui" "ParamEditor.ui"
 	"SensorDevice.cpp" "SensorDevice.h"
 	"SensorExample.cpp" "SensorExample.h"
 	"GazeTracker.cpp" "GazeTracker.h"
@@ -57,6 +57,7 @@ add_executable(SonoAssist WIN32
 	"ClariusProbeClient.cpp" "ClariusProbeClient.h"
 	"MLModel.cpp" "MLModel.h"
 	"CUGNModel.h" "CUGNModel.cpp"
+	"ParamEditor.h" "ParamEditor.cpp"
 	"SonoAssist.cpp" "SonoAssist.h"
 	"main.cpp" 
 	"SonoAssist.rc"
