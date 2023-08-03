@@ -45,9 +45,10 @@ Note that the configuration parameters for the processing scripts are detailed i
 
 1. Install system dependencies
    1. Install the [conan](https://conan.io/) package manager via pip : `pip install conan<2.0`
-      *Note : The generator used is cmake. The `cmake` generator has been superseded in Conan 1.X in favor of `CMakeDeps` + `CMakeToolchain` and it has been completely removed in Conan 2.0.*
+      *Note : The generator used in this project is `cmake`. The `cmake` generator has been superseded in Conan 1.X in favor of `CMakeDeps` + `CMakeToolchain` and it has been completely removed in Conan 2.0.*
    2. Install [Qt](https://www.qt.io/download-open-source?hsCtaTracking=9f6a2170-a938-42df-a8e2-a9f0b1d6cdce%7C6cb0de4f-9bb5-4778-ab02-bfb62735f3e5). This project is for now ONLY compatible with Qt 5.14.
    3. Install the [RealSense SDK](https://www.intelrealsense.com/sdk-2/).
+   4. Install [CMake](https://cmake.org/download/).
 
 2. Clone this repository and navigate to the source folder
    - `git clone ...`
@@ -58,6 +59,9 @@ Note that the configuration parameters for the processing scripts are detailed i
 4. Navigate back using `cd ../SonoAssist/` and run the following Conan install commands from the source folder
 
    - `conan install . -s build_type=Release -of=out/build/x64-Release -s compiler.cppstd=17 --build=missing`
+
+   This might take a while. 
+
 5. Update the `set(CMAKE_PREFIX_PATH C:/Qt/<Qt_version>/<compiler>)` statement in the `CMakeLists.txt` file to match your installed version of Qt.
 
 6. Open the source folder 'SonoAssist/SonoAssist/' in VisualStudio and configure the project with CMake. In VisualStudio, the configuration is done automatically when opening and saving  `CMakeLists.txt`.
