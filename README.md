@@ -58,7 +58,7 @@ Note that the configuration parameters for the processing scripts are detailed i
    - `.\dependencies-download.ps1`
 4. Navigate back using `cd ../SonoAssist/` and run the following Conan install commands from the source folder
 
-   - `conan install . -s build_type=Release -of=out/build/x64-Release -s compiler.cppstd=17 --build=missing`
+   - `conan install . -s build_type=Release -if=out/build/x64-Release -s compiler.cppstd=17 --build=missing`
 
    This might take a while. 
 
